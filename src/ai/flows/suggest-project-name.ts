@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,15 +15,12 @@ import {z} from 'genkit';
 const SuggestProjectNameInputSchema = z.object({
   repoDescription: z
     .string()
-    .describe('The high level description of the github repo.'),
-  repoLanguages: z
-    .string()
-    .describe("List of languages used in this repo. Example: 'Typescript, Python, Java'"),
+    .describe('The high level description of the github repo, including its purpose and main functionalities.'),
 });
 export type SuggestProjectNameInput = z.infer<typeof SuggestProjectNameInputSchema>;
 
 const SuggestProjectNameOutputSchema = z.object({
-  projectName: z.string().describe('A creative and relevant project name suggestion.'),
+  projectName: z.string().describe('A creative and relevant project name suggestion based on the repository description.'),
 });
 export type SuggestProjectNameOutput = z.infer<typeof SuggestProjectNameOutputSchema>;
 
@@ -36,10 +34,10 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestProjectNameOutputSchema},
   prompt: `You are a creative project name generator.
 
-  Based on the description and languages of the project, suggest a relevant and catchy name for the project.
+  Based on the following description of the project, suggest a relevant and catchy name.
 
-  Description: {{{repoDescription}}}
-  Languages: {{{repoLanguages}}}
+  Project Description:
+  {{{repoDescription}}}
 
   Please suggest a project name:
   `,

@@ -1,3 +1,4 @@
+
 // src/lib/actions.ts
 "use server";
 
@@ -22,19 +23,16 @@ export async function processGitHubRepo(
       return { error: "Invalid GitHub repository URL." };
     }
 
-    // 1. Summarize Repo (to get description for project name suggestion)
+    // 1. Summarize Repo (to get description for project name suggestion and README sections)
     const summaryOutput = await summarizeRepo({ repoUrl });
     if (!summaryOutput || !summaryOutput.summary) {
       return { error: "Failed to summarize repository." };
     }
     const repoDescription = summaryOutput.summary;
 
-    // 2. Suggest Project Name
-    // Mocking languages as this is not directly provided by current AI flows from just a URL
-    const mockedRepoLanguages = "TypeScript, JavaScript, Python"; // Example
+    // 2. Suggest Project Name based on the description
     const projectNameOutput = await suggestProjectName({
       repoDescription,
-      repoLanguages: mockedRepoLanguages,
     });
     if (!projectNameOutput || !projectNameOutput.projectName) {
       return { error: "Failed to suggest a project name." };
@@ -42,16 +40,44 @@ export async function processGitHubRepo(
     const projectName = projectNameOutput.projectName;
 
     // 3. Generate README Sections
-    // Mocking fileContents as fetching all files is a complex task beyond current AI flows
+    // Mocking fileContents as fetching all files is a complex task beyond current AI flows in this prototype.
+    // This content should be representative enough for the AI to infer basic project structure/type.
     const mockedFileContents = `
-      // Mocked file contents for ${repoUrl}
-      // This is a placeholder. In a real scenario, actual file contents would be fetched.
-      function helloWorld() { console.log("Hello from ${projectName}"); }
+      // Mocked representative file contents for: ${repoUrl}
+      // Project: ${projectName}
+      // Description: ${repoDescription.substring(0, 100)}...
+
+      // Example: A simple function or component structure
+      // If this were a React project, it might look like:
+      // import React from 'react';
+      // const MainComponent = () => (
+      //   <div>
+      //     <h1>Welcome to ${projectName}</h1>
+      //     <p>This project is about ${repoDescription.substring(0,50)}...</p>
+      //   </div>
+      // );
+      // export default MainComponent;
+
+      // If this were a Node.js backend, it might look like:
+      // const express = require('express');
+      // const app = express();
+      // app.get('/', (req, res) => {
+      //   res.send('Hello from ${projectName}');
+      // });
+      // app.listen(3000, () => console.log('Server started for ${projectName}'));
+
+      // Generic placeholder:
+      function projectMainFunction() {
+        console.log("Core logic for ${projectName} would be here.");
+      }
+      projectMainFunction();
     `;
+
     const readmeSectionsOutput = await generateReadmeSections({
       repoUrl,
       fileContents: mockedFileContents,
       projectName,
+      projectDescription: repoDescription, // Pass description to help with technology inference and features
     });
 
     if (
@@ -65,7 +91,7 @@ export async function processGitHubRepo(
 
     return {
       projectName,
-      projectDescription: repoDescription, // Using the summary as the description
+      projectDescription: repoDescription,
       features: readmeSectionsOutput.features,
       technologiesUsed: readmeSectionsOutput.technologiesUsed,
       setupInstructions: readmeSectionsOutput.setupInstructions,
