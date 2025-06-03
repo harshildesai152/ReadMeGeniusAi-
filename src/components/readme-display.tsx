@@ -14,21 +14,25 @@ interface ReadmeDisplayProps {
 }
 
 // A simple component to render markdown-like text.
-// For a full markdown experience, a library like react-markdown would be better.
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
-  // Split content by newlines and render each line, preserving some structure.
-  // Replace common markdown list items for better display.
   const lines = content.split('\n').map((line, index) => {
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       return <li key={index} className="ml-4 list-disc">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
-    if (line.match(/^#{1,6}\s/)) { // Basic heading support
+    if (line.match(/^#{1,6}\s/)) { 
         const level = line.match(/^#+/)![0].length;
         const text = line.replace(/^#+\s/, '');
-        const Tag = `h${level + 1}` as keyof JSX.IntrinsicElements; // h2, h3 etc.
-        return <Tag key={index} className={`font-semibold mt-2 mb-1 ${level === 1 ? 'text-xl' : level === 2 ? 'text-lg' : 'text-base'}`}>{text}</Tag>;
+        const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements; // Start from h3 for these sections
+        return <Tag key={index} className={`font-semibold mt-2 mb-1 ${level === 1 ? 'text-lg' : level === 2 ? 'text-base' : 'text-sm'}`}>{text}</Tag>;
     }
-    return <p key={index} className="mb-1">{line || <>&nbsp;</>}</p>; // Render empty line as a small break
+    // Basic code block detection for folder structure
+    if (line.trim().startsWith('```') && index > 0 && content.split('\n')[index-1].trim().startsWith('```')) {
+      return <pre key={index} className="bg-muted p-2 rounded-md text-sm overflow-x-auto my-2">{line}</pre>;
+    }
+    if (line.trim().startsWith('    ') || line.trim().startsWith('\t')) { // Indented lines, potentially for code or structure
+      return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-sm">{line || <>&nbsp;</>}</p>;
+    }
+    return <p key={index} className="mb-1">{line || <>&nbsp;</>}</p>;
   });
 
   return <div className="prose prose-sm dark:prose-invert max-w-none">{lines}</div>;
@@ -52,13 +56,16 @@ export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
 ## Project Description
 ${readmeData.projectDescription}
 
-## Project Features
+## Features
 ${readmeData.features}
 
-## Project Technologies
+## Technologies Used
 ${readmeData.technologiesUsed}
 
-## To run this project locally, follow these steps:
+## Folder Structure
+${readmeData.folderStructure}
+
+## Setup Instructions
 ${readmeData.setupInstructions}
     `.trim();
   };
@@ -86,7 +93,7 @@ ${readmeData.setupInstructions}
   };
 
   if (!mounted) {
-    return null; // Or a loading skeleton
+    return null; 
   }
 
   return (
@@ -119,21 +126,28 @@ ${readmeData.setupInstructions}
 
             <div>
               <h2 className="text-xl font-semibold mb-2 pb-1 border-b font-headline">
-                3. Project Features:
+                3. Features:
               </h2>
               <MarkdownContent content={data.features} />
             </div>
 
             <div>
               <h2 className="text-xl font-semibold mb-2 pb-1 border-b font-headline">
-                4. Project Technologies:
+                4. Technologies Used:
               </h2>
               <MarkdownContent content={data.technologiesUsed} />
+            </div>
+            
+            <div>
+              <h2 className="text-xl font-semibold mb-2 pb-1 border-b font-headline">
+                5. Folder Structure:
+              </h2>
+              <MarkdownContent content={data.folderStructure} />
             </div>
 
             <div>
               <h2 className="text-xl font-semibold mb-2 pb-1 border-b font-headline">
-                5. To run this project locally, follow these steps:
+                6. Setup Instructions:
               </h2>
               <MarkdownContent content={data.setupInstructions} />
             </div>

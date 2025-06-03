@@ -5,6 +5,7 @@
 import { generateReadmeSections } from "@/ai/flows/generate-readme-sections";
 import { summarizeRepo } from "@/ai/flows/summarize-repo";
 import { suggestProjectName } from "@/ai/flows/suggest-project-name";
+import { summarizeCodeContent } from "@/ai/flows/summarize-code-content"; // New import
 
 export type FullReadmeData = {
   projectName: string;
@@ -12,25 +13,66 @@ export type FullReadmeData = {
   features: string;
   technologiesUsed: string;
   setupInstructions: string;
+  folderStructure: string;
+};
+
+type ProcessInput = {
+  repoUrl?: string;
+  codeContent?: string;
 };
 
 export async function processGitHubRepo(
-  repoUrl: string
+  input: ProcessInput
 ): Promise<FullReadmeData | { error: string }> {
   try {
-    // Validate repoUrl (basic check)
-    if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
-      return { error: "Invalid GitHub repository URL." };
+    let repoDescription: string;
+    let fileContentsForSections: string;
+    let effectiveRepoUrl: string | undefined = input.repoUrl;
+
+    if (input.repoUrl) {
+      if (!input.repoUrl.startsWith("https://github.com/")) {
+        return { error: "Invalid GitHub repository URL." };
+      }
+      const summaryOutput = await summarizeRepo({ repoUrl: input.repoUrl });
+      if (!summaryOutput || !summaryOutput.summary) {
+        return { error: "Failed to summarize repository." };
+      }
+      repoDescription = summaryOutput.summary;
+      // Generate mockedFileContents for repoUrl input
+      fileContentsForSections = `
+// Mocked generic representative file structure for: ${input.repoUrl}
+// Description (first 200 chars): ${repoDescription.substring(0, 200)}...
+//
+// This is a simplified, language-agnostic structural representation.
+// The AI should infer technologies primarily from the Project Description.
+//
+// project-root/
+//   src/
+//     main_module/
+//       core_logic.file_extension
+//       utils.file_extension
+//     another_module/
+//   tests/
+//   docs/
+//   scripts/
+//   public/ or static/
+//   README.md
+//   package.json or similar
+//   LICENSE
+//   .gitignore
+      `;
+    } else if (input.codeContent) {
+      const summaryOutput = await summarizeCodeContent({ codeContent: input.codeContent });
+      if (!summaryOutput || !summaryOutput.summary) {
+        return { error: "Failed to summarize code content." };
+      }
+      repoDescription = summaryOutput.summary;
+      fileContentsForSections = input.codeContent; // Use actual code for sections
+      effectiveRepoUrl = undefined; // No real URL for direct code input
+    } else {
+      return { error: "Either a repository URL or code content must be provided." };
     }
 
-    // 1. Summarize Repo (to get description for project name suggestion and README sections)
-    const summaryOutput = await summarizeRepo({ repoUrl });
-    if (!summaryOutput || !summaryOutput.summary) {
-      return { error: "Failed to summarize repository." };
-    }
-    const repoDescription = summaryOutput.summary;
-
-    // 2. Suggest Project Name based on the description
     const projectNameOutput = await suggestProjectName({
       repoDescription,
     });
@@ -39,41 +81,9 @@ export async function processGitHubRepo(
     }
     const projectName = projectNameOutput.projectName;
 
-    // 3. Generate README Sections - Create a *truly generic* mockedFileContents
-    // This will be a language-agnostic representation.
-    const mockedFileContents = `
-// Mocked generic representative file structure for: ${repoUrl}
-// Project: ${projectName}
-// Description (first 200 chars): ${repoDescription.substring(0, 200)}...
-//
-// This is a simplified, language-agnostic structural representation.
-// The AI should infer technologies primarily from the Project Description.
-//
-// project-root/
-//   src/
-//     main_module/  // e.g., components, services, controllers
-//       core_logic.file_extension // e.g., .js, .ts, .py, .java, .cs
-//       utils.file_extension
-//     another_module/
-//   tests/
-//     unit_tests/
-//     integration_tests/
-//   docs/
-//   scripts/
-//   public/ or static/ or assets/
-//     images/
-//     styles/
-//   README.md
-//   package.json // or requirements.txt, pom.xml, .csproj, Gemfile etc.
-//   main_executable_or_script // e.g., app.js, main.py, Program.cs, server.rb
-//   LICENSE
-//   .gitignore
-//   config_file.yml // or .xml, .json, .env
-    `;
-
     const readmeSectionsOutput = await generateReadmeSections({
-      repoUrl,
-      fileContents: mockedFileContents,
+      repoUrl: effectiveRepoUrl,
+      fileContents: fileContentsForSections,
       projectName,
       projectDescription: repoDescription,
     });
@@ -82,7 +92,8 @@ export async function processGitHubRepo(
       !readmeSectionsOutput ||
       !readmeSectionsOutput.features ||
       !readmeSectionsOutput.technologiesUsed ||
-      !readmeSectionsOutput.setupInstructions
+      !readmeSectionsOutput.setupInstructions ||
+      readmeSectionsOutput.folderStructure === undefined // Check for undefined specifically
     ) {
       return { error: "Failed to generate README sections." };
     }
@@ -93,10 +104,13 @@ export async function processGitHubRepo(
       features: readmeSectionsOutput.features,
       technologiesUsed: readmeSectionsOutput.technologiesUsed,
       setupInstructions: readmeSectionsOutput.setupInstructions,
+      folderStructure: readmeSectionsOutput.folderStructure,
     };
   } catch (e: any) {
-    console.error("Error processing GitHub repo:", e);
+    console.error("Error processing input:", e);
+    if (e.message && e.message.includes("503 Service Unavailable") || e.message && e.message.includes("model is overloaded")) {
+      return { error: "The AI model is currently overloaded. Please try again in a few moments." };
+    }
     return { error: e.message || "An unexpected error occurred during README generation." };
   }
 }
-

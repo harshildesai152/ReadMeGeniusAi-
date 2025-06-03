@@ -4,3 +4,4 @@ config();
 import '@/ai/flows/generate-readme-sections.ts';
 import '@/ai/flows/summarize-repo.ts';
 import '@/ai/flows/suggest-project-name.ts';
+import '@/ai/flows/summarize-code-content.ts'; // Added new flow

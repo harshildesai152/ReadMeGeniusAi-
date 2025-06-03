@@ -6,12 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertTriangle, Github } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Loader2, AlertTriangle, Github, FileCode } from "lucide-react";
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 
+type InputType = "url" | "code";
+
 export function ReadmeGenerator() {
+  const [inputType, setInputType] = useState<InputType>("url");
   const [repoUrl, setRepoUrl] = useState<string>("");
+  const [codeContent, setCodeContent] = useState<string>("");
   const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,46 +32,58 @@ export function ReadmeGenerator() {
     event.preventDefault();
     if (!mounted) return;
 
-    if (!repoUrl) {
-      setError("Please enter a GitHub repository URL.");
-      return;
-    }
-    // Basic URL validation
-    try {
-      const url = new URL(repoUrl);
-      if (url.hostname !== 'github.com') {
-        setError("Please enter a valid GitHub repository URL.");
-        return;
-      }
-    } catch (_) {
-      setError("Invalid URL format.");
-      return;
-    }
-
-
-    setIsLoading(true);
     setError(null);
     setGeneratedReadmeData(null);
+    setIsLoading(true);
 
-    const result = await processGitHubRepo(repoUrl);
+    let result;
 
-    if ("error" in result) {
-      setError(result.error);
+    if (inputType === "url") {
+      if (!repoUrl) {
+        setError("Please enter a GitHub repository URL.");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const url = new URL(repoUrl);
+        if (url.hostname !== 'github.com') {
+          setError("Please enter a valid GitHub repository URL.");
+          setIsLoading(false);
+          return;
+        }
+      } catch (_) {
+        setError("Invalid URL format.");
+        setIsLoading(false);
+        return;
+      }
+      result = await processGitHubRepo({ repoUrl });
     } else {
+      if (!codeContent.trim()) {
+        setError("Please enter some code to analyze.");
+        setIsLoading(false);
+        return;
+      }
+      result = await processGitHubRepo({ codeContent });
+    }
+
+    if (result && "error" in result) {
+      setError(result.error);
+    } else if (result) {
       setGeneratedReadmeData(result);
+    } else {
+      setError("An unexpected error occurred.");
     }
     setIsLoading(false);
   };
 
   if (!mounted) {
-     // Basic skeleton or loading state for initial mount
     return (
-      <div className="w-full max-w-2xl space-y-8">
+      <div className="w-full max-w-3xl space-y-8">
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center font-headline">Enter GitHub Repository URL</CardTitle>
-            <CardDescription className="text-center">
-              Let AI craft a professional README for your project.
+            <CardTitle className="text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
+            <CardDescription className="text-center text-muted-foreground">
+              Loading README generator...
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -84,23 +103,53 @@ export function ReadmeGenerator() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            Enter a public GitHub repository URL and let AI craft a professional README for your project.
+            Choose your input method and let AI craft a professional README.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="relative">
-              <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="url"
-                placeholder="e.g., https://github.com/username/repository"
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                className="pl-10 text-base"
-                aria-label="GitHub Repository URL"
-                disabled={isLoading}
-              />
-            </div>
+            <RadioGroup
+              defaultValue="url"
+              onValueChange={(value: string) => setInputType(value as InputType)}
+              className="flex space-x-4 mb-4 justify-center"
+              aria-label="Input method"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="url" id="url-input" />
+                <Label htmlFor="url-input" className="cursor-pointer">GitHub URL</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="code" id="code-input" />
+                <Label htmlFor="code-input" className="cursor-pointer">Direct Code</Label>
+              </div>
+            </RadioGroup>
+
+            {inputType === "url" ? (
+              <div className="relative">
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="url"
+                  placeholder="e.g., https://github.com/username/repository"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  className="pl-10 text-base"
+                  aria-label="GitHub Repository URL"
+                  disabled={isLoading}
+                />
+              </div>
+            ) : (
+              <div className="relative">
+                <FileCode className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Textarea
+                  placeholder="Paste your code snippet here..."
+                  value={codeContent}
+                  onChange={(e) => setCodeContent(e.target.value)}
+                  className="pl-10 text-base min-h-[150px]"
+                  aria-label="Direct Code Input"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
             <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
               {isLoading ? (
                 <>
