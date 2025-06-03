@@ -29,6 +29,7 @@ export async function processGitHubRepo(
       return { error: "Failed to summarize repository." };
     }
     const repoDescription = summaryOutput.summary;
+    const lowerRepoDescription = repoDescription.toLowerCase();
 
     // 2. Suggest Project Name based on the description
     const projectNameOutput = await suggestProjectName({
@@ -38,130 +39,126 @@ export async function processGitHubRepo(
       return { error: "Failed to suggest a project name." };
     }
     const projectName = projectNameOutput.projectName;
-
-    // 3. Generate README Sections
-    // Mocking fileContents - this is crucial for the AI's inference.
-    // Make it more contextual based on project type.
-    let mockedFileContents = `
-      // Mocked generic representative file contents for: ${repoUrl}
-      // Project: ${projectName}
-      // Description: ${repoDescription.substring(0, 150)}...
-
-      // Main function or class structure
-      class MainApplication {
-        constructor() {
-          console.log("Initializing ${projectName}");
-        }
-        run() {
-          console.log("${projectName} is running.");
-        }
-      }
-      const app = new MainApplication();
-      app.run();
-    `;
-
     const lowerProjectName = projectName.toLowerCase();
-    const lowerRepoDescription = repoDescription.toLowerCase();
 
-    if (
-      lowerProjectName.includes('portfolio') ||
-      lowerRepoDescription.includes('personal website') ||
-      lowerRepoDescription.includes('frontend application') ||
-      lowerRepoDescription.includes('static site')
-    ) {
+    // 3. Generate README Sections - Create more contextual mockedFileContents
+    let mockedFileContents = `
+// Mocked generic representative file structure for: ${repoUrl}
+// Project: ${projectName}
+// Description: ${repoDescription.substring(0, 200)}...
+//
+// This is a simplified representation. The AI will infer technologies
+// based on this, the project description, and common patterns.
+//
+// project-root/
+//   src/
+//     main_module/
+//       core_logic.file_extension
+//       utils.file_extension
+//   tests/
+//   README.md
+//   config.file
+//   main_executable_or_script
+    `; // Default generic mock
+
+    // Attempt to create more language-specific mocks based on description
+    if (lowerRepoDescription.includes("python") || lowerProjectName.includes("python")) {
       mockedFileContents = `
-        // Mocked representative file contents for a frontend/portfolio project: ${repoUrl}
-        // Project: ${projectName}
-        // Description: ${repoDescription.substring(0, 150)}...
+# Mocked representative file contents for a Python project: ${repoUrl}
+# Project: ${projectName}
+# Description: ${repoDescription.substring(0, 150)}...
 
-        // Example: A TypeScript React component structure
-        // import type { FC } from 'react';
-        //
-        // interface ProjectCardProps {
-        //   title: string;
-        //   description: string;
-        //   tech: string[];
-        // }
-        //
-        // const ProjectDisplay: FC<ProjectCardProps> = ({ title, description, tech }) => {
-        //   return (
-        //     <article className="project-card">
-        //       <h2>{title}</h2>
-        //       <p>{description}</p>
-        //       <div>Technologies: {tech.join(', ')}</div>
-        //     </article>
-        //   );
-        // };
-        // export default ProjectDisplay;
+# def main():
+#   print("Python project: ${projectName} initialized.")
+#   # Example function call
+#   # result = some_python_function(arg1, arg2)
+#   # print(f"Result: {result}")
 
-        // Basic TypeScript class example
-        // class DataFetcher {
-        //   private endpoint: string;
-        //   constructor(endpointUrl: string) {
-        //     this.endpoint = endpointUrl;
-        //   }
-        //   async fetchData<T>(id: string): Promise<T | null> {
-        //     try {
-        //       // const response = await fetch(\`\${this.endpoint}/\${id}\`);
-        //       // if (!response.ok) throw new Error('Network response was not ok');
-        //       // return await response.json() as T;
-        //       console.log(\`Fetching data from \${this.endpoint}/\${id}\`);
-        //       return null; // Mocked
-        //     } catch (error) {
-        //       console.error("Failed to fetch data:", error);
-        //       return null;
-        //     }
-        //   }
-        // }
-        //
-        // // Usage:
-        // // const api = new DataFetcher("/api/items");
-        // // api.fetchData<any>("123").then(data => console.log(data));
-        //
-        // console.log("Portfolio or frontend project structure with TypeScript.");
+# if __name__ == "__main__":
+#   main()
+      `;
+    } else if (lowerRepoDescription.includes("java") && !lowerRepoDescription.includes("javascript")) {
+       mockedFileContents = `
+// Mocked representative file contents for a Java project: ${repoUrl}
+// Project: ${projectName}
+// Description: ${repoDescription.substring(0, 150)}...
+
+// public class MainApplication {
+//   public static void main(String[] args) {
+//     System.out.println("Java project: ${projectName} initialized.");
+//     // Example method call
+//     // String data = DataService.fetchData();
+//     // System.out.println("Data: " + data);
+//   }
+// }
+      `;
+    } else if (lowerRepoDescription.includes("c#") || lowerRepoDescription.includes("csharp") || lowerRepoDescription.includes(".net")) {
+       mockedFileContents = `
+// Mocked representative file contents for a C# .NET project: ${repoUrl}
+// Project: ${projectName}
+// Description: ${repoDescription.substring(0, 150)}...
+
+// using System;
+//
+// namespace ${projectName.replace(/\s+/g, '')} {
+//   class Program {
+//     static void Main(string[] args) {
+//       Console.WriteLine("C# project: ${projectName} initialized.");
+//       // Example usage
+//       // var service = new MyService();
+//       // service.DoWork();
+//     }
+//   }
+// }
       `;
     } else if (
-      lowerProjectName.includes('e-comm') ||
+      lowerRepoDescription.includes("typescript") ||
+      lowerRepoDescription.includes("react") ||
+      lowerRepoDescription.includes("angular") ||
+      lowerRepoDescription.includes("vue") ||
+      lowerRepoDescription.includes("frontend") ||
+      lowerRepoDescription.includes("node.js") || // Node.js often uses TS/JS
+      lowerRepoDescription.includes("express.js") ||
+      lowerProjectName.includes('portfolio') ||
+      lowerRepoDescription.includes('personal website') ||
+      lowerRepoDescription.includes('static site') ||
+      lowerProjectName.includes('e-comm') || // E-commerce often uses JS/TS stacks
       lowerProjectName.includes('store') ||
       lowerRepoDescription.includes('e-commerce') ||
-      lowerRepoDescription.includes('mern stack') ||
-      lowerRepoDescription.includes('backend api')
+      lowerRepoDescription.includes('mern stack')
     ) {
+      // More specific for TS/JS heavy projects (frontend, Node.js backends)
       mockedFileContents = `
-        // Mocked representative file contents for an e-commerce/backend project: ${repoUrl}
-        // Project: ${projectName}
-        // Description: ${repoDescription.substring(0, 150)}...
+// Mocked representative file contents for a TypeScript/JavaScript project: ${repoUrl}
+// Project: ${projectName}
+// Description: ${repoDescription.substring(0, 150)}...
 
-        // Example: Node.js Express server with TypeScript
-        // import express, { Request, Response, NextFunction } from 'express';
-        //
-        // const app = express();
-        // app.use(express.json());
-        //
-        // interface Product {
-        //   id: string;
-        //   name: string;
-        //   price: number;
-        // }
-        //
-        // // Mock database
-        // const products: Product[] = [];
-        //
-        // app.get('/api/products', (req: Request, res: Response) => {
-        //   res.json(products);
-        // });
-        //
-        // app.post('/api/products', (req: Request, res: Response) => {
-        //   const newProduct = req.body as Product;
-        //   products.push(newProduct);
-        //   res.status(201).json(newProduct);
-        // });
-        //
-        // // const PORT = process.env.PORT || 3001;
-        // // app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
-        // console.log("E-commerce or backend project structure with Node.js/TypeScript.");
+// Example: A TypeScript or JavaScript module structure
+// import { someFunction } from './utils'; // or const someFunction = require('./utils');
+//
+// class MainApplication {
+//   constructor(private config: any) {
+//     console.log("Initializing ${projectName} with config:", config);
+//   }
+//
+//   public run(): void {
+//     console.log("${projectName} is running.");
+//     // const result = someFunction();
+//     // console.log("Result from util:", result);
+//   }
+// }
+//
+// // const appConfig = { setting: 'value' };
+// // const app = new MainApplication(appConfig);
+// // app.run();
+// //
+// // export default MainApplication; // or module.exports = MainApplication;
+console.log("Project structure likely involving TypeScript/JavaScript (e.g., React, Node.js, Vue, Angular, general web app).");
       `;
     }
+    // The AI prompt for generateReadmeSections is already quite strict about
+    // basing technologies on the description and *explicitly visible* technologies
+    // in the sample code. The key is that this sample code is now more targeted.
 
     const readmeSectionsOutput = await generateReadmeSections({
       repoUrl,
