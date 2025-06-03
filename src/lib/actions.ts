@@ -40,44 +40,134 @@ export async function processGitHubRepo(
     const projectName = projectNameOutput.projectName;
 
     // 3. Generate README Sections
-    // Mocking fileContents as fetching all files is a complex task beyond current AI flows in this prototype.
-    // This content should be representative enough for the AI to infer basic project structure/type.
-    const mockedFileContents = `
-      // Mocked representative file contents for: ${repoUrl}
+    // Mocking fileContents - this is crucial for the AI's inference.
+    // Make it more contextual based on project type.
+    let mockedFileContents = `
+      // Mocked generic representative file contents for: ${repoUrl}
       // Project: ${projectName}
-      // Description: ${repoDescription.substring(0, 100)}...
+      // Description: ${repoDescription.substring(0, 150)}...
 
-      // Example: A simple function or component structure
-      // If this were a React project, it might look like:
-      // import React from 'react';
-      // const MainComponent = () => (
-      //   <div>
-      //     <h1>Welcome to ${projectName}</h1>
-      //     <p>This project is about ${repoDescription.substring(0,50)}...</p>
-      //   </div>
-      // );
-      // export default MainComponent;
-
-      // If this were a Node.js backend, it might look like:
-      // const express = require('express');
-      // const app = express();
-      // app.get('/', (req, res) => {
-      //   res.send('Hello from ${projectName}');
-      // });
-      // app.listen(3000, () => console.log('Server started for ${projectName}'));
-
-      // Generic placeholder:
-      function projectMainFunction() {
-        console.log("Core logic for ${projectName} would be here.");
+      // Main function or class structure
+      class MainApplication {
+        constructor() {
+          console.log("Initializing ${projectName}");
+        }
+        run() {
+          console.log("${projectName} is running.");
+        }
       }
-      projectMainFunction();
+      const app = new MainApplication();
+      app.run();
     `;
+
+    const lowerProjectName = projectName.toLowerCase();
+    const lowerRepoDescription = repoDescription.toLowerCase();
+
+    if (
+      lowerProjectName.includes('portfolio') ||
+      lowerRepoDescription.includes('personal website') ||
+      lowerRepoDescription.includes('frontend application') ||
+      lowerRepoDescription.includes('static site')
+    ) {
+      mockedFileContents = `
+        // Mocked representative file contents for a frontend/portfolio project: ${repoUrl}
+        // Project: ${projectName}
+        // Description: ${repoDescription.substring(0, 150)}...
+
+        // Example: A TypeScript React component structure
+        // import type { FC } from 'react';
+        //
+        // interface ProjectCardProps {
+        //   title: string;
+        //   description: string;
+        //   tech: string[];
+        // }
+        //
+        // const ProjectDisplay: FC<ProjectCardProps> = ({ title, description, tech }) => {
+        //   return (
+        //     <article className="project-card">
+        //       <h2>{title}</h2>
+        //       <p>{description}</p>
+        //       <div>Technologies: {tech.join(', ')}</div>
+        //     </article>
+        //   );
+        // };
+        // export default ProjectDisplay;
+
+        // Basic TypeScript class example
+        // class DataFetcher {
+        //   private endpoint: string;
+        //   constructor(endpointUrl: string) {
+        //     this.endpoint = endpointUrl;
+        //   }
+        //   async fetchData<T>(id: string): Promise<T | null> {
+        //     try {
+        //       // const response = await fetch(\`\${this.endpoint}/\${id}\`);
+        //       // if (!response.ok) throw new Error('Network response was not ok');
+        //       // return await response.json() as T;
+        //       console.log(\`Fetching data from \${this.endpoint}/\${id}\`);
+        //       return null; // Mocked
+        //     } catch (error) {
+        //       console.error("Failed to fetch data:", error);
+        //       return null;
+        //     }
+        //   }
+        // }
+        //
+        // // Usage:
+        // // const api = new DataFetcher("/api/items");
+        // // api.fetchData<any>("123").then(data => console.log(data));
+        //
+        // console.log("Portfolio or frontend project structure with TypeScript.");
+      `;
+    } else if (
+      lowerProjectName.includes('e-comm') ||
+      lowerProjectName.includes('store') ||
+      lowerRepoDescription.includes('e-commerce') ||
+      lowerRepoDescription.includes('mern stack') ||
+      lowerRepoDescription.includes('backend api')
+    ) {
+      mockedFileContents = `
+        // Mocked representative file contents for an e-commerce/backend project: ${repoUrl}
+        // Project: ${projectName}
+        // Description: ${repoDescription.substring(0, 150)}...
+
+        // Example: Node.js Express server with TypeScript
+        // import express, { Request, Response, NextFunction } from 'express';
+        //
+        // const app = express();
+        // app.use(express.json());
+        //
+        // interface Product {
+        //   id: string;
+        //   name: string;
+        //   price: number;
+        // }
+        //
+        // // Mock database
+        // const products: Product[] = [];
+        //
+        // app.get('/api/products', (req: Request, res: Response) => {
+        //   res.json(products);
+        // });
+        //
+        // app.post('/api/products', (req: Request, res: Response) => {
+        //   const newProduct = req.body as Product;
+        //   products.push(newProduct);
+        //   res.status(201).json(newProduct);
+        // });
+        //
+        // // const PORT = process.env.PORT || 3001;
+        // // app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
+        // console.log("E-commerce or backend project structure with Node.js/TypeScript.");
+      `;
+    }
 
     const readmeSectionsOutput = await generateReadmeSections({
       repoUrl,
       fileContents: mockedFileContents,
       projectName,
-      projectDescription: repoDescription, // Pass description to help with technology inference and features
+      projectDescription: repoDescription,
     });
 
     if (
