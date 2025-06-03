@@ -15,19 +15,25 @@ body {
     --card-foreground: 0 0% 0%; /* Black */
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 0%; /* Black */
+    
     --primary: 0 0% 0%; /* Black */
     --primary-foreground: 0 0% 100%; /* White */
+    
     --secondary: 0 0% 95%; /* Very Light Gray (#f2f2f2) */
     --secondary-foreground: 0 0% 10%; /* Very Dark Gray (#1a1a1a) */
     --muted: 0 0% 90%; /* Light Gray (#e5e5e5) */
     --muted-foreground: 0 0% 40%; /* Medium Gray (#666666) */
-    --accent: 0 0% 40%; /* Medium Gray (#666666) */
-    --accent-foreground: 0 0% 100%; /* White */
+    
+    /* Accent for button hover in light mode */
+    --accent: 0 0% 85%; /* Light Gray e.g. #D9D9D9 */
+    --accent-foreground: 0 0% 0%; /* Black text for light gray hover */
+    
     --destructive: 0 0% 10%; /* Very Dark Gray (#1a1a1a) */
     --destructive-foreground: 0 0% 100%; /* White */
     --border: 0 0% 87%; /* Light Gray (#dddddd) */
     --input: 0 0% 87%; /* Light Gray (#dddddd) */
     --ring: 0 0% 10%; /* Very Dark Gray (#1a1a1a) */
+    
     --chart-1: 0 0% 20%;
     --chart-2: 0 0% 35%;
     --chart-3: 0 0% 50%;
@@ -51,19 +57,25 @@ body {
     --card-foreground: 0 0% 100%; /* White */
     --popover: 0 0% 0%; /* Black */
     --popover-foreground: 0 0% 100%; /* White */
+    
     --primary: 0 0% 100%; /* White */
     --primary-foreground: 0 0% 0%; /* Black */
+    
     --secondary: 0 0% 10%; /* Very Dark Gray (#1a1a1a) */
     --secondary-foreground: 0 0% 90%; /* Light Gray (#e5e5e5) */
     --muted: 0 0% 20%; /* Dark Gray (#333333) */
     --muted-foreground: 0 0% 70%; /* Lighter Medium Gray (#b3b3b3) */
-    --accent: 0 0% 70%; /* Lighter Medium Gray (#b3b3b3) */
-    --accent-foreground: 0 0% 0%; /* Black */
+    
+    /* Accent for button hover in dark mode */
+    --accent: 0 0% 25%; /* Dark Gray e.g. #404040 */
+    --accent-foreground: 0 0% 100%; /* White text for dark gray hover */
+    
     --destructive: 0 0% 100%; /* White */
     --destructive-foreground: 0 0% 0%; /* Black */
     --border: 0 0% 20%; /* Dark Gray (#333333) */
     --input: 0 0% 20%; /* Dark Gray (#333333) */
     --ring: 0 0% 90%; /* Light Gray (#e5e5e5) */
+
     --chart-1: 0 0% 80%;
     --chart-2: 0 0% 65%;
     --chart-3: 0 0% 50%;
