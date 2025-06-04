@@ -20,34 +20,28 @@ interface ReadmeDisplayProps {
 }
 
 // A simple component to render markdown-like text.
-// Using dangerouslySetInnerHTML for simplicity as per previous implementation.
-// For a production app, consider a safer Markdown renderer if complex user input is allowed in future.
 const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean }> = ({ content, isFullScreen }) => {
   if (!content && content !== "") return <p className="text-muted-foreground italic text-sm">Not available or empty.</p>;
 
-  // Basic replacements for Markdown-like syntax to HTML
-  // This is a simplified parser. For robust Markdown, a library like 'marked' or 'react-markdown' is recommended.
   let htmlContent = content
     .replace(/^### (.*$)/gim, `<h4 class="text-base font-semibold mt-2.5 mb-1 ${isFullScreen ? 'text-foreground' : 'text-primary/80'}">${'$1'}</h4>`)
     .replace(/^## (.*$)/gim, `<h3 class="text-lg font-semibold mt-3 mb-1.5 ${isFullScreen ? 'text-foreground' : 'text-primary/90'} underline underline-offset-2 decoration-primary/50">${'$1'}</h3>`)
     .replace(/^# (.*$)/gim, `<h2 class="text-xl font-bold mt-4 mb-2 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-4 decoration-primary/60">${'$1'}</h2>`)
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')     // Italic
-    .replace(/`([^`]+)`/g, '<code class="bg-muted/70 px-1 py-0.5 rounded text-sm font-mono">$1</code>') // Inline code
-    .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => { // Unordered lists
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')     
+    .replace(/`([^`]+)`/g, '<code class="bg-muted/70 px-1 py-0.5 rounded text-sm font-mono">$1</code>') 
+    .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => { 
       const items = match.trim().split('\n').map(item => `<li class="ml-6 list-disc space-y-1 my-1 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
       return `<ul class="space-y-0.5 mb-2.5">${items}</ul>`;
     })
-    .replace(/^(?:\d+\.\s*.*(?:\n|$))+/gm, (match) => { // Ordered lists
+    .replace(/^(?:\d+\.\s*.*(?:\n|$))+/gm, (match) => { 
         const items = match.trim().split('\n').map(item => `<li class="ml-6 list-decimal space-y-1 my-1 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${item.replace(/^\d+\.\s*/, '')}</li>`).join('');
         return `<ol class="space-y-0.5 mb-2.5">${items}</ol>`;
     })
-    .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre class="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${p1.trim()}</pre>`) // Code blocks
-    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>') // Underline
-    .replace(/\n/g, '<br />'); // Newlines to <br>
+    .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre class="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${p1.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`) 
+    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>') 
+    .replace(/\n/g, '<br />'); 
 
-  // For lines that are not part of other structures, wrap them in <p>
-  // This is a very rough way to do it and might need refinement.
   htmlContent = htmlContent.split('<br />').map(line => {
     const trimmedLine = line.trim();
     if (trimmedLine.startsWith('<h') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<pre') || trimmedLine.startsWith('<li') || trimmedLine === '') {
@@ -165,7 +159,7 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             variant="outline" 
             size="sm" 
             onClick={handleEditClick} 
-            disabled={isGeneratingDetails || isFullScreen}
+            disabled={isGeneratingDetails}
             className="bg-blue-500 hover:bg-blue-600 text-white"
           >
             <Edit3 className="mr-2 h-4 w-4" />
@@ -175,7 +169,7 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             variant="outline" 
             size="sm" 
             onClick={handleMoreDetailClick} 
-            disabled={isGeneratingDetails || isFullScreen}
+            disabled={isGeneratingDetails}
             className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
           >
             {isGeneratingDetails ? (
@@ -189,7 +183,6 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             variant="outline" 
             size="sm" 
             onClick={handleCopy} 
-            disabled={isFullScreen}
             className="bg-accent text-accent-foreground hover:bg-accent/90"
           >
             {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
@@ -277,5 +270,3 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
     </Card>
   );
 }
-
-    
