@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getCurrentUserEmail } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React from 'react'; // Added import
 
 
 interface FileDetail {
@@ -52,7 +52,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
     }
     // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-5 list-disc text-sm">{line.substring(line.indexOf(' ') + 1)}</li>;
+      return <li key={index} className="ml-5 list-disc text-sm space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
    
     // Code blocks (simple heuristic for ``` blocks)
@@ -83,10 +83,10 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
     
     // Indented lines for folder structure or simple code
     if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
-      return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-xs bg-muted/50 p-0.5 rounded">{line || <>&nbsp;</>}</p>;
+      return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-xs bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
     }
     // Default paragraphs
-    return <p key={index} className="mb-1.5 leading-normal text-sm">{line || <>&nbsp;</>}</p>;
+    return <p key={index} className="mb-1.5 leading-relaxed text-sm">{line || <>&nbsp;</>}</p>;
   });
 
   const validLines = lines.filter(line => line !== null);
@@ -359,8 +359,9 @@ ${cleanText(readmeData.setupInstructions)}
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
       <div className="container mx-auto flex flex-col items-center gap-8 w-full max-w-4xl">
+        
         <header className="w-full mb-8">
-          <div className="flex justify-between items-center w-full py-4 border-b mb-6">
+          <nav className="flex justify-between items-center w-full py-4 border-b mb-6">
             <div className="flex items-center space-x-2">
               <Link href="/" passHref>
                 <Button variant="outline" size="icon" title="Go to Home Page">
@@ -396,7 +397,7 @@ ${cleanText(readmeData.setupInstructions)}
               )}
               <ThemeToggle />
             </div>
-          </div>
+          </nav>
           
           <div className="text-center">
             <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>

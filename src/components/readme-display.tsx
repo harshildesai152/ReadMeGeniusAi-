@@ -1,6 +1,7 @@
 // src/components/readme-display.tsx
 "use client";
 
+import React from 'react'; // Added import
 import type { FullReadmeData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,11 @@ interface ReadmeDisplayProps {
 
 // A simple component to render markdown-like text.
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
-  if (!content && content !== "") return <p className="text-muted-foreground italic">Not available or empty.</p>;
+  if (!content && content !== "") return <p className="text-muted-foreground italic text-sm">Not available or empty.</p>;
 
   const lines = content.split('\n').map((line, index, arr) => {
     // Headings
-    if (line.match(/^#{1,6}\s/)) { 
+    if (line.match(/^#{1,6}\s/)) {
         const level = line.match(/^#+/)![0].length;
         const text = line.replace(/^#+\s/, '');
         const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements; // Start from h3 for these sections
@@ -31,36 +32,24 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
     }
     // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-5 list-disc">{line.substring(line.indexOf(' ') + 1)}</li>;
+      return <li key={index} className="ml-5 list-disc space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
     // Code blocks (simple heuristic for ``` blocks)
     if (line.trim().startsWith('```')) {
-      // Check if it's the start or end of a block
       const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
       const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
-      if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) { // single line ```
+      if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) {
          return <pre key={index} className="bg-muted/70 p-3 rounded-md text-sm overflow-x-auto my-2 font-mono shadow-sm">{line.substring(3).trim()}</pre>;
       }
-      return null; // Hide the ``` lines themselves if part of a multi-line block
+      return null; 
     }
-    // Check if inside a code block started on previous line
     if (index > 0 && arr[index-1].trim().startsWith('```') && !arr[index-1].trim().endsWith('```') ) {
-        let codeContent = line;
-        let currentIdx = index;
-        while(currentIdx < arr.length && !arr[currentIdx].trim().startsWith('```')) {
-            codeContent += (currentIdx > index ? '\n' : '') + arr[currentIdx];
-            currentIdx++;
-        }
-         // This heuristic will render the whole block at once, then skip lines
         if(index === (arr.slice(0, arr.findIndex((l,i)=> i > index && l.trim().startsWith('```'))).findLastIndex(l => l.trim().startsWith('```')) +1 ) || (index > 0 && arr[index-1].trim().startsWith('```') && arr.findIndex((l,i)=> i > index && l.trim().startsWith('```')) === -1) ){
             const blockLines = [];
             let i = index -1;
-            // go up to find ```
             while(i >= 0 && !arr[i].trim().startsWith('```')) i--;
-            if(i<0) i=0; // Should not happen if arr[index-1] is ```
-
+            if(i<0) i=0;
             const lang = arr[i].trim().substring(3);
-            
             let j = i + 1;
             while(j < arr.length && !arr[j].trim().startsWith('```')){
                 blockLines.push(arr[j]);
@@ -68,23 +57,21 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
             }
             return <pre key={index} className="bg-muted/70 p-3 rounded-md text-sm overflow-x-auto my-2 font-mono shadow-sm" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
         }
-        return null; // Skip rendering for lines already part of a block
+        return null; 
     }
-
-
+    
     // Indented lines for folder structure or simple code
-    if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) { 
+    if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
       return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
     }
     // Default paragraphs
     return <p key={index} className="mb-2 leading-relaxed">{line || <>&nbsp;</>}</p>;
   });
 
-  // Filter out nulls from ``` handling
   const validLines = lines.filter(line => line !== null);
-  // Wrap list items in ul
-  const structuredLines = [];
+  const structuredLines: (JSX.Element | null)[] = [];
   let inList = false;
+
   for (const line of validLines) {
     if (React.isValidElement(line) && line.type === 'li') {
       if (!inList) {
@@ -93,7 +80,6 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
       } else {
         const lastElement = structuredLines[structuredLines.length - 1];
         if (React.isValidElement(lastElement) && lastElement.type === 'ul') {
-          // Add li to existing ul
           structuredLines[structuredLines.length - 1] = React.cloneElement(lastElement, {}, [...React.Children.toArray(lastElement.props.children), line]);
         }
       }
@@ -104,7 +90,6 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
       structuredLines.push(line);
     }
   }
-
 
   return <div className="prose prose-sm dark:prose-invert max-w-none">{structuredLines}</div>;
 };
@@ -218,4 +203,3 @@ export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
     </Card>
   );
 }
-
