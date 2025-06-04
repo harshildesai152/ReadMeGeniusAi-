@@ -10,23 +10,26 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, FileCode, Eye, Trash2, Download } from "lucide-react"; // Added Download, removed Save
+import { Loader2, AlertTriangle, Github, FileCode, Eye, Trash2, Download, MessagesSquare } from "lucide-react";
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-type InputType = "url" | "code";
+type InputType = "url" | "code" | "prompt";
 
 interface SavedReadmeItem extends FullReadmeData {
   id: string;
   savedDate: string;
+  inputTypeUsed?: InputType; // Optional: to remember how it was generated
+  originalInput?: string; // Optional: to store the URL, code snippet, or prompt
 }
 
 export function ReadmeGenerator() {
   const [inputType, setInputType] = useState<InputType>("url");
   const [repoUrl, setRepoUrl] = useState<string>("");
   const [codeContent, setCodeContent] = useState<string>("");
+  const [userPrompt, setUserPrompt] = useState<string>("");
   const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export function ReadmeGenerator() {
           setSavedReadmes(JSON.parse(storedReadmes));
         } catch (e) {
           console.error("Failed to parse saved READMEs from localStorage", e);
-          localStorage.removeItem("savedReadmes"); // Clear corrupted data
+          localStorage.removeItem("savedReadmes");
         }
       }
     }
@@ -53,16 +56,18 @@ export function ReadmeGenerator() {
     if (mounted && savedReadmes.length > 0) {
       localStorage.setItem("savedReadmes", JSON.stringify(savedReadmes));
     } else if (mounted && savedReadmes.length === 0) {
-      localStorage.removeItem("savedReadmes"); // Clean up if no saved readmes
+      localStorage.removeItem("savedReadmes");
     }
   }, [savedReadmes, mounted]);
 
-  const handleSaveReadme = (readmeToSave: FullReadmeData) => {
+  const handleSaveReadme = (readmeToSave: FullReadmeData, inputTypeUsed: InputType, originalInput: string) => {
     if (!mounted) return;
     const newReadme: SavedReadmeItem = {
       ...readmeToSave,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       savedDate: new Date().toISOString(),
+      inputTypeUsed,
+      originalInput,
     };
     setSavedReadmes((prev) => [newReadme, ...prev.slice(0, 19)]); // Keep latest 20
     toast({
@@ -84,12 +89,11 @@ export function ReadmeGenerator() {
   const handleLoadReadme = (readmeItem: SavedReadmeItem) => {
     if (!mounted) return;
     setGeneratedReadmeData(readmeItem);
-    setError(null); // Clear any previous errors
+    setError(null);
     toast({
       title: "README Loaded",
       description: `${readmeItem.projectName} is now displayed.`,
     });
-    // Scroll to the readme display section
     const displayElement = document.getElementById("readme-display-card");
     if (displayElement) {
       displayElement.scrollIntoView({ behavior: "smooth" });
@@ -120,7 +124,6 @@ ${readmeItem.setupInstructions}
     const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    // Sanitize filename: replace non-alphanumeric (excluding underscore) with underscore, convert to lowercase
     const sanitizedProjectName = readmeItem.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
     link.download = `${sanitizedProjectName || 'readme'}.md`;
     
@@ -140,11 +143,10 @@ ${readmeItem.setupInstructions}
     if (!mounted) return;
 
     setError(null);
-    // Do not clear generatedReadmeData here if we want to keep it displayed while loading new
-    // setGeneratedReadmeData(null); 
     setIsLoading(true);
 
     let result;
+    let originalInputValue = "";
 
     if (inputType === "url") {
       if (!repoUrl) {
@@ -164,25 +166,36 @@ ${readmeItem.setupInstructions}
         setIsLoading(false);
         return;
       }
+      originalInputValue = repoUrl;
       result = await processGitHubRepo({ repoUrl });
-    } else {
+    } else if (inputType === "code") {
       if (!codeContent.trim()) {
         setError("Please enter some code to analyze.");
         setIsLoading(false);
         return;
       }
+      originalInputValue = codeContent;
       result = await processGitHubRepo({ codeContent });
+    } else if (inputType === "prompt") {
+      if (!userPrompt.trim()) {
+        setError("Please enter a prompt to generate the README.");
+        setIsLoading(false);
+        return;
+      }
+      originalInputValue = userPrompt;
+      result = await processGitHubRepo({ userPrompt });
     }
+
 
     if (result && "error" in result) {
       setError(result.error);
-      setGeneratedReadmeData(null); // Clear data on error
+      setGeneratedReadmeData(null);
     } else if (result) {
       setGeneratedReadmeData(result);
-      handleSaveReadme(result); // Automatic save on successful generation
+      handleSaveReadme(result, inputType, originalInputValue);
     } else {
       setError("An unexpected error occurred.");
-      setGeneratedReadmeData(null); // Clear data on error
+      setGeneratedReadmeData(null);
     }
     setIsLoading(false);
   };
@@ -214,28 +227,39 @@ ${readmeItem.setupInstructions}
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            Choose your input method and let AI craft a professional README. Your generated READMEs are automatically saved.
+            Choose your input method. Generated READMEs are automatically saved.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <RadioGroup
               defaultValue="url"
-              onValueChange={(value: string) => setInputType(value as InputType)}
-              className="flex space-x-4 mb-4 justify-center"
+              onValueChange={(value: string) => {
+                setInputType(value as InputType);
+                setError(null); // Clear error when changing input type
+                setGeneratedReadmeData(null); // Clear previous results
+              }}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 justify-center"
               aria-label="Input method"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="url" id="url-input" />
-                <Label htmlFor="url-input" className="cursor-pointer">GitHub URL</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="code" id="code-input" />
-                <Label htmlFor="code-input" className="cursor-pointer">Direct Code</Label>
-              </div>
+              <Label htmlFor="url-input" className={`flex items-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'url' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
+                <RadioGroupItem value="url" id="url-input" className="sr-only" />
+                <Github className="h-5 w-5" />
+                <span>GitHub URL</span>
+              </Label>
+              <Label htmlFor="code-input" className={`flex items-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'code' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
+                <RadioGroupItem value="code" id="code-input" className="sr-only" />
+                <FileCode className="h-5 w-5" />
+                <span>Direct Code</span>
+              </Label>
+              <Label htmlFor="prompt-input" className={`flex items-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'prompt' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
+                <RadioGroupItem value="prompt" id="prompt-input" className="sr-only" />
+                <MessagesSquare className="h-5 w-5" />
+                <span>From Prompt</span>
+              </Label>
             </RadioGroup>
 
-            {inputType === "url" ? (
+            {inputType === "url" && (
               <div className="relative">
                 <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -248,15 +272,29 @@ ${readmeItem.setupInstructions}
                   disabled={isLoading}
                 />
               </div>
-            ) : (
+            )}
+            {inputType === "code" && (
               <div className="relative">
                 <FileCode className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                 <Textarea
-                  placeholder="Paste your code snippet here..."
+                  placeholder="Paste your code snippet here (e.g., a key component, file structure example, or main script)..."
                   value={codeContent}
                   onChange={(e) => setCodeContent(e.target.value)}
                   className="pl-10 text-base min-h-[150px]"
                   aria-label="Direct Code Input"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+            {inputType === "prompt" && (
+              <div className="relative">
+                 <MessagesSquare className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <Textarea
+                  placeholder="Describe your project, its purpose, key functionalities, and any specific technologies you'd like mentioned..."
+                  value={userPrompt}
+                  onChange={(e) => setUserPrompt(e.target.value)}
+                  className="pl-10 text-base min-h-[150px]"
+                  aria-label="User Prompt for README Generation"
                   disabled={isLoading}
                 />
               </div>
@@ -283,7 +321,6 @@ ${readmeItem.setupInstructions}
         </Alert>
       )}
       
-      {/* Saved READMEs Section */}
       {savedReadmes.length > 0 && (
         <Card className="shadow-lg">
           <CardHeader>
@@ -300,16 +337,17 @@ ${readmeItem.setupInstructions}
                         <p className="font-semibold text-primary">{item.projectName}</p>
                         <p className="text-xs text-muted-foreground">
                           Saved on: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString()}
+                          {item.inputTypeUsed && ` (via ${item.inputTypeUsed})`}
                         </p>
                       </div>
                       <div className="flex items-center space-x-1 sm:space-x-2">
-                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2">
+                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README">
                           <Eye className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">View</span>
                         </Button>
-                         <Button onClick={() => handleDownloadReadme(item)} variant="outline" size="sm" className="p-1 sm:p-2">
+                         <Button onClick={() => handleDownloadReadme(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README">
                           <Download className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Download</span>
                         </Button>
-                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2">
+                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README">
                           <Trash2 className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </div>
@@ -323,10 +361,11 @@ ${readmeItem.setupInstructions}
       )}
 
       {generatedReadmeData && !isLoading && (
-         <div id="readme-display-card"> {/* Added id for scrolling */}
+         <div id="readme-display-card">
             <ReadmeDisplay data={generatedReadmeData} />
          </div>
       )}
     </div>
   );
 }
+

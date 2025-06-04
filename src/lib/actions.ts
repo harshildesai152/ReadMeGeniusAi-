@@ -5,7 +5,8 @@
 import { generateReadmeSections } from "@/ai/flows/generate-readme-sections";
 import { summarizeRepo } from "@/ai/flows/summarize-repo";
 import { suggestProjectName } from "@/ai/flows/suggest-project-name";
-import { summarizeCodeContent } from "@/ai/flows/summarize-code-content"; // New import
+import { summarizeCodeContent } from "@/ai/flows/summarize-code-content";
+import { generateReadmeFromPrompt } from "@/ai/flows/generate-readme-from-prompt"; // New import
 
 export type FullReadmeData = {
   projectName: string;
@@ -19,30 +20,52 @@ export type FullReadmeData = {
 type ProcessInput = {
   repoUrl?: string;
   codeContent?: string;
+  userPrompt?: string; // New field for prompt-based generation
 };
 
-export async function processGitHubRepo(
+export async function processGitHubRepo( // Consider renaming this function if its scope expands
   input: ProcessInput
 ): Promise<FullReadmeData | { error: string }> {
   try {
+    // Handle prompt-based generation first
+    if (input.userPrompt) {
+      if (!input.userPrompt.trim()) {
+        return { error: "User prompt cannot be empty." };
+      }
+      const readmeDataFromPrompt = await generateReadmeFromPrompt({ userPrompt: input.userPrompt });
+      if (!readmeDataFromPrompt) {
+        return { error: "Failed to generate README from prompt." };
+      }
+      return readmeDataFromPrompt; // This directly returns FullReadmeData
+    }
+
+    // Existing logic for URL or code content
     let repoDescription: string;
     let fileContentsForSections: string;
     let effectiveRepoUrl: string | undefined = input.repoUrl;
+    let sourceProjectName: string | undefined = undefined;
+
 
     if (input.repoUrl) {
       if (!input.repoUrl.startsWith("https://github.com/")) {
         return { error: "Invalid GitHub repository URL." };
       }
+      // Extract a potential project name from the URL as a fallback
+      try {
+        const pathParts = new URL(input.repoUrl).pathname.split('/');
+        if (pathParts.length >= 2 && pathParts[1]) {
+          sourceProjectName = pathParts[pathParts.length-1].replace('.git', '');
+        }
+      } catch (e) { /* ignore error parsing URL for project name */ }
+
       const summaryOutput = await summarizeRepo({ repoUrl: input.repoUrl });
       if (!summaryOutput || !summaryOutput.summary) {
         return { error: "Failed to summarize repository." };
       }
       repoDescription = summaryOutput.summary;
-      // Generate mockedFileContents for repoUrl input
       fileContentsForSections = `
-// Mocked generic representative file structure for: ${input.repoUrl}
-// Description (first 200 chars): ${repoDescription.substring(0, 200)}...
-//
+// Generic representative file structure for: ${input.repoUrl}
+// Project Description (first 200 chars): ${repoDescription.substring(0, 200)}...
 // This is a simplified, language-agnostic structural representation.
 // The AI should infer technologies primarily from the Project Description.
 //
@@ -51,15 +74,26 @@ export async function processGitHubRepo(
 //     main_module/
 //       core_logic.file_extension
 //       utils.file_extension
-//     another_module/
+//     api/
+//       endpoints.file_extension
 //   tests/
+//     unit/
+//     integration/
 //   docs/
+//     api_reference.md
+//     user_guide.md
 //   scripts/
+//     deploy.sh
+//     build.sh
 //   public/ or static/
+//     index.html
+//     styles.css
+//     images/
 //   README.md
-//   package.json or similar
+//   package.json or requirements.txt or pom.xml or Gemfile
 //   LICENSE
 //   .gitignore
+//   .env.example
       `;
     } else if (input.codeContent) {
       const summaryOutput = await summarizeCodeContent({ codeContent: input.codeContent });
@@ -67,19 +101,22 @@ export async function processGitHubRepo(
         return { error: "Failed to summarize code content." };
       }
       repoDescription = summaryOutput.summary;
-      fileContentsForSections = input.codeContent; // Use actual code for sections
-      effectiveRepoUrl = undefined; // No real URL for direct code input
+      fileContentsForSections = input.codeContent;
+      effectiveRepoUrl = undefined;
     } else {
-      return { error: "Either a repository URL or code content must be provided." };
+      return { error: "Either a repository URL, code content, or a user prompt must be provided." };
     }
 
-    const projectNameOutput = await suggestProjectName({
-      repoDescription,
-    });
-    if (!projectNameOutput || !projectNameOutput.projectName) {
-      return { error: "Failed to suggest a project name." };
+    const projectNameOutput = await suggestProjectName({ repoDescription });
+    let projectName = sourceProjectName; // Use name from URL if available
+    if (projectNameOutput && projectNameOutput.projectName) {
+      projectName = projectNameOutput.projectName;
     }
-    const projectName = projectNameOutput.projectName;
+    if (!projectName) {
+         // Fallback if AI suggestion fails and no URL name
+        projectName = "My Awesome Project";
+    }
+
 
     const readmeSectionsOutput = await generateReadmeSections({
       repoUrl: effectiveRepoUrl,
@@ -93,9 +130,9 @@ export async function processGitHubRepo(
       !readmeSectionsOutput.features ||
       !readmeSectionsOutput.technologiesUsed ||
       !readmeSectionsOutput.setupInstructions ||
-      readmeSectionsOutput.folderStructure === undefined // Check for undefined specifically
+      readmeSectionsOutput.folderStructure === undefined
     ) {
-      return { error: "Failed to generate README sections." };
+      return { error: "Failed to generate README sections from URL/code." };
     }
 
     return {
@@ -108,8 +145,8 @@ export async function processGitHubRepo(
     };
   } catch (e: any) {
     console.error("Error processing input:", e);
-    if (e.message && e.message.includes("503 Service Unavailable") || e.message && e.message.includes("model is overloaded")) {
-      return { error: "The AI model is currently overloaded. Please try again in a few moments." };
+    if (e.message && (e.message.includes("503 Service Unavailable") || e.message.includes("model is overloaded") || e.message.includes("upstream connect error"))) {
+      return { error: "The AI model is currently overloaded or unavailable. Please try again in a few moments." };
     }
     return { error: e.message || "An unexpected error occurred during README generation." };
   }
