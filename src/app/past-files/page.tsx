@@ -10,10 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, AlertTriangle, UploadCloud, FileText, Download, Trash2, Home } from "lucide-react";
+import { Loader2, AlertTriangle, UploadCloud, FileText, Download, Trash2, Home, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { isLoggedIn, setLoggedIn as setAuthLoggedIn } from '@/lib/auth/storage'; // Renamed to avoid conflict
+import { useRouter } from 'next/navigation';
+
 
 interface FileDetail {
   id: string;
@@ -71,10 +74,32 @@ export default function PastFilesPage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+  const [loggedIn, setLoggedInStatus] = useState(false);
+
 
   useEffect(() => {
     setMounted(true);
+    setLoggedInStatus(isLoggedIn());
   }, []);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setLoggedInStatus(isLoggedIn());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+
+  const handleLogout = () => {
+    setAuthLoggedIn(false);
+    setLoggedInStatus(false);
+    toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    router.push('/');
+  };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!mounted) return;
@@ -84,7 +109,7 @@ export default function PastFilesPage() {
     }
 
     setGlobalError(null);
-    setGeneratedFileReadmes([]); // Clear previous generations
+    setGeneratedFileReadmes([]); 
     const newFileDetails: FileDetail[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -138,7 +163,19 @@ export default function PastFilesPage() {
   };
 
   const handleGenerateAllReadmes = async () => {
-    if (!mounted || selectedFileDetails.length === 0) {
+    if (!mounted) return;
+
+    if (!isLoggedIn()) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to generate READMEs from files.",
+        variant: "destructive",
+      });
+      router.push('/auth/login');
+      return;
+    }
+    
+    if (selectedFileDetails.length === 0) {
       setGlobalError("Please upload at least one file.");
       toast({ title: "No Files", description: "Please upload at least one file.", variant: "destructive" });
       return;
@@ -157,8 +194,6 @@ export default function PastFilesPage() {
 
     for (const fileDetail of selectedFileDetails) {
       try {
-        // For each file, call the AI to generate README sections
-        // Construct the input for processGitHubRepo for a single file's content
         const result = await processGitHubRepo({ codeContent: fileDetail.content });
 
         if (result && "error" in result) {
@@ -266,17 +301,41 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
           <div className="text-center flex-grow">
             <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
             <p className="mt-3 text-lg text-muted-foreground">
-              Upload project files to generate individual READMEs for each.
+              Upload project files to generate individual READMEs for each. Login required.
             </p>
           </div>
           <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-            <ThemeToggle />
             <Link href="/" passHref>
-              <Button variant="outline" size="lg" className="flex-shrink-0">
-                <Home className="mr-2 h-5 w-5" />
-                Home
+              <Button variant="outline" size="icon" title="Go to Home Page" className="flex-shrink-0">
+                <Home className="h-5 w-5" />
               </Button>
             </Link>
+             {loggedIn ? (
+              <>
+                <Link href="/dashboard" passHref>
+                  <Button variant="outline" size="lg">
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  </Button>
+                </Link>
+                <Button variant="destructive" onClick={handleLogout} size="lg">
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" passHref>
+                  <Button variant="outline" size="lg">
+                    <LogIn className="mr-2 h-4 w-4" /> Login
+                  </Button>
+                </Link>
+                <Link href="/auth/signup" passHref>
+                  <Button variant="default" size="lg">
+                    <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
+            <ThemeToggle />
           </div>
         </header>
 
@@ -301,7 +360,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
                 disabled={isOverallLoading}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                You can select multiple files. Max total size recommended: ~5MB.
+                Max total size recommended: ~5MB.
               </p>
             </div>
 
@@ -418,3 +477,4 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
     </main>
   );
 }
+

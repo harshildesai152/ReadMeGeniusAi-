@@ -1,35 +1,32 @@
 
-// src/app/page.tsx
+// src/app/past/page.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
 import { ReadmeGenerator } from "@/components/readme-generator";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Files, FileText, LogIn, UserPlus, LogOut, LayoutDashboard } from 'lucide-react'; 
+import { LogIn, UserPlus, LogOut, LayoutDashboard, Home } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { isLoggedIn, setLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 
-
-export default function HomePage() {
-  const [loggedIn, setLoggedInStatus] = useState(false);
+export default function PastPage() {
+  const [loggedInStatus, setLoggedInStatusState] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
-    setLoggedInStatus(isLoggedIn());
+    setLoggedInStatusState(isLoggedIn());
   }, []);
-  
-  // This effect ensures that if the login state changes (e.g. in another tab),
-  // the component re-evaluates the login status.
+
   useEffect(() => {
     const handleStorageChange = () => {
-      setLoggedInStatus(isLoggedIn());
+      setLoggedInStatusState(isLoggedIn());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
@@ -37,31 +34,22 @@ export default function HomePage() {
     };
   }, []);
 
-
   const handleLogout = () => {
-    setLoggedIn(false); // Clear from localStorage
-    setLoggedInStatus(false); // Update local state
+    setLoggedIn(false);
+    setLoggedInStatusState(false);
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    router.push('/'); // Refresh or redirect to home
+    router.push('/');
   };
 
   if (!mounted) {
-    // To prevent hydration mismatch, render nothing or a placeholder until mounted
-    return (
+     return (
       <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
         <div className="container mx-auto flex flex-col items-center gap-12">
-          <header className="text-center w-full flex justify-between items-center">
-            <Logo />
-            <div className="flex items-center space-x-2">
-              {/* Placeholder for buttons */}
-              <div className="h-10 w-20 bg-muted rounded-md animate-pulse"></div>
-              <div className="h-10 w-24 bg-muted rounded-md animate-pulse"></div>
-              <ThemeToggle />
-            </div>
-          </header>
-          <p className="mt-3 text-lg text-muted-foreground">
-            Loading...
-          </p>
+           <header className="text-center w-full flex justify-between items-center">
+             <Logo />
+             <div className="h-10 w-24 bg-muted rounded-md animate-pulse"></div>
+           </header>
+           <p className="mt-3 text-lg text-muted-foreground">Loading...</p>
         </div>
       </main>
     );
@@ -73,7 +61,12 @@ export default function HomePage() {
         <header className="text-center w-full flex justify-between items-center">
           <Logo />
           <div className="flex items-center space-x-2">
-            {loggedIn ? (
+            <Link href="/" passHref>
+              <Button variant="outline" size="icon" title="Go to Home">
+                <Home className="h-4 w-4" />
+              </Button>
+            </Link>
+            {loggedInStatus ? (
               <>
                 <Link href="/dashboard" passHref>
                   <Button variant="outline">
@@ -102,29 +95,11 @@ export default function HomePage() {
           </div>
         </header>
         <p className="mt-3 text-lg text-muted-foreground">
-          Your AI-powered assistant for creating stunning README files instantly.
+          Generate a README from a GitHub URL, direct code upload (single or multiple files), or a textual prompt. Login required.
         </p>
         <ReadmeGenerator />
-         <footer className="mt-12 text-center text-sm text-muted-foreground w-full">
-          <div className="mb-4">
-            <p className="font-semibold">Explore other tools:</p>
-            <div className="flex justify-center gap-4 mt-2">
-                <Link href="/past" passHref>
-                  <Button variant="outline" className="bg-secondary hover:bg-muted">
-                    <FileText className="mr-2 h-4 w-4" />
-                    README from Past Link/Code
-                  </Button>
-                </Link>
-                <Link href="/past-files" passHref>
-                   <Button variant="outline" className="bg-secondary hover:bg-muted">
-                    <Files className="mr-2 h-4 w-4" /> 
-                    Past Files Inventory & Gen
-                  </Button>
-                </Link>
-            </div>
-          </div>
+        <footer className="mt-12 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
-          <p className="mt-1">Powered by AI magic ✨</p>
         </footer>
       </div>
     </main>
