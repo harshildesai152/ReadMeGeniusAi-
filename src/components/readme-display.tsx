@@ -8,13 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Check, FileText, Loader2 } from "lucide-react"; // Added FileText, Loader2
+import { Copy, Check, FileText, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface ReadmeDisplayProps {
   data: FullReadmeData;
-  onGenerateDetails: (currentData: FullReadmeData) => Promise<void>; // Callback to trigger detailed generation
-  isGeneratingDetails: boolean; // Loading state from parent
+  onGenerateDetails: (currentData: FullReadmeData) => Promise<void>;
+  isGeneratingDetails: boolean;
 }
 
 // A simple component to render markdown-like text.
@@ -26,23 +26,25 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
     if (line.match(/^#{1,6}\s/)) {
         const level = line.match(/^#+/)![0].length;
         const text = line.replace(/^#+\s/, '');
+        // Adjusting h-tags: # -> h3, ## -> h4, ### -> h5 for semantic structure within a section
         const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements;
-        let headingClass = "font-semibold";
-        if (level === 1) headingClass += " text-lg mt-3 mb-1.5"; 
-        else if (level === 2) headingClass += " text-base mt-2.5 mb-1";
-        else headingClass += " text-sm mt-2 mb-0.5"; 
+        let headingClass = "font-semibold text-foreground"; // Use text-foreground for default
+        if (level === 1) headingClass += " text-lg mt-4 mb-2 underline underline-offset-4 decoration-primary/70"; 
+        else if (level === 2) headingClass += " text-base mt-3 mb-1.5 underline underline-offset-2 decoration-primary/50";
+        else if (level === 3) headingClass += " text-sm mt-2 mb-1 text-foreground/80";
+        else headingClass += " text-xs mt-1.5 mb-0.5 text-foreground/70"; 
         return <Tag key={index} className={headingClass}>{text}</Tag>;
     }
     // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-5 list-disc space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
+      return <li key={index} className="ml-6 list-disc space-y-1 my-1 text-foreground/90">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
     // Code blocks
     if (line.trim().startsWith('```')) {
       const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
       const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
       if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) {
-         return <pre key={index} className="bg-muted/70 p-3 rounded-md text-sm overflow-x-auto my-2 font-mono shadow-sm">{line.substring(3).trim()}</pre>;
+         return <pre key={index} className="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 text-foreground/90">{line.substring(3).trim()}</pre>;
       }
       return null; 
     }
@@ -58,15 +60,16 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
                 blockLines.push(arr[j]);
                 j++;
             }
-            return <pre key={index} className="bg-muted/70 p-3 rounded-md text-sm overflow-x-auto my-2 font-mono shadow-sm" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
+            return <pre key={index} className="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 text-foreground/90" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
         }
         return null; 
     }
-    
+    // For folder structures or indented text (heuristic)
     if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
-      return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
+      return <p key={index} className="mb-1 whitespace-pre-wrap font-mono text-xs bg-muted/60 p-1.5 rounded border border-border/50 shadow-sm text-foreground/80">{line || <>&nbsp;</>}</p>;
     }
-    return <p key={index} className="mb-2 leading-relaxed">{line || <>&nbsp;</>}</p>;
+    // Default paragraphs
+    return <p key={index} className="mb-2.5 leading-relaxed text-foreground/90">{line || <>&nbsp;</>}</p>;
   });
 
   const validLines = lines.filter(line => line !== null);
@@ -77,7 +80,7 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
     if (React.isValidElement(line) && line.type === 'li') {
       if (!inList) {
         inList = true;
-        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-2">{line}</ul>);
+        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-2.5">{line}</ul>);
       } else {
         const lastElement = structuredLines[structuredLines.length - 1];
         if (React.isValidElement(lastElement) && lastElement.type === 'ul') {
@@ -111,7 +114,7 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails }: 
     text += `## Project Description\n${readmeData.projectDescription}\n\n`;
     text += `## Features\n${readmeData.features}\n\n`;
     text += `## Technologies Used\n${readmeData.technologiesUsed}\n\n`;
-    text += `## Folder Structure\n\`\`\`\n${readmeData.folderStructure}\n\`\`\`\n\n`; // Added backticks for code block
+    text += `## Folder Structure\n\`\`\`\n${readmeData.folderStructure}\n\`\`\`\n\n`;
     text += `## Setup Instructions\n${readmeData.setupInstructions}\n`;
     return text.trim();
   };
@@ -150,7 +153,7 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails }: 
   return (
     <Card className="w-full shadow-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold font-headline">
+        <CardTitle className="text-2xl font-bold font-headline text-primary">
           Generated README.md
         </CardTitle>
         <div className="flex items-center space-x-2">
@@ -176,44 +179,44 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails }: 
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[500px] w-full rounded-md border p-4 bg-background">
-          <div className="space-y-3">
+          <div className="space-y-4"> {/* Increased spacing between sections */}
             <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 1. Project Name:
               </h2>
-              <p className="text-lg font-bold text-primary">{data.projectName}</p>
+              <p className="text-2xl font-bold text-accent-foreground/90 ml-1">{data.projectName}</p> {/* Made project name larger and brighter */}
             </div>
 
             <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 2. Project Description:
               </h2>
               <MarkdownContent content={data.projectDescription} />
             </div>
 
             <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 3. Features:
               </h2>
               <MarkdownContent content={data.features} />
             </div>
 
             <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 4. Technologies Used:
               </h2>
               <MarkdownContent content={data.technologiesUsed} />
             </div>
             
             <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 5. Folder Structure:
               </h2>
               <MarkdownContent content={data.folderStructure} />
             </div>
 
             <div className="py-3 last:border-b-0">
-              <h2 className="text-xl font-semibold mb-2 pb-1 font-headline">
+              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
                 6. Setup Instructions:
               </h2>
               <MarkdownContent content={data.setupInstructions} />
@@ -224,3 +227,4 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails }: 
     </Card>
   );
 }
+
