@@ -46,22 +46,63 @@ export default function HomePage() {
   };
 
   if (!mounted) {
-    // To prevent hydration mismatch, render nothing or a placeholder until mounted
+    // Skeleton UI
     return (
       <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-        <div className="container mx-auto flex flex-col items-center gap-12">
+        <div className="container mx-auto flex flex-col items-center gap-12 w-full">
+          {/* Header Skeleton */}
           <header className="text-center w-full flex justify-between items-center">
-            <Logo />
+            {/* Logo Skeleton */}
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div> {/* Sparkles icon */}
+              <div className="h-7 w-24 md:w-28 bg-muted rounded-md animate-pulse"></div> {/* ReadMe */}
+              <div className="h-7 w-20 md:w-24 bg-muted rounded-md animate-pulse"></div> {/* Genius */}
+            </div>
+            {/* Auth Buttons & Theme Toggle Skeleton */}
             <div className="flex items-center space-x-2">
-              {/* Placeholder for buttons */}
-              <div className="h-10 w-20 bg-muted rounded-md animate-pulse"></div>
-              <div className="h-10 w-24 bg-muted rounded-md animate-pulse"></div>
-              <ThemeToggle />
+              <div className="h-10 w-24 md:w-32 bg-muted rounded-md animate-pulse"></div> {/* Login/Dashboard Button */}
+              <div className="h-10 w-24 md:w-28 bg-muted rounded-md animate-pulse"></div> {/* Signup/Logout Button */}
+              <div className="h-10 w-10 bg-muted rounded-full animate-pulse"></div> {/* ThemeToggle */}
             </div>
           </header>
-          <p className="mt-3 text-lg text-muted-foreground">
-            Loading...
-          </p>
+
+          {/* Subtitle Skeleton */}
+          <div className="h-6 w-4/5 md:w-1/2 lg:w-2/5 bg-muted rounded-md animate-pulse mt-3"></div>
+
+          {/* ReadmeGenerator Card Skeleton */}
+          <div className="w-full max-w-3xl space-y-8 mt-8">
+            <div className="bg-card shadow-xl rounded-lg p-6 sm:p-8 animate-pulse">
+              {/* Card Header Skeleton */}
+              <div className="h-8 w-3/4 mx-auto bg-muted rounded-md mb-2"></div> {/* Title */}
+              <div className="h-4 w-full mx-auto bg-muted rounded-md mb-6"></div> {/* Description */}
+              
+              {/* RadioGroup Skeleton */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="h-12 bg-muted rounded-md"></div>
+                <div className="h-12 bg-muted rounded-md"></div>
+                <div className="h-12 bg-muted rounded-md"></div>
+              </div>
+              
+              {/* Input Area Skeleton (e.g., for URL/Textarea) */}
+              <div className="h-24 bg-muted rounded-md mb-6"></div>
+              
+              {/* Generate Button Skeleton */}
+              <div className="h-12 bg-muted rounded-md"></div>
+            </div>
+          </div>
+
+          {/* Footer Skeleton */}
+          <footer className="mt-12 text-center text-sm text-muted-foreground w-full">
+            <div className="mb-4">
+              <div className="h-5 w-1/3 mx-auto bg-muted rounded-md mb-2"></div> {/* Explore other tools text */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-2">
+                  <div className="h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 1 */}
+                  <div className="h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 2 */}
+              </div>
+            </div>
+            <div className="h-4 w-1/2 mx-auto bg-muted rounded-md mb-1 mt-6"></div> {/* Copyright */}
+            <div className="h-4 w-1/3 mx-auto bg-muted rounded-md"></div> {/* Powered by AI magic */}
+          </footer>
         </div>
       </main>
     );
@@ -108,15 +149,15 @@ export default function HomePage() {
          <footer className="mt-12 text-center text-sm text-muted-foreground w-full">
           <div className="mb-4">
             <p className="font-semibold">Explore other tools:</p>
-            <div className="flex justify-center gap-4 mt-2">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-2">
                 <Link href="/past" passHref>
-                  <Button variant="outline" className="bg-secondary hover:bg-muted">
+                  <Button variant="outline" className="bg-secondary hover:bg-muted w-full sm:w-auto">
                     <FileText className="mr-2 h-4 w-4" />
                     README from Past Link/Code
                   </Button>
                 </Link>
                 <Link href="/past-files" passHref>
-                   <Button variant="outline" className="bg-secondary hover:bg-muted">
+                   <Button variant="outline" className="bg-secondary hover:bg-muted w-full sm:w-auto">
                     <Files className="mr-2 h-4 w-4" /> 
                     Past Files Inventory & Gen
                   </Button>
