@@ -14,7 +14,7 @@ import { Loader2, AlertTriangle, UploadCloud, FileText, Download, Trash2, Home, 
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { isLoggedIn, setLoggedIn as setAuthLoggedIn } from '@/lib/auth/storage'; // Renamed to avoid conflict
+import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getCurrentUserEmail } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 
 
@@ -80,25 +80,22 @@ export default function PastFilesPage() {
 
   useEffect(() => {
     setMounted(true);
-    setLoggedInStatus(isLoggedIn());
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
+    const checkLoginStatus = () => {
       setLoggedInStatus(isLoggedIn());
     };
-    window.addEventListener('storage', handleStorageChange);
+    checkLoginStatus(); // Initial check
+    window.addEventListener('storage', checkLoginStatus); // Listen for changes
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', checkLoginStatus);
     };
   }, []);
 
 
   const handleLogout = () => {
     setAuthLoggedIn(false);
-    setLoggedInStatus(false);
+    setLoggedInStatus(false); // Update local state immediately
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    router.push('/');
+    router.push('/'); // Or router.refresh() if you prefer to stay on page and update UI
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +106,8 @@ export default function PastFilesPage() {
     }
 
     setGlobalError(null);
-    setGeneratedFileReadmes([]); 
+    // Do not clear generatedFileReadmes here if we want to keep previous generations visible
+    // setGeneratedFileReadmes([]); 
     const newFileDetails: FileDetail[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -126,6 +124,7 @@ export default function PastFilesPage() {
       } catch (e) {
         console.error("Error reading file:", file.name, e);
         setGlobalError(`Error reading file ${file.name}. It might be too large or not a text file.`);
+        toast({ title: `Error Reading File: ${file.name}`, description: "The file might be too large or not a text file.", variant: "destructive"});
         return; 
       }
     }
@@ -148,7 +147,7 @@ export default function PastFilesPage() {
   const handleRemoveFile = (fileIdToRemove: string) => {
     setSelectedFileDetails(prevDetails => prevDetails.filter(file => file.id !== fileIdToRemove));
     setGeneratedFileReadmes(prevGenerated => prevGenerated.filter(gen => gen.fileId !== fileIdToRemove));
-    if (selectedFileDetails.length === 1) {
+    if (selectedFileDetails.length === 1 && generatedFileReadmes.every(g => g.fileId !== fileIdToRemove)) {
         setGlobalError(null);
     }
   };
@@ -165,7 +164,7 @@ export default function PastFilesPage() {
   const handleGenerateAllReadmes = async () => {
     if (!mounted) return;
 
-    if (!isLoggedIn()) {
+    if (!loggedIn) {
       toast({
         title: "Authentication Required",
         description: "Please log in to generate READMEs from files.",
@@ -190,11 +189,10 @@ export default function PastFilesPage() {
       error: null,
       isLoading: true,
     }));
-    setGeneratedFileReadmes(initialReadmeStates);
+    setGeneratedFileReadmes(initialReadmeStates); // This will set/reset for all selected files
 
     for (const fileDetail of selectedFileDetails) {
       try {
-        // Call processGitHubRepo with only the current file's content
         const result = await processGitHubRepo({ codeContent: fileDetail.content });
 
         if (result && "error" in result) {
@@ -232,13 +230,12 @@ export default function PastFilesPage() {
   };
 
   const formatReadmeForTxt = (readmeData: FullReadmeData): string => {
-    // Helper to clean markdown-like syntax for plain text
     const cleanText = (text: string) => {
         return text
-            .replace(/^#+\s*/gm, '') // Remove markdown headers
-            .replace(/^- /gm, '* ') // Convert markdown list items
-            .replace(/```[\s\S]*?```/g, '(Code Block)') // Replace code blocks
-            .replace(/`([^`]+)`/g, '$1'); // Remove inline code backticks
+            .replace(/^#+\s*/gm, '') 
+            .replace(/^- /gm, '* ') 
+            .replace(/```[\s\S]*?```/g, '(Code Block)') 
+            .replace(/`([^`]+)`/g, '$1'); 
     };
     
     return `
@@ -296,9 +293,9 @@ ${cleanText(readmeData.setupInstructions)}
   if (!mounted) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-        <div className="w-full max-w-3xl space-y-8 text-center">
-          <h1 className="text-3xl font-bold">Loading Past Files Section...</h1>
-           <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+        <div className="w-full max-w-4xl mx-auto text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-lg text-muted-foreground">Loading Past Files Section...</p>
         </div>
       </main>
     );
@@ -306,46 +303,53 @@ ${cleanText(readmeData.setupInstructions)}
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-      <div className="container mx-auto flex flex-col items-center gap-12 w-full max-w-4xl">
-        <header className="w-full flex justify-between items-start">
-          <div className="text-center flex-grow">
+      <div className="container mx-auto flex flex-col items-center gap-8 w-full max-w-4xl">
+        <header className="w-full mb-8">
+          <div className="flex justify-between items-center w-full py-4 border-b mb-6">
+            {/* Top Navigation Bar */}
+            <div className="flex items-center space-x-2">
+              <Link href="/" passHref>
+                <Button variant="outline" size="icon" title="Go to Home Page">
+                  <Home className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-2">
+              {loggedIn ? (
+                <>
+                  <Link href="/dashboard" passHref>
+                    <Button variant="outline" size="default">
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                    </Button>
+                  </Link>
+                  <Button variant="destructive" onClick={handleLogout} size="default">
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/auth/login" passHref>
+                    <Button variant="outline" size="default">
+                      <LogIn className="mr-2 h-4 w-4" /> Login
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signup" passHref>
+                    <Button variant="default" size="default">
+                      <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
+              <ThemeToggle />
+            </div>
+          </div>
+          
+          {/* Page Title and Subtitle */}
+          <div className="text-center">
             <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
             <p className="mt-3 text-lg text-muted-foreground">
               Upload project files to generate individual READMEs for each. Login required.
             </p>
-          </div>
-          <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-            <Link href="/" passHref>
-              <Button variant="outline" size="icon" title="Go to Home Page" className="flex-shrink-0">
-                <Home className="h-5 w-5" />
-              </Button>
-            </Link>
-             {loggedIn ? (
-              <>
-                <Link href="/dashboard" passHref>
-                  <Button variant="outline" size="lg">
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                  </Button>
-                </Link>
-                <Button variant="destructive" onClick={handleLogout} size="lg">
-                  <LogOut className="mr-2 h-4 w-4" /> Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/login" passHref>
-                  <Button variant="outline" size="lg">
-                    <LogIn className="mr-2 h-4 w-4" /> Login
-                  </Button>
-                </Link>
-                <Link href="/auth/signup" passHref>
-                  <Button variant="default" size="lg">
-                    <UserPlus className="mr-2 h-4 w-4" /> Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
-            <ThemeToggle />
           </div>
         </header>
 
@@ -355,7 +359,7 @@ ${cleanText(readmeData.setupInstructions)}
               <UploadCloud className="h-7 w-7 text-primary" /> Upload Files
             </CardTitle>
             <CardDescription>
-              Select one or more files. A separate README will be generated for each file.
+              Select one or more files. A separate README will be generated for each file. Max total size recommended: ~5MB per file.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -369,9 +373,6 @@ ${cleanText(readmeData.setupInstructions)}
                 className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 disabled={isOverallLoading}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Max total size recommended per file for optimal AI processing.
-              </p>
             </div>
 
             {selectedFileDetails.length > 0 && (
@@ -487,4 +488,3 @@ ${cleanText(readmeData.setupInstructions)}
     </main>
   );
 }
-
