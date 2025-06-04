@@ -45,7 +45,7 @@ The application also features a theme toggle for light/dark mode preferences and
 
 This is the primary interface for generating README files. It offers three input methods:
 *   **GitHub URL**: Provide a link to a public GitHub repository.
-*   **Direct Code**: Upload one or more code files directly. Their combined content will be analyzed.
+*   **Direct Code**: Upload one or more code files directly. Their combined content will be analyzed by the AI.
 *   **From Prompt**: Describe your project in text, and the AI will craft a README.
 
 Generated READMEs are automatically saved and can be managed in the "Saved READMEs" panel that appears on this page.
@@ -59,11 +59,11 @@ This section provides another instance of the main `ReadmeGenerator` component. 
 This dedicated section allows users to:
 1.  **Upload Multiple Files**: Users can select and upload multiple files from their local system.
 2.  **View Uploaded Files**: A list of uploaded files (name and size) is displayed. Users can remove files from this list.
-3.  **Generate README from Files**: Clicking "Generate README from Files" will cause the AI to analyze the content of all uploaded files.
-4.  **Display Generated README**: The AI-generated README content (including Project Name, Description, Features, etc.) is then displayed on the page.
-5.  **Download README.txt**: Users can download the generated README content as a `README.txt` file.
+3.  **Generate Individual READMEs**: Clicking "Generate READMEs from Files" will trigger the AI to process *each uploaded file individually*. For every file, the AI will attempt to generate a full set of README sections (Project Name, Description, Features, etc.).
+4.  **Display Generated READMEs**: Each generated README is displayed separately on the page, associated with its original filename.
+5.  **Download Individual README.txt**: For each successfully generated README, a "Download README.txt" button allows users to download its content as a plain text file.
 
-This section focuses on projects where the user has the files locally and wants a README generated directly from that local content.
+This section is useful when users want to generate distinct READMEs for several separate code files or modules from their local system.
 
 ## Getting Started
 
@@ -132,3 +132,5 @@ To run this project locally:
 *   **ShadCN UI**: Add or customize components from `shadcn/ui` as needed.
 
 Enjoy using ReadMeGenius!
+
+    

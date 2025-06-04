@@ -6,7 +6,7 @@ import type { ChangeEvent } from "react";
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Used for file input
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,12 +19,21 @@ interface FileDetail {
   name: string;
   size: number;
   type: string;
-  content: string; // Store file content as string
+  content: string;
 }
 
-// Re-purposed MarkdownContent from ReadmeDisplay for on-page rendering
+interface GeneratedReadmeForFile {
+  fileId: string;
+  fileName: string;
+  readmeData: FullReadmeData | null;
+  error?: string | null;
+  isLoading: boolean;
+}
+
 const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ content, title }) => {
-  if (!content) return <p className="text-muted-foreground">Not yet generated.</p>;
+  if (!content && content !== "") return <p className="text-muted-foreground">Not yet generated or N/A.</p>;
+  if (content.trim() === "") return <p className="text-muted-foreground">Content is empty.</p>;
+
 
   const lines = content.split('\n').map((line, index) => {
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
@@ -39,7 +48,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
     if (line.trim().startsWith('```') && index > 0 && content.split('\n')[index-1].trim().startsWith('```')) {
       return <pre key={index} className="bg-muted p-2 rounded-md text-sm overflow-x-auto my-2">{line}</pre>;
     }
-    if (line.trim().startsWith('    ') || line.trim().startsWith('\t')) { 
+     if (line.trim().startsWith('    ') || line.trim().startsWith('\t')) { 
       return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-sm">{line || <>&nbsp;</>}</p>;
     }
     return <p key={index} className="mb-1">{line || <>&nbsp;</>}</p>;
@@ -47,7 +56,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
 
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none">
-      <h3 className="text-lg font-semibold mb-1 pb-1 border-b font-headline">{title}:</h3>
+      <h4 className="text-md font-semibold mb-1 pb-1 border-b font-headline">{title}:</h4>
       {lines}
     </div>
   );
@@ -56,9 +65,9 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
 
 export default function PastFilesPage() {
   const [selectedFileDetails, setSelectedFileDetails] = useState<FileDetail[]>([]);
-  const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [generatedFileReadmes, setGeneratedFileReadmes] = useState<GeneratedReadmeForFile[]>([]);
+  const [isOverallLoading, setIsOverallLoading] = useState<boolean>(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
 
@@ -70,17 +79,11 @@ export default function PastFilesPage() {
     if (!mounted) return;
     const files = event.target.files;
     if (!files || files.length === 0) {
-      // If selection is cleared, clear existing files
-      if (selectedFileDetails.length > 0) {
-         // setSelectedFileDetails([]); 
-         // setGeneratedReadmeData(null); // also clear generated content
-         // setError(null);
-      }
       return;
     }
 
-    setError(null);
-    setGeneratedReadmeData(null);
+    setGlobalError(null);
+    setGeneratedFileReadmes([]); // Clear previous generations
     const newFileDetails: FileDetail[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -88,7 +91,7 @@ export default function PastFilesPage() {
       try {
         const content = await readFileAsText(file);
         newFileDetails.push({
-          id: `${file.name}-${file.lastModified}-${file.size}`,
+          id: `${file.name}-${file.lastModified}-${file.size}-${Math.random().toString(36).substring(2,9)}`,
           name: file.name,
           size: file.size,
           type: file.type || "unknown",
@@ -96,15 +99,12 @@ export default function PastFilesPage() {
         });
       } catch (e) {
         console.error("Error reading file:", file.name, e);
-        setError(`Error reading file ${file.name}. It might be too large or not a text file.`);
-        // Optionally clear all files if one fails, or just skip this one
-        // setSelectedFileDetails([]); 
+        setGlobalError(`Error reading file ${file.name}. It might be too large or not a text file.`);
         return; 
       }
     }
-    setSelectedFileDetails(prevDetails => [...prevDetails, ...newFileDetails].filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i)); // Add new files, prevent duplicates based on ID
+    setSelectedFileDetails(prevDetails => [...prevDetails, ...newFileDetails].filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i));
 
-    // Clear the file input value so the same files can be re-selected if needed after removal
     if (event.target) {
       event.target.value = "";
     }
@@ -115,15 +115,15 @@ export default function PastFilesPage() {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = () => reject(reader.error);
-      reader.readAsText(file); // Assuming text files
+      reader.readAsText(file);
     });
   };
 
   const handleRemoveFile = (fileIdToRemove: string) => {
     setSelectedFileDetails(prevDetails => prevDetails.filter(file => file.id !== fileIdToRemove));
-    if (selectedFileDetails.length === 1) { // If last file removed
-        setGeneratedReadmeData(null);
-        setError(null);
+    setGeneratedFileReadmes(prevGenerated => prevGenerated.filter(gen => gen.fileId !== fileIdToRemove));
+    if (selectedFileDetails.length === 1) {
+        setGlobalError(null);
     }
   };
 
@@ -136,40 +136,63 @@ export default function PastFilesPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   };
 
-  const handleGenerateReadme = async () => {
+  const handleGenerateAllReadmes = async () => {
     if (!mounted || selectedFileDetails.length === 0) {
-      setError("Please upload at least one file.");
+      setGlobalError("Please upload at least one file.");
+      toast({ title: "No Files", description: "Please upload at least one file.", variant: "destructive" });
       return;
     }
-    setError(null);
-    setIsLoading(true);
-    setGeneratedReadmeData(null);
+    setGlobalError(null);
+    setIsOverallLoading(true);
 
-    // Concatenate file contents with markers
-    const combinedCodeContent = selectedFileDetails
-      .map(file => `// --- FILE: ${file.name} ---\n\n${file.content}\n\n// --- END FILE: ${file.name} ---`)
-      .join("\n\n");
-    
-    const result = await processGitHubRepo({ codeContent: combinedCodeContent });
+    const initialReadmeStates = selectedFileDetails.map(file => ({
+      fileId: file.id,
+      fileName: file.name,
+      readmeData: null,
+      error: null,
+      isLoading: true,
+    }));
+    setGeneratedFileReadmes(initialReadmeStates);
 
-    if (result && "error" in result) {
-      setError(result.error);
-      setGeneratedReadmeData(null);
-      toast({ title: "Generation Failed", description: result.error, variant: "destructive" });
-    } else if (result) {
-      setGeneratedReadmeData(result);
-      toast({ title: "README Generated!", description: "The README has been generated from the uploaded files." });
-    } else {
-      setError("An unexpected error occurred during README generation.");
-      setGeneratedReadmeData(null);
-      toast({ title: "Generation Failed", description: "An unknown error occurred.", variant: "destructive" });
+    for (const fileDetail of selectedFileDetails) {
+      try {
+        const result = await processGitHubRepo({ codeContent: fileDetail.content });
+
+        if (result && "error" in result) {
+          setGeneratedFileReadmes(prev =>
+            prev.map(item =>
+              item.fileId === fileDetail.id ? { ...item, error: result.error, readmeData: null, isLoading: false } : item
+            )
+          );
+          toast({ title: `Generation Failed: ${fileDetail.name}`, description: result.error, variant: "destructive", duration: 5000 });
+        } else if (result) {
+          setGeneratedFileReadmes(prev =>
+            prev.map(item =>
+              item.fileId === fileDetail.id ? { ...item, readmeData: result, error: null, isLoading: false } : item
+            )
+          );
+          toast({ title: `README Generated: ${fileDetail.name}`, description: `Successfully generated README for ${fileDetail.name}.`, duration: 3000 });
+        } else {
+           setGeneratedFileReadmes(prev =>
+            prev.map(item =>
+              item.fileId === fileDetail.id ? { ...item, error: "An unknown error occurred during README generation.", readmeData: null, isLoading: false } : item
+            )
+          );
+          toast({ title: `Generation Failed: ${fileDetail.name}`, description: "An unknown error occurred.", variant: "destructive", duration: 5000 });
+        }
+      } catch (e: any) {
+         setGeneratedFileReadmes(prev =>
+          prev.map(item =>
+            item.fileId === fileDetail.id ? { ...item, error: e.message || `An unexpected processing error occurred for ${fileDetail.name}.`, readmeData: null, isLoading: false } : item
+          )
+        );
+         toast({ title: `Processing Error: ${fileDetail.name}`, description: e.message || "An unexpected error occurred.", variant: "destructive", duration: 5000 });
+      }
     }
-    setIsLoading(false);
+    setIsOverallLoading(false);
   };
 
   const formatReadmeForTxt = (readmeData: FullReadmeData): string => {
-    // Basic text formatting, trying to make it readable in .txt
-    // This could be more sophisticated to strip Markdown, but this is a start.
     return `
 Project Name: ${readmeData.projectName}
 
@@ -197,17 +220,19 @@ ${readmeData.folderStructure.replace(/```[\s\S]*?\n/g, '').replace(/```/g, '')}
 Setup Instructions:
 --------------------
 ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replace(/`([^`]+)`/g, '$1').replace(/^- /gm, '* ').replace(/###\s*/g, '').replace(/##\s*/g, '').replace(/#\s*/g, '')}
-    `.trim().replace(/\n\n\n+/g, '\n\n'); // Consolidate multiple blank lines
+    `.trim().replace(/\n\n\n+/g, '\n\n');
   };
 
-  const handleDownloadReadme = () => {
-    if (!mounted || !generatedReadmeData) return;
-    const readmeText = formatReadmeForTxt(generatedReadmeData);
-    const blob = new Blob([readmeText], { type: 'text/plain;charset=utf--8' });
+  const handleDownloadIndividualReadme = (readmeData: FullReadmeData, originalFileName: string) => {
+    if (!mounted || !readmeData) return;
+    const readmeText = formatReadmeForTxt(readmeData);
+    const blob = new Blob([readmeText], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    const sanitizedProjectName = generatedReadmeData.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
-    link.download = `${sanitizedProjectName || 'readme'}.txt`; // Download as README.txt
+    
+    const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+    const sanitizedBaseName = baseName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+    link.download = `${sanitizedBaseName || 'readme'}_readme.txt`;
     
     document.body.appendChild(link);
     link.click();
@@ -238,7 +263,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
           <div className="text-center flex-grow">
             <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory & README Generator</h1>
             <p className="mt-3 text-lg text-muted-foreground">
-              Upload your project files, view them, and generate a README.md from their content.
+              Upload project files to generate individual READMEs for each.
             </p>
           </div>
           <Link href="/" passHref>
@@ -255,7 +280,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
               <UploadCloud className="h-7 w-7 text-primary" /> Upload Files
             </CardTitle>
             <CardDescription>
-              Select one or more files from your project. Text-based files work best.
+              Select one or more files. A separate README will be generated for each file.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -267,7 +292,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
                 multiple
                 onChange={handleFileChange}
                 className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                disabled={isLoading}
+                disabled={isOverallLoading}
               />
               <p className="mt-1 text-xs text-muted-foreground">
                 You can select multiple files. Max total size recommended: ~5MB.
@@ -287,7 +312,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-7 w-7 text-destructive hover:text-destructive/80" title="Remove file" disabled={isLoading}>
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-7 w-7 text-destructive hover:text-destructive/80" title="Remove file" disabled={isOverallLoading}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -296,17 +321,17 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
                   </ul>
                 </ScrollArea>
                  <Button 
-                    onClick={handleGenerateReadme} 
+                    onClick={handleGenerateAllReadmes} 
                     className="w-full text-lg py-3" 
-                    disabled={isLoading || selectedFileDetails.length === 0}
+                    disabled={isOverallLoading || selectedFileDetails.length === 0}
                   >
-                  {isLoading ? (
+                  {isOverallLoading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Generating README...
+                      Generating READMEs...
                     </>
                   ) : (
-                    "Generate README from Files"
+                    "Generate READMEs from Files"
                   )}
                 </Button>
               </div>
@@ -314,36 +339,72 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
           </CardContent>
         </Card>
 
-        {error && (
+        {globalError && (
           <Alert variant="destructive" className="shadow-md w-full">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{globalError}</AlertDescription>
           </Alert>
         )}
-
-        {generatedReadmeData && !isLoading && (
-          <Card className="w-full shadow-xl mt-8" id="generated-readme-display">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-2xl font-bold font-headline">Generated README Content</CardTitle>
-              <Button onClick={handleDownloadReadme} variant="outline" size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" disabled={!generatedReadmeData}>
-                <Download className="mr-2 h-5 w-5" /> Download README.txt
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px] w-full rounded-md border p-4 bg-background">
-                <div className="space-y-4">
-                    <MarkdownContentDisplay content={generatedReadmeData.projectName} title="Project Name"/>
-                    <MarkdownContentDisplay content={generatedReadmeData.projectDescription} title="Project Description"/>
-                    <MarkdownContentDisplay content={generatedReadmeData.features} title="Features"/>
-                    <MarkdownContentDisplay content={generatedReadmeData.technologiesUsed} title="Technologies Used"/>
-                    <MarkdownContentDisplay content={generatedReadmeData.folderStructure} title="Folder Structure"/>
-                    <MarkdownContentDisplay content={generatedReadmeData.setupInstructions} title="Setup Instructions"/>
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        
+        {generatedFileReadmes.length > 0 && (
+            <Card className="w-full shadow-xl mt-8" id="generated-readmes-display">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold font-headline">Generated READMEs</CardTitle>
+                    <CardDescription>Below are the individually generated READMEs for your uploaded files.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {generatedFileReadmes.map(genFile => (
+                        <Card key={genFile.fileId} className="p-4 rounded-md shadow-md">
+                            <CardHeader className="p-0 pb-2 mb-2 border-b">
+                                <div className="flex justify-between items-center">
+                                    <CardTitle className="text-xl font-semibold text-primary">{genFile.fileName}</CardTitle>
+                                    {genFile.readmeData && !genFile.isLoading && (
+                                    <Button 
+                                        onClick={() => handleDownloadIndividualReadme(genFile.readmeData!, genFile.fileName)} 
+                                        variant="outline" 
+                                        size="sm"
+                                        className="bg-accent text-accent-foreground hover:bg-accent/90"
+                                        disabled={!genFile.readmeData}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" /> Download README.txt
+                                    </Button>
+                                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {genFile.isLoading && (
+                                <div className="flex items-center space-x-2 py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                    <span className="text-muted-foreground">Generating README for {genFile.fileName}...</span>
+                                </div>
+                                )}
+                                {genFile.error && !genFile.isLoading && (
+                                <Alert variant="destructive" className="my-2">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Generation Error</AlertTitle>
+                                    <AlertDescription>{genFile.error}</AlertDescription>
+                                </Alert>
+                                )}
+                                {genFile.readmeData && !genFile.isLoading && (
+                                <ScrollArea className="h-[450px] w-full rounded-md border p-3 bg-background">
+                                    <div className="space-y-3">
+                                        <MarkdownContentDisplay content={genFile.readmeData.projectName} title="AI Suggested Project Name" />
+                                        <MarkdownContentDisplay content={genFile.readmeData.projectDescription} title="Project Description" />
+                                        <MarkdownContentDisplay content={genFile.readmeData.features} title="Features" />
+                                        <MarkdownContentDisplay content={genFile.readmeData.technologiesUsed} title="Technologies Used" />
+                                        <MarkdownContentDisplay content={genFile.readmeData.folderStructure} title="Folder Structure" />
+                                        <MarkdownContentDisplay content={genFile.readmeData.setupInstructions} title="Setup Instructions" />
+                                    </div>
+                                </ScrollArea>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </CardContent>
+            </Card>
         )}
+
          <footer className="mt-12 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
@@ -351,3 +412,5 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
     </main>
   );
 }
+
+    
