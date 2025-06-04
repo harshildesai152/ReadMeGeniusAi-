@@ -5,7 +5,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Files, FileText } from 'lucide-react'; // Updated icon import
+import { Files, FileText, LogIn, UserPlus } from 'lucide-react'; 
 
 
 export default function HomePage() {
@@ -14,7 +14,19 @@ export default function HomePage() {
       <div className="container mx-auto flex flex-col items-center gap-12">
         <header className="text-center w-full flex justify-between items-center">
           <Logo />
-          <ThemeToggle /> 
+          <div className="flex items-center space-x-2">
+            <Link href="/auth/login" passHref>
+              <Button variant="outline">
+                <LogIn className="mr-2 h-4 w-4" /> Login
+              </Button>
+            </Link>
+            <Link href="/auth/signup" passHref>
+              <Button variant="default"> {/* Or another variant */}
+                <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+              </Button>
+            </Link>
+            <ThemeToggle /> 
+          </div>
         </header>
         <p className="mt-3 text-lg text-muted-foreground">
           Your AI-powered assistant for creating stunning README files instantly.
@@ -32,7 +44,7 @@ export default function HomePage() {
                 </Link>
                 <Link href="/past-files" passHref>
                    <Button variant="outline" className="bg-secondary hover:bg-muted">
-                    <Files className="mr-2 h-4 w-4" /> {/* Using Files icon */}
+                    <Files className="mr-2 h-4 w-4" /> 
                     Past Files Inventory & Gen
                   </Button>
                 </Link>
