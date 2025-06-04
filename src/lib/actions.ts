@@ -6,7 +6,8 @@ import { generateReadmeSections } from "@/ai/flows/generate-readme-sections";
 import { summarizeRepo } from "@/ai/flows/summarize-repo";
 import { suggestProjectName } from "@/ai/flows/suggest-project-name";
 import { summarizeCodeContent } from "@/ai/flows/summarize-code-content";
-import { generateReadmeFromPrompt } from "@/ai/flows/generate-readme-from-prompt"; // New import
+import { generateReadmeFromPrompt } from "@/ai/flows/generate-readme-from-prompt";
+import { generateDetailedReadme as generateDetailedReadmeCore } from "@/ai/flows/generate-detailed-readme-flow"; // New import
 
 export type FullReadmeData = {
   projectName: string;
@@ -20,14 +21,13 @@ export type FullReadmeData = {
 type ProcessInput = {
   repoUrl?: string;
   codeContent?: string;
-  userPrompt?: string; // New field for prompt-based generation
+  userPrompt?: string;
 };
 
-export async function processGitHubRepo( // Consider renaming this function if its scope expands
+export async function processGitHubRepo(
   input: ProcessInput
 ): Promise<FullReadmeData | { error: string }> {
   try {
-    // Handle prompt-based generation first
     if (input.userPrompt) {
       if (!input.userPrompt.trim()) {
         return { error: "User prompt cannot be empty." };
@@ -36,21 +36,18 @@ export async function processGitHubRepo( // Consider renaming this function if i
       if (!readmeDataFromPrompt) {
         return { error: "Failed to generate README from prompt." };
       }
-      return readmeDataFromPrompt; // This directly returns FullReadmeData
+      return readmeDataFromPrompt;
     }
 
-    // Existing logic for URL or code content
     let repoDescription: string;
     let fileContentsForSections: string;
     let effectiveRepoUrl: string | undefined = input.repoUrl;
     let sourceProjectName: string | undefined = undefined;
 
-
     if (input.repoUrl) {
       if (!input.repoUrl.startsWith("https://github.com/")) {
         return { error: "Invalid GitHub repository URL." };
       }
-      // Extract a potential project name from the URL as a fallback
       try {
         const pathParts = new URL(input.repoUrl).pathname.split('/');
         if (pathParts.length >= 2 && pathParts[1]) {
@@ -108,15 +105,13 @@ export async function processGitHubRepo( // Consider renaming this function if i
     }
 
     const projectNameOutput = await suggestProjectName({ repoDescription });
-    let projectName = sourceProjectName; // Use name from URL if available
+    let projectName = sourceProjectName;
     if (projectNameOutput && projectNameOutput.projectName) {
       projectName = projectNameOutput.projectName;
     }
     if (!projectName) {
-         // Fallback if AI suggestion fails and no URL name
         projectName = "My Awesome Project";
     }
-
 
     const readmeSectionsOutput = await generateReadmeSections({
       repoUrl: effectiveRepoUrl,
@@ -149,5 +144,37 @@ export async function processGitHubRepo( // Consider renaming this function if i
       return { error: "The AI model is currently overloaded or unavailable. Please try again in a few moments." };
     }
     return { error: e.message || "An unexpected error occurred during README generation." };
+  }
+}
+
+export async function generateDetailedReadme(
+  currentData: FullReadmeData
+): Promise<FullReadmeData | { error: string }> {
+  try {
+    if (!currentData) {
+      return { error: "Current README data must be provided to generate details." };
+    }
+
+    const detailedOutput = await generateDetailedReadmeCore({
+      projectName: currentData.projectName,
+      projectDescription: currentData.projectDescription,
+      currentFeatures: currentData.features,
+      currentTechnologiesUsed: currentData.technologiesUsed,
+      currentSetupInstructions: currentData.setupInstructions,
+      currentFolderStructure: currentData.folderStructure,
+    });
+
+    if (!detailedOutput) {
+      return { error: "Failed to generate detailed README content." };
+    }
+
+    return detailedOutput;
+
+  } catch (e: any) {
+    console.error("Error generating detailed README:", e);
+     if (e.message && (e.message.includes("503 Service Unavailable") || e.message.includes("model is overloaded") || e.message.includes("upstream connect error"))) {
+      return { error: "The AI model is currently overloaded or unavailable for generating details. Please try again in a few moments." };
+    }
+    return { error: e.message || "An unexpected error occurred while generating detailed README." };
   }
 }

@@ -1,17 +1,20 @@
+
 // src/components/readme-display.tsx
 "use client";
 
-import React from 'react'; // Added import
+import React from 'react';
 import type { FullReadmeData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, FileText, Loader2 } from "lucide-react"; // Added FileText, Loader2
 import { useState, useEffect } from "react";
 
 interface ReadmeDisplayProps {
   data: FullReadmeData;
+  onGenerateDetails: (currentData: FullReadmeData) => Promise<void>; // Callback to trigger detailed generation
+  isGeneratingDetails: boolean; // Loading state from parent
 }
 
 // A simple component to render markdown-like text.
@@ -23,18 +26,18 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
     if (line.match(/^#{1,6}\s/)) {
         const level = line.match(/^#+/)![0].length;
         const text = line.replace(/^#+\s/, '');
-        const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements; // Start from h3 for these sections
+        const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements;
         let headingClass = "font-semibold";
-        if (level === 1) headingClass += " text-lg mt-3 mb-1.5"; // ##
-        else if (level === 2) headingClass += " text-base mt-2.5 mb-1"; // ###
-        else headingClass += " text-sm mt-2 mb-0.5"; // ####+
+        if (level === 1) headingClass += " text-lg mt-3 mb-1.5"; 
+        else if (level === 2) headingClass += " text-base mt-2.5 mb-1";
+        else headingClass += " text-sm mt-2 mb-0.5"; 
         return <Tag key={index} className={headingClass}>{text}</Tag>;
     }
     // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       return <li key={index} className="ml-5 list-disc space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
-    // Code blocks (simple heuristic for ``` blocks)
+    // Code blocks
     if (line.trim().startsWith('```')) {
       const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
       const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
@@ -60,11 +63,9 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
         return null; 
     }
     
-    // Indented lines for folder structure or simple code
     if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
       return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-sm bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
     }
-    // Default paragraphs
     return <p key={index} className="mb-2 leading-relaxed">{line || <>&nbsp;</>}</p>;
   });
 
@@ -95,7 +96,7 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
 };
 
 
-export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
+export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails }: ReadmeDisplayProps) {
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -106,12 +107,11 @@ export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
 
 
   const formatReadmeForCopy = (readmeData: FullReadmeData): string => {
-    // Basic Markdown formatting for copy
     let text = `# ${readmeData.projectName}\n\n`;
     text += `## Project Description\n${readmeData.projectDescription}\n\n`;
     text += `## Features\n${readmeData.features}\n\n`;
     text += `## Technologies Used\n${readmeData.technologiesUsed}\n\n`;
-    text += `## Folder Structure\n\`\`\`\n${readmeData.folderStructure}\n\`\`\`\n\n`;
+    text += `## Folder Structure\n\`\`\`\n${readmeData.folderStructure}\n\`\`\`\n\n`; // Added backticks for code block
     text += `## Setup Instructions\n${readmeData.setupInstructions}\n`;
     return text.trim();
   };
@@ -138,6 +138,11 @@ export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
       });
   };
 
+  const handleMoreDetailClick = () => {
+    if (!mounted || isGeneratingDetails) return;
+    onGenerateDetails(data);
+  };
+
   if (!mounted) {
     return null; 
   }
@@ -148,10 +153,26 @@ export function ReadmeDisplay({ data }: ReadmeDisplayProps) {
         <CardTitle className="text-2xl font-bold font-headline">
           Generated README.md
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={handleCopy} className="bg-accent text-accent-foreground hover:bg-accent/90">
-          {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-          {isCopied ? "Copied!" : "Copy"}
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleMoreDetailClick} 
+            disabled={isGeneratingDetails}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+          >
+            {isGeneratingDetails ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-2 h-4 w-4" />
+            )}
+            {isGeneratingDetails ? "Generating..." : "More Detail README"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopy} className="bg-accent text-accent-foreground hover:bg-accent/90">
+            {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+            {isCopied ? "Copied!" : "Copy"}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[500px] w-full rounded-md border p-4 bg-background">

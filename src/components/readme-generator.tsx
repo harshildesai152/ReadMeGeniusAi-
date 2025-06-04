@@ -2,7 +2,7 @@
 // src/components/readme-generator.tsx
 "use client";
 
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, FormEvent } from "react"; // Removed ChangeEvent
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste } from "lucide-react"; // Changed UploadCloud to ClipboardPaste
-import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste } from "lucide-react";
+import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions"; // Added generateDetailedReadme
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,21 +25,20 @@ interface SavedReadmeItem extends FullReadmeData {
   savedDate: string;
   inputTypeUsed?: InputType;
   originalInput?: string;
-  // originalFileNames is removed as we no longer upload files directly in this component
 }
-
-// Removed UploadedFile interface as it's no longer needed here
 
 export function ReadmeGenerator() {
   const [inputType, setInputType] = useState<InputType>("url");
   const [repoUrl, setRepoUrl] = useState<string>("");
   const [userPrompt, setUserPrompt] = useState<string>("");
-  const [pastedCode, setPastedCode] = useState<string>(""); // New state for pasted code
+  const [pastedCode, setPastedCode] = useState<string>("");
   const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isGeneratingDetails, setIsGeneratingDetails] = useState<boolean>(false); // New loading state for details
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [savedReadmes, setSavedReadmes] = useState<SavedReadmeItem[]>([]);
+  const [currentReadmeIdForDetail, setCurrentReadmeIdForDetail] = useState<string | null>(null); // To track active README ID
   const { toast } = useToast();
   const router = useRouter();
 
@@ -64,7 +63,7 @@ export function ReadmeGenerator() {
             setSavedReadmes([]);
           }
         } else {
-          setSavedReadmes([]);
+          setSavedReadmes([]); // Should not happen if loggedIn is true
         }
       } else {
         setSavedReadmes([]);
@@ -79,20 +78,17 @@ export function ReadmeGenerator() {
         const userEmail = getCurrentUserEmail();
         if (userEmail) {
           const userSavedReadmesKey = `savedReadmes_${userEmail}`;
-          if (savedReadmes.length > 0) {
+          if (savedReadmes.length > 0 || localStorage.getItem(userSavedReadmesKey)) { // Ensure removal if array becomes empty
             localStorage.setItem(userSavedReadmesKey, JSON.stringify(savedReadmes));
-          } else {
-            localStorage.removeItem(userSavedReadmesKey);
           }
         }
       }
     }
   }, [savedReadmes, mounted]);
 
-  // Removed handleFileChange, formatFileSize, handleRemoveUploadedFile as file uploads are removed from this component
 
-  const handleSaveReadme = (readmeToSave: FullReadmeData, inputTypeUsed: InputType, originalInput: string) => {
-    if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
+  const handleSaveReadme = (readmeToSave: FullReadmeData, inputTypeUsed: InputType, originalInput: string): SavedReadmeItem | undefined => {
+    if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return undefined;
 
     const newReadme: SavedReadmeItem = {
       ...readmeToSave,
@@ -101,16 +97,24 @@ export function ReadmeGenerator() {
       inputTypeUsed,
       originalInput,
     };
-    setSavedReadmes((prev) => [newReadme, ...prev.slice(0, 19)]);
+    setSavedReadmes((prev) => {
+      const updatedReadmes = [newReadme, ...prev.slice(0, 19)];
+      return updatedReadmes;
+    });
     toast({
       title: "README Automatically Saved!",
       description: `${newReadme.projectName} has been added to your saved list.`,
     });
+    return newReadme;
   };
 
   const handleDeleteReadme = (id: string) => {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setSavedReadmes((prev) => prev.filter((item) => item.id !== id));
+    if (generatedReadmeData && currentReadmeIdForDetail === id) {
+        setGeneratedReadmeData(null); // Clear display if deleted item was shown
+        setCurrentReadmeIdForDetail(null);
+    }
     toast({
       title: "README Deleted",
       description: "The saved README has been removed.",
@@ -121,6 +125,7 @@ export function ReadmeGenerator() {
   const handleLoadReadme = (readmeItem: SavedReadmeItem) => {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setGeneratedReadmeData(readmeItem);
+    setCurrentReadmeIdForDetail(readmeItem.id); // Set the ID of the loaded README
     setError(null);
     toast({
       title: "README Loaded",
@@ -147,13 +152,15 @@ ${readmeItem.features}
 ${readmeItem.technologiesUsed}
 
 ## Folder Structure
+\`\`\`
 ${readmeItem.folderStructure}
+\`\`\`
 
 ## Setup Instructions
 ${readmeItem.setupInstructions}
     `.trim();
 
-    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-8' });
+    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     const sanitizedProjectName = readmeItem.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -187,6 +194,7 @@ ${readmeItem.setupInstructions}
     setError(null);
     setIsLoading(true);
     setGeneratedReadmeData(null);
+    setCurrentReadmeIdForDetail(null); // Reset active ID on new generation
 
     let result;
     let originalInputValue = "";
@@ -217,7 +225,7 @@ ${readmeItem.setupInstructions}
         setIsLoading(false);
         return;
       }
-      originalInputValue = pastedCode;
+      originalInputValue = pastedCode; // Note: this could be large, consider implications if stored
       result = await processGitHubRepo({ codeContent: pastedCode });
     } else if (inputType === "prompt") {
       if (!userPrompt.trim()) {
@@ -234,13 +242,53 @@ ${readmeItem.setupInstructions}
       setGeneratedReadmeData(null);
     } else if (result) {
       setGeneratedReadmeData(result);
-      handleSaveReadme(result, inputType, originalInputValue); // Removed fileNamesForSave
+      const savedItem = handleSaveReadme(result, inputType, originalInputValue);
+      if (savedItem) {
+        setCurrentReadmeIdForDetail(savedItem.id);
+      }
     } else {
       setError("An unexpected error occurred.");
       setGeneratedReadmeData(null);
     }
     setIsLoading(false);
   };
+
+  const handleGenerateDetails = async (currentData: FullReadmeData) => {
+    if (!mounted || !isLoggedIn() || !currentData) return;
+
+    setError(null);
+    setIsGeneratingDetails(true);
+
+    const result = await generateDetailedReadme(currentData);
+
+    if (result && "error" in result) {
+      setError(result.error);
+      toast({ title: "Detail Generation Failed", description: result.error, variant: "destructive" });
+    } else if (result) {
+      setGeneratedReadmeData(result);
+      // Update the corresponding saved README if an ID is available
+      if (currentReadmeIdForDetail) {
+        setSavedReadmes(prev => prev.map(item =>
+          item.id === currentReadmeIdForDetail
+            ? { ...item, ...result, savedDate: new Date().toISOString() } // Update all fields from result
+            : item
+        ));
+        toast({ title: "README Enhanced & Saved!", description: "The detailed README has been updated and saved to your list." });
+      } else {
+         // This case should ideally not happen if currentReadmeIdForDetail is set upon initial generation/load
+         // If it does, it means the current displayed README wasn't from the saved list or just generated.
+         // We can still save it as a new entry, or just display.
+         // For now, let's just display and inform user it's not auto-saved as a "new" version from this action.
+         // A better approach would be to ensure currentReadmeIdForDetail is always valid for displayed data that can be detailed.
+        toast({ title: "README Enhanced!", description: "The README has been updated with more details." });
+      }
+    } else {
+      setError("An unexpected error occurred while generating details.");
+      toast({ title: "Detail Generation Failed", description: "An unknown error occurred.", variant: "destructive" });
+    }
+    setIsGeneratingDetails(false);
+  };
+
 
   if (!mounted) {
     return (
@@ -280,7 +328,8 @@ ${readmeItem.setupInstructions}
                 setInputType(value as InputType);
                 setError(null);
                 setGeneratedReadmeData(null);
-                setPastedCode(""); // Reset pasted code when changing input type
+                setCurrentReadmeIdForDetail(null);
+                setPastedCode(""); 
               }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 justify-center"
               aria-label="Input method"
@@ -312,7 +361,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setRepoUrl(e.target.value)}
                   className="pl-10 text-base"
                   aria-label="GitHub Repository URL"
-                  disabled={isLoading}
+                  disabled={isLoading || isGeneratingDetails}
                 />
               </div>
             )}
@@ -325,7 +374,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setPastedCode(e.target.value)}
                   className="pl-10 text-base min-h-[200px]"
                   aria-label="Pasted Code Content"
-                  disabled={isLoading}
+                  disabled={isLoading || isGeneratingDetails}
                 />
                  <p className="mt-1 text-xs text-muted-foreground">
                     Paste one or more code snippets. The AI will analyze the combined content.
@@ -341,11 +390,11 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setUserPrompt(e.target.value)}
                   className="pl-10 text-base min-h-[150px]"
                   aria-label="User Prompt for README Generation"
-                  disabled={isLoading}
+                  disabled={isLoading || isGeneratingDetails}
                 />
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -383,17 +432,17 @@ ${readmeItem.setupInstructions}
                         <p className="font-semibold text-primary truncate" title={item.projectName}>{item.projectName}</p>
                         <p className="text-xs text-muted-foreground">
                           Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString()}
-                          {item.inputTypeUsed && ` (via ${item.inputTypeUsed}${item.inputTypeUsed === 'code' ? '' : ''})`}
+                          {item.inputTypeUsed && ` (via ${item.inputTypeUsed}${item.inputTypeUsed === 'code' && item.originalInput && item.originalInput.length > 50 ? ' (pasted code snippet)' : ''})`}
                         </p>
                       </div>
                       <div className="flex items-center space-x-1 sm:space-x-2 ml-2 flex-shrink-0">
-                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README">
+                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README" disabled={isGeneratingDetails || isLoading}>
                           <Eye className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">View</span>
                         </Button>
-                         <Button onClick={() => handleDownloadReadme(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README">
+                         <Button onClick={() => handleDownloadReadme(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README" disabled={isGeneratingDetails || isLoading}>
                           <Download className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Download</span>
                         </Button>
-                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README">
+                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README" disabled={isGeneratingDetails || isLoading}>
                           <Trash2 className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </div>
@@ -408,7 +457,11 @@ ${readmeItem.setupInstructions}
 
       {generatedReadmeData && !isLoading && (
          <div id="readme-display-card">
-            <ReadmeDisplay data={generatedReadmeData} />
+            <ReadmeDisplay 
+              data={generatedReadmeData} 
+              onGenerateDetails={handleGenerateDetails}
+              isGeneratingDetails={isGeneratingDetails} 
+            />
          </div>
       )}
     </div>
