@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, AlertTriangle, UploadCloud, FileText, Download, Trash2, Home } from "lucide-react";
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface FileDetail {
   id: string;
@@ -156,6 +157,8 @@ export default function PastFilesPage() {
 
     for (const fileDetail of selectedFileDetails) {
       try {
+        // For each file, call the AI to generate README sections
+        // Construct the input for processGitHubRepo for a single file's content
         const result = await processGitHubRepo({ codeContent: fileDetail.content });
 
         if (result && "error" in result) {
@@ -261,17 +264,20 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
       <div className="container mx-auto flex flex-col items-center gap-12 w-full max-w-4xl">
         <header className="w-full flex justify-between items-start">
           <div className="text-center flex-grow">
-            <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory & README Generator</h1>
+            <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
             <p className="mt-3 text-lg text-muted-foreground">
               Upload project files to generate individual READMEs for each.
             </p>
           </div>
-          <Link href="/" passHref>
-            <Button variant="outline" size="lg" className="ml-4 flex-shrink-0">
-              <Home className="mr-2 h-5 w-5" />
-              Home
-            </Button>
-          </Link>
+          <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
+            <ThemeToggle />
+            <Link href="/" passHref>
+              <Button variant="outline" size="lg" className="flex-shrink-0">
+                <Home className="mr-2 h-5 w-5" />
+                Home
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <Card className="w-full shadow-xl">
@@ -412,5 +418,3 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
     </main>
   );
 }
-
-    
