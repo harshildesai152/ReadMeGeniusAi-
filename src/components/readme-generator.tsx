@@ -10,13 +10,25 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle } from "lucide-react";
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, FileText as FileTextIcon } from "lucide-react"; // Renamed FileText to FileTextIcon
 import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isLoggedIn, getCurrentUserEmail } from "@/lib/auth/storage";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 
 type InputType = "url" | "code" | "prompt";
 
@@ -26,6 +38,57 @@ interface SavedReadmeItem extends FullReadmeData {
   inputTypeUsed?: InputType;
   originalInput?: string;
 }
+
+// Helper function to convert a single README item to a simplified HTML string
+const readmeToSimplifiedHtml = (readme: SavedReadmeItem): string => {
+  let html = `<div style="font-family: Arial, sans-serif; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; page-break-inside: avoid;">`;
+
+  html += `<h1 style="font-size: 22px; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">${readme.projectName || 'Untitled Project'}</h1>`;
+
+  const formatSection = (title: string, content: string | undefined, isPreformatted = false) => {
+    if (!content || content.trim() === "" || content.trim().toLowerCase() === "not applicable" || content.trim().toLowerCase() === "n/a") {
+      return `<p style="font-size: 14px; color: #7f8c8d; font-style: italic;">${title}: Not available</p>`;
+    }
+    let sectionHtml = `<div style="margin-top: 15px;">`;
+    sectionHtml += `<h2 style="font-size: 18px; color: #34495e; margin-bottom: 8px;">${title}</h2>`;
+    if (isPreformatted) {
+      sectionHtml += `<pre style="background-color: #f9f9f9; border: 1px solid #ecf0f1; padding: 10px; border-radius: 4px; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; color: #555;">${content}</pre>`;
+    } else {
+      // Basic Markdown-like list handling for HTML
+      const lines = content.split('\n');
+      let listOpen = false;
+      const processedContent = lines.map(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+          if (!listOpen) {
+            listOpen = true;
+            return `<ul><li>${trimmedLine.substring(2)}</li>`;
+          }
+          return `<li>${trimmedLine.substring(2)}</li>`;
+        } else {
+          if (listOpen) {
+            listOpen = false;
+            return `</ul><p style="font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 5px;">${line}</p>`;
+          }
+          return `<p style="font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 5px;">${line}</p>`;
+        }
+      }).join('');
+      sectionHtml += listOpen ? processedContent + '</ul>' : processedContent;
+    }
+    sectionHtml += `</div>`;
+    return sectionHtml;
+  };
+
+  html += formatSection("Project Description", readme.projectDescription);
+  html += formatSection("Features", readme.features);
+  html += formatSection("Technologies Used", readme.technologiesUsed);
+  html += formatSection("Folder Structure", readme.folderStructure, true);
+  html += formatSection("Setup Instructions", readme.setupInstructions);
+
+  html += `</div>`;
+  return html;
+};
+
 
 export function ReadmeGenerator() {
   const [inputType, setInputType] = useState<InputType>("url");
@@ -40,9 +103,12 @@ export function ReadmeGenerator() {
   const [savedReadmes, setSavedReadmes] = useState<SavedReadmeItem[]>([]);
   const [currentReadmeIdForDetail, setCurrentReadmeIdForDetail] = useState<string | null>(null);
   
-  // State for editing
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editableReadmeData, setEditableReadmeData] = useState<FullReadmeData | null>(null);
+
+  const [selectedReadmeIdsForPdf, setSelectedReadmeIdsForPdf] = useState<string[]>([]);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+
 
   const { toast } = useToast();
   const router = useRouter();
@@ -103,7 +169,7 @@ export function ReadmeGenerator() {
       originalInput,
     };
     setSavedReadmes((prev) => {
-      const updatedReadmes = [newReadme, ...prev.slice(0, 19)]; // Keep max 20 saved items
+      const updatedReadmes = [newReadme, ...prev.slice(0, 19)]; 
       return updatedReadmes;
     });
     toast({
@@ -116,6 +182,7 @@ export function ReadmeGenerator() {
   const handleDeleteReadme = (id: string) => {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setSavedReadmes((prev) => prev.filter((item) => item.id !== id));
+    setSelectedReadmeIdsForPdf(prev => prev.filter(selectedId => selectedId !== id)); // Also remove from selection
     if (generatedReadmeData && currentReadmeIdForDetail === id) {
         setGeneratedReadmeData(null); 
         setCurrentReadmeIdForDetail(null);
@@ -131,7 +198,7 @@ export function ReadmeGenerator() {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setGeneratedReadmeData(readmeItem);
     setCurrentReadmeIdForDetail(readmeItem.id); 
-    setIsEditing(false); // Ensure not in edit mode when loading
+    setIsEditing(false); 
     setEditableReadmeData(null);
     setError(null);
     toast({
@@ -144,7 +211,7 @@ export function ReadmeGenerator() {
     }
   };
 
-  const handleDownloadReadme = (readmeItem: FullReadmeData) => { // Changed to FullReadmeData
+  const handleDownloadReadmeMd = (readmeItem: FullReadmeData) => { 
     if (!mounted) return;
     const readmeText = `
 # ${readmeItem.projectName}
@@ -167,7 +234,7 @@ ${readmeItem.folderStructure}
 ${readmeItem.setupInstructions}
     `.trim();
 
-    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-8' });
+    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     const sanitizedProjectName = readmeItem.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -179,7 +246,7 @@ ${readmeItem.setupInstructions}
     URL.revokeObjectURL(link.href);
 
     toast({
-      title: "README Downloading...",
+      title: "README.md Downloading...",
       description: `${link.download} will be downloaded.`,
     });
   };
@@ -300,7 +367,7 @@ ${readmeItem.setupInstructions}
     if (generatedReadmeData) {
       setEditableReadmeData({ ...generatedReadmeData });
       setIsEditing(true);
-      setError(null); // Clear any previous errors
+      setError(null); 
     }
   };
 
@@ -327,8 +394,6 @@ ${readmeItem.setupInstructions}
         ));
         toast({ title: "Edits Saved!", description: "Your changes to the README have been saved." });
       } else {
-        // If there's no currentReadmeIdForDetail, it means it was a new generation not yet saved
-        // or an old one loaded without an ID properly set. We can save it as a new entry.
         const savedItem = handleSaveReadme(editableReadmeData, inputType, 
             inputType === 'url' ? repoUrl : (inputType === 'code' ? pastedCode : userPrompt)
         );
@@ -346,6 +411,76 @@ ${readmeItem.setupInstructions}
     setIsEditing(false);
     setEditableReadmeData(null);
     toast({ title: "Edits Cancelled", description: "Your changes were not saved.", variant: "default" });
+  };
+
+  const handlePdfSelectionChange = (readmeId: string, checked: boolean | "indeterminate") => {
+    if (checked === true) {
+      setSelectedReadmeIdsForPdf(prev => [...prev, readmeId]);
+    } else {
+      setSelectedReadmeIdsForPdf(prev => prev.filter(id => id !== readmeId));
+    }
+  };
+
+  const generateAndDownloadPdf = async (readmesToProcess: SavedReadmeItem[], fileName: string) => {
+    if (!mounted || readmesToProcess.length === 0) {
+      toast({ title: "No READMEs to Export", description: "Please select at least one README or use 'Merge All'.", variant: "destructive" });
+      return;
+    }
+    setIsGeneratingPdf(true);
+    toast({ title: "Generating PDF...", description: "This may take a moment." });
+
+    try {
+      const combinedHtml = readmesToProcess.map(readme => readmeToSimplifiedHtml(readme)).join('');
+      
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'absolute';
+      pdfContainer.style.left = '-9999px'; // Position off-screen
+      pdfContainer.style.width = '800px'; // A4-like width for better canvas rendering
+      pdfContainer.innerHTML = combinedHtml;
+      document.body.appendChild(pdfContainer);
+
+      const canvas = await html2canvas(pdfContainer, {
+        scale: 2, // Increase scale for better quality
+        useCORS: true,
+        logging: false,
+        width: pdfContainer.scrollWidth,
+        height: pdfContainer.scrollHeight,
+        windowWidth: pdfContainer.scrollWidth,
+        windowHeight: pdfContainer.scrollHeight,
+      });
+      
+      document.body.removeChild(pdfContainer);
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px', // Use pixels for easier coordination with canvas
+        format: [canvas.width, canvas.height] // Set PDF page size to canvas size
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`${fileName}.pdf`);
+
+      toast({ title: "PDF Generated!", description: `${fileName}.pdf has been downloaded.` });
+    } catch (e: any) {
+      console.error("PDF Generation Error:", e);
+      toast({ title: "PDF Generation Failed", description: e.message || "An unexpected error occurred.", variant: "destructive" });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleDownloadAllAsPdf = () => {
+    generateAndDownloadPdf(savedReadmes, "all_readmes_merged");
+  };
+
+  const handleDownloadSelectedAsPdf = () => {
+    const selectedReadmes = savedReadmes.filter(readme => selectedReadmeIdsForPdf.includes(readme.id));
+    if (selectedReadmes.length === 0) {
+      toast({ title: "No READMEs Selected", description: "Please select at least one README to download.", variant: "destructive"});
+      return;
+    }
+    generateAndDownloadPdf(selectedReadmes, "selected_readmes_merged");
   };
 
 
@@ -463,9 +598,6 @@ ${readmeItem.setupInstructions}
               onValueChange={(value: string) => {
                 setInputType(value as InputType);
                 setError(null);
-                // Do not clear generatedReadmeData here if we want edit to persist across input type changes before generation
-                // setGeneratedReadmeData(null); 
-                // setCurrentReadmeIdForDetail(null);
                 setPastedCode(""); 
               }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 justify-center"
@@ -498,7 +630,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setRepoUrl(e.target.value)}
                   className="pl-10 text-base"
                   aria-label="GitHub Repository URL"
-                  disabled={isLoading || isGeneratingDetails || isEditing}
+                  disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
               </div>
             )}
@@ -511,7 +643,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setPastedCode(e.target.value)}
                   className="pl-10 text-base min-h-[200px]"
                   aria-label="Pasted Code Content"
-                  disabled={isLoading || isGeneratingDetails || isEditing}
+                  disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
                  <p className="mt-1 text-xs text-muted-foreground">
                     Paste one or more code snippets. The AI will analyze the combined content.
@@ -527,11 +659,11 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setUserPrompt(e.target.value)}
                   className="pl-10 text-base min-h-[150px]"
                   aria-label="User Prompt for README Generation"
-                  disabled={isLoading || isGeneratingDetails || isEditing}
+                  disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails || isEditing}>
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -545,7 +677,7 @@ ${readmeItem.setupInstructions}
         </CardContent>
       </Card>
 
-      {error && !isEditing && ( // Only show general error if not in edit mode
+      {error && !isEditing && ( 
         <Alert variant="destructive" className="shadow-md">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -555,9 +687,29 @@ ${readmeItem.setupInstructions}
 
       {isLoggedIn() && getCurrentUserEmail() && savedReadmes.length > 0 && !isEditing && (
         <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold font-headline">Saved READMEs</CardTitle>
-            <CardDescription>View, download, or delete your previously generated READMEs. (Visible only to you)</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+                <CardTitle className="text-2xl font-bold font-headline">Saved READMEs</CardTitle>
+                <CardDescription>View, download, or delete your previously generated READMEs. (Visible only to you)</CardDescription>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={isGeneratingPdf || isLoading || isGeneratingDetails || isEditing}>
+                  {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileTextIcon className="mr-2 h-4 w-4" />}
+                  Generate PDF
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>PDF Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDownloadAllAsPdf} disabled={isGeneratingPdf || savedReadmes.length === 0}>
+                  Merge All & Download
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadSelectedAsPdf} disabled={isGeneratingPdf || selectedReadmeIdsForPdf.length === 0}>
+                  Download Selected
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[300px] w-full rounded-md border p-2">
@@ -565,21 +717,30 @@ ${readmeItem.setupInstructions}
                 {savedReadmes.map((item) => (
                   <li key={item.id} className="p-3 bg-muted/50 rounded-md shadow-sm hover:bg-muted transition-colors">
                     <div className="flex justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-primary truncate" title={item.projectName}>{item.projectName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString()}
-                          {item.inputTypeUsed && ` (via ${item.inputTypeUsed}${item.inputTypeUsed === 'code' && item.originalInput && item.originalInput.length > 50 ? ' (pasted code snippet)' : ''})`}
-                        </p>
+                      <div className="flex items-center flex-1 min-w-0 space-x-3">
+                        <Checkbox
+                          id={`select-pdf-${item.id}`}
+                          checked={selectedReadmeIdsForPdf.includes(item.id)}
+                          onCheckedChange={(checked) => handlePdfSelectionChange(item.id, checked)}
+                          aria-label={`Select ${item.projectName} for PDF export`}
+                          disabled={isGeneratingPdf || isLoading || isGeneratingDetails || isEditing}
+                        />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-primary truncate" title={item.projectName}>{item.projectName}</p>
+                            <p className="text-xs text-muted-foreground">
+                            Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString()}
+                            {item.inputTypeUsed && ` (via ${item.inputTypeUsed}${item.inputTypeUsed === 'code' && item.originalInput && item.originalInput.length > 50 ? ' (pasted code snippet)' : ''})`}
+                            </p>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-1 sm:space-x-2 ml-2 flex-shrink-0">
-                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README" disabled={isGeneratingDetails || isLoading}>
+                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
                           <Eye className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">View</span>
                         </Button>
-                         <Button onClick={() => handleDownloadReadme(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README" disabled={isGeneratingDetails || isLoading}>
-                          <Download className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Download</span>
+                         <Button onClick={() => handleDownloadReadmeMd(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README.md" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
+                          <Download className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">.MD</span>
                         </Button>
-                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README" disabled={isGeneratingDetails || isLoading}>
+                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
                           <Trash2 className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </div>
@@ -588,6 +749,11 @@ ${readmeItem.setupInstructions}
                 ))}
               </ul>
             </ScrollArea>
+             {savedReadmes.length > 0 && (
+                 <p className="text-xs text-muted-foreground mt-2">
+                    {selectedReadmeIdsForPdf.length} README(s) selected for PDF export.
+                </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -598,7 +764,7 @@ ${readmeItem.setupInstructions}
               data={generatedReadmeData} 
               onGenerateDetails={handleGenerateDetails}
               isGeneratingDetails={isGeneratingDetails} 
-              onEditRequest={handleEditRequest} // Pass the edit request handler
+              onEditRequest={handleEditRequest} 
             />
          </div>
       )}
