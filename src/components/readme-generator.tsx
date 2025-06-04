@@ -15,7 +15,7 @@ import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { isLoggedIn } from "@/lib/auth/storage";
+import { isLoggedIn, getCurrentUserEmail } from "@/lib/auth/storage"; // Added getCurrentUserEmail
 import { useRouter } from "next/navigation";
 
 type InputType = "url" | "code" | "prompt";
@@ -37,7 +37,6 @@ interface UploadedFile {
 export function ReadmeGenerator() {
   const [inputType, setInputType] = useState<InputType>("url");
   const [repoUrl, setRepoUrl] = useState<string>("");
-  // const [codeContent, setCodeContent] = useState<string>(""); // Replaced by uploadedFiles
   const [userPrompt, setUserPrompt] = useState<string>("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
@@ -51,23 +50,47 @@ export function ReadmeGenerator() {
   useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined") {
-      const storedReadmes = localStorage.getItem("savedReadmes");
-      if (storedReadmes) {
-        try {
-          setSavedReadmes(JSON.parse(storedReadmes));
-        } catch (e) {
-          console.error("Failed to parse saved READMEs from localStorage", e);
-          localStorage.removeItem("savedReadmes");
+      const loggedIn = isLoggedIn();
+      if (loggedIn) {
+        const userEmail = getCurrentUserEmail();
+        if (userEmail) {
+          const userSavedReadmesKey = `savedReadmes_${userEmail}`;
+          const storedReadmes = localStorage.getItem(userSavedReadmesKey);
+          if (storedReadmes) {
+            try {
+              setSavedReadmes(JSON.parse(storedReadmes));
+            } catch (e) {
+              console.error(`Failed to parse saved READMEs for ${userEmail} from localStorage`, e);
+              localStorage.removeItem(userSavedReadmesKey);
+              setSavedReadmes([]);
+            }
+          } else {
+            setSavedReadmes([]); // No READMEs saved for this user yet
+          }
+        } else {
+          setSavedReadmes([]); // Should not happen if loggedIn is true, but good practice
         }
+      } else {
+        setSavedReadmes([]); // Not logged in, so no READMEs to display
       }
     }
-  }, []);
+  }, []); // Runs once on mount
 
   useEffect(() => {
-    if (mounted && savedReadmes.length > 0) {
-      localStorage.setItem("savedReadmes", JSON.stringify(savedReadmes));
-    } else if (mounted && savedReadmes.length === 0) {
-      localStorage.removeItem("savedReadmes");
+    if (mounted) {
+      const loggedIn = isLoggedIn();
+      if (loggedIn) {
+        const userEmail = getCurrentUserEmail();
+        if (userEmail) {
+          const userSavedReadmesKey = `savedReadmes_${userEmail}`;
+          if (savedReadmes.length > 0) {
+            localStorage.setItem(userSavedReadmesKey, JSON.stringify(savedReadmes));
+          } else {
+            localStorage.removeItem(userSavedReadmesKey); // Clear if list becomes empty for this user
+          }
+        }
+      }
+      // If not logged in, don't attempt to save to localStorage
     }
   }, [savedReadmes, mounted]);
 
@@ -103,14 +126,14 @@ export function ReadmeGenerator() {
     try {
       const results = await Promise.all(fileReadPromises);
       setUploadedFiles(results);
-      setError(null); // Clear previous errors
+      setError(null); 
     } catch (e) {
       console.error("Error reading files:", e);
       setError("Error reading one or more files. Please ensure they are text files.");
       setUploadedFiles([]);
     }
      if (event.target) {
-      event.target.value = ""; // Allow re-uploading the same file(s)
+      event.target.value = ""; 
     }
   };
 
@@ -129,7 +152,8 @@ export function ReadmeGenerator() {
 
 
   const handleSaveReadme = (readmeToSave: FullReadmeData, inputTypeUsed: InputType, originalInput: string, originalFileNames?: string[]) => {
-    if (!mounted) return;
+    if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return; // Ensure user is logged in
+    
     const newReadme: SavedReadmeItem = {
       ...readmeToSave,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -138,7 +162,7 @@ export function ReadmeGenerator() {
       originalInput,
       originalFileNames,
     };
-    setSavedReadmes((prev) => [newReadme, ...prev.slice(0, 19)]); // Keep latest 20
+    setSavedReadmes((prev) => [newReadme, ...prev.slice(0, 19)]); // Keep latest 20 per user
     toast({
       title: "README Automatically Saved!",
       description: `${newReadme.projectName} has been added to your saved list.`,
@@ -146,7 +170,7 @@ export function ReadmeGenerator() {
   };
 
   const handleDeleteReadme = (id: string) => {
-    if (!mounted) return;
+    if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setSavedReadmes((prev) => prev.filter((item) => item.id !== id));
     toast({
       title: "README Deleted",
@@ -156,7 +180,7 @@ export function ReadmeGenerator() {
   };
 
   const handleLoadReadme = (readmeItem: SavedReadmeItem) => {
-    if (!mounted) return;
+    if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setGeneratedReadmeData(readmeItem);
     setError(null);
     toast({
@@ -256,7 +280,7 @@ ${readmeItem.setupInstructions}
         return;
       }
       const combinedCodeContent = uploadedFiles.map(file => `// FILE_START: ${file.name}\n\n${file.content}\n\n// FILE_END: ${file.name}`).join('\n\n---\n\n');
-      originalInputValue = combinedCodeContent; // Or just a summary of filenames
+      originalInputValue = `Uploaded files: ${uploadedFiles.map(f => f.name).join(', ')}`; 
       fileNamesForSave = uploadedFiles.map(f => f.name);
       result = await processGitHubRepo({ codeContent: combinedCodeContent });
     } else if (inputType === "prompt") {
@@ -433,11 +457,11 @@ ${readmeItem.setupInstructions}
         </Alert>
       )}
       
-      {savedReadmes.length > 0 && (
+      {isLoggedIn() && getCurrentUserEmail() && savedReadmes.length > 0 && (
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold font-headline">Saved READMEs</CardTitle>
-            <CardDescription>View, download, or delete your previously generated READMEs.</CardDescription>
+            <CardDescription>View, download, or delete your previously generated READMEs. (Visible only to you)</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[300px] w-full rounded-md border p-2">
@@ -480,3 +504,4 @@ ${readmeItem.setupInstructions}
     </div>
   );
 }
+
