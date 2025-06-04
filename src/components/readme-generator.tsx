@@ -2,7 +2,7 @@
 // src/components/readme-generator.tsx
 "use client";
 
-import { useState, useEffect, FormEvent } from "react"; // Removed ChangeEvent
+import { useState, useEffect, FormEvent, ChangeEvent as ReactTextareaChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste } from "lucide-react";
-import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions"; // Added generateDetailedReadme
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle } from "lucide-react";
+import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -34,11 +34,16 @@ export function ReadmeGenerator() {
   const [pastedCode, setPastedCode] = useState<string>("");
   const [generatedReadmeData, setGeneratedReadmeData] = useState<FullReadmeData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isGeneratingDetails, setIsGeneratingDetails] = useState<boolean>(false); // New loading state for details
+  const [isGeneratingDetails, setIsGeneratingDetails] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [savedReadmes, setSavedReadmes] = useState<SavedReadmeItem[]>([]);
-  const [currentReadmeIdForDetail, setCurrentReadmeIdForDetail] = useState<string | null>(null); // To track active README ID
+  const [currentReadmeIdForDetail, setCurrentReadmeIdForDetail] = useState<string | null>(null);
+  
+  // State for editing
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editableReadmeData, setEditableReadmeData] = useState<FullReadmeData | null>(null);
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,7 +68,7 @@ export function ReadmeGenerator() {
             setSavedReadmes([]);
           }
         } else {
-          setSavedReadmes([]); // Should not happen if loggedIn is true
+          setSavedReadmes([]); 
         }
       } else {
         setSavedReadmes([]);
@@ -78,7 +83,7 @@ export function ReadmeGenerator() {
         const userEmail = getCurrentUserEmail();
         if (userEmail) {
           const userSavedReadmesKey = `savedReadmes_${userEmail}`;
-          if (savedReadmes.length > 0 || localStorage.getItem(userSavedReadmesKey)) { // Ensure removal if array becomes empty
+          if (savedReadmes.length > 0 || localStorage.getItem(userSavedReadmesKey)) { 
             localStorage.setItem(userSavedReadmesKey, JSON.stringify(savedReadmes));
           }
         }
@@ -98,7 +103,7 @@ export function ReadmeGenerator() {
       originalInput,
     };
     setSavedReadmes((prev) => {
-      const updatedReadmes = [newReadme, ...prev.slice(0, 19)];
+      const updatedReadmes = [newReadme, ...prev.slice(0, 19)]; // Keep max 20 saved items
       return updatedReadmes;
     });
     toast({
@@ -112,7 +117,7 @@ export function ReadmeGenerator() {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setSavedReadmes((prev) => prev.filter((item) => item.id !== id));
     if (generatedReadmeData && currentReadmeIdForDetail === id) {
-        setGeneratedReadmeData(null); // Clear display if deleted item was shown
+        setGeneratedReadmeData(null); 
         setCurrentReadmeIdForDetail(null);
     }
     toast({
@@ -125,7 +130,9 @@ export function ReadmeGenerator() {
   const handleLoadReadme = (readmeItem: SavedReadmeItem) => {
     if (!mounted || !isLoggedIn() || !getCurrentUserEmail()) return;
     setGeneratedReadmeData(readmeItem);
-    setCurrentReadmeIdForDetail(readmeItem.id); // Set the ID of the loaded README
+    setCurrentReadmeIdForDetail(readmeItem.id); 
+    setIsEditing(false); // Ensure not in edit mode when loading
+    setEditableReadmeData(null);
     setError(null);
     toast({
       title: "README Loaded",
@@ -137,7 +144,7 @@ export function ReadmeGenerator() {
     }
   };
 
-  const handleDownloadReadme = (readmeItem: SavedReadmeItem) => {
+  const handleDownloadReadme = (readmeItem: FullReadmeData) => { // Changed to FullReadmeData
     if (!mounted) return;
     const readmeText = `
 # ${readmeItem.projectName}
@@ -160,7 +167,7 @@ ${readmeItem.folderStructure}
 ${readmeItem.setupInstructions}
     `.trim();
 
-    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-utf-8' });
+    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     const sanitizedProjectName = readmeItem.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -194,7 +201,9 @@ ${readmeItem.setupInstructions}
     setError(null);
     setIsLoading(true);
     setGeneratedReadmeData(null);
-    setCurrentReadmeIdForDetail(null); // Reset active ID on new generation
+    setCurrentReadmeIdForDetail(null);
+    setIsEditing(false); 
+    setEditableReadmeData(null);
 
     let result;
     let originalInputValue = "";
@@ -225,7 +234,7 @@ ${readmeItem.setupInstructions}
         setIsLoading(false);
         return;
       }
-      originalInputValue = pastedCode; // Note: this could be large, consider implications if stored
+      originalInputValue = pastedCode;
       result = await processGitHubRepo({ codeContent: pastedCode });
     } else if (inputType === "prompt") {
       if (!userPrompt.trim()) {
@@ -255,6 +264,10 @@ ${readmeItem.setupInstructions}
 
   const handleGenerateDetails = async (currentData: FullReadmeData) => {
     if (!mounted || !isLoggedIn() || !currentData) return;
+    if (isEditing) {
+        toast({ title: "Save or Cancel Edits", description: "Please save or cancel your current edits before generating more details.", variant: "destructive"});
+        return;
+    }
 
     setError(null);
     setIsGeneratingDetails(true);
@@ -266,20 +279,14 @@ ${readmeItem.setupInstructions}
       toast({ title: "Detail Generation Failed", description: result.error, variant: "destructive" });
     } else if (result) {
       setGeneratedReadmeData(result);
-      // Update the corresponding saved README if an ID is available
       if (currentReadmeIdForDetail) {
         setSavedReadmes(prev => prev.map(item =>
           item.id === currentReadmeIdForDetail
-            ? { ...item, ...result, savedDate: new Date().toISOString() } // Update all fields from result
+            ? { ...item, ...result, savedDate: new Date().toISOString() } 
             : item
         ));
         toast({ title: "README Enhanced & Saved!", description: "The detailed README has been updated and saved to your list." });
       } else {
-         // This case should ideally not happen if currentReadmeIdForDetail is set upon initial generation/load
-         // If it does, it means the current displayed README wasn't from the saved list or just generated.
-         // We can still save it as a new entry, or just display.
-         // For now, let's just display and inform user it's not auto-saved as a "new" version from this action.
-         // A better approach would be to ensure currentReadmeIdForDetail is always valid for displayed data that can be detailed.
         toast({ title: "README Enhanced!", description: "The README has been updated with more details." });
       }
     } else {
@@ -287,6 +294,58 @@ ${readmeItem.setupInstructions}
       toast({ title: "Detail Generation Failed", description: "An unknown error occurred.", variant: "destructive" });
     }
     setIsGeneratingDetails(false);
+  };
+
+  const handleEditRequest = () => {
+    if (generatedReadmeData) {
+      setEditableReadmeData({ ...generatedReadmeData });
+      setIsEditing(true);
+      setError(null); // Clear any previous errors
+    }
+  };
+
+  const handleEditableInputChange = (
+    e: ReactTextareaChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    field: keyof FullReadmeData
+  ) => {
+    if (editableReadmeData) {
+      setEditableReadmeData({
+        ...editableReadmeData,
+        [field]: e.target.value,
+      });
+    }
+  };
+
+  const handleSaveChanges = () => {
+    if (editableReadmeData) {
+      setGeneratedReadmeData(editableReadmeData);
+      if (currentReadmeIdForDetail) {
+        setSavedReadmes(prev => prev.map(item =>
+          item.id === currentReadmeIdForDetail
+            ? { ...item, ...editableReadmeData, savedDate: new Date().toISOString() }
+            : item
+        ));
+        toast({ title: "Edits Saved!", description: "Your changes to the README have been saved." });
+      } else {
+        // If there's no currentReadmeIdForDetail, it means it was a new generation not yet saved
+        // or an old one loaded without an ID properly set. We can save it as a new entry.
+        const savedItem = handleSaveReadme(editableReadmeData, inputType, 
+            inputType === 'url' ? repoUrl : (inputType === 'code' ? pastedCode : userPrompt)
+        );
+        if (savedItem) {
+            setCurrentReadmeIdForDetail(savedItem.id);
+        }
+         toast({ title: "Edits Saved!", description: "Your changes have been saved as a new README." });
+      }
+      setIsEditing(false);
+      setEditableReadmeData(null);
+    }
+  };
+
+  const handleCancelEdits = () => {
+    setIsEditing(false);
+    setEditableReadmeData(null);
+    toast({ title: "Edits Cancelled", description: "Your changes were not saved.", variant: "default" });
   };
 
 
@@ -311,6 +370,83 @@ ${readmeItem.setupInstructions}
     );
   }
 
+  if (isEditing && editableReadmeData) {
+    return (
+      <Card className="w-full max-w-3xl shadow-xl space-y-6">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center font-headline">Edit README Content</CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Modify the sections below. Use Markdown for formatting (e.g., ## for headings, **bold**).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="edit-projectName" className="font-semibold text-lg">Project Name</Label>
+            <Input 
+              id="edit-projectName" 
+              value={editableReadmeData.projectName} 
+              onChange={(e) => handleEditableInputChange(e, 'projectName')}
+              className="mt-1 text-base" 
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-projectDescription" className="font-semibold text-lg">Project Description</Label>
+            <Textarea 
+              id="edit-projectDescription" 
+              value={editableReadmeData.projectDescription} 
+              onChange={(e) => handleEditableInputChange(e, 'projectDescription')}
+              className="mt-1 min-h-[120px] text-base"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-features" className="font-semibold text-lg">Features</Label>
+            <Textarea 
+              id="edit-features" 
+              value={editableReadmeData.features} 
+              onChange={(e) => handleEditableInputChange(e, 'features')}
+              className="mt-1 min-h-[150px] text-base"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-technologiesUsed" className="font-semibold text-lg">Technologies Used</Label>
+            <Textarea 
+              id="edit-technologiesUsed" 
+              value={editableReadmeData.technologiesUsed} 
+              onChange={(e) => handleEditableInputChange(e, 'technologiesUsed')}
+              className="mt-1 min-h-[100px] text-base"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-folderStructure" className="font-semibold text-lg">Folder Structure</Label>
+            <Textarea 
+              id="edit-folderStructure" 
+              value={editableReadmeData.folderStructure} 
+              onChange={(e) => handleEditableInputChange(e, 'folderStructure')}
+              className="mt-1 min-h-[150px] text-base font-mono"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-setupInstructions" className="font-semibold text-lg">Setup Instructions</Label>
+            <Textarea 
+              id="edit-setupInstructions" 
+              value={editableReadmeData.setupInstructions} 
+              onChange={(e) => handleEditableInputChange(e, 'setupInstructions')}
+              className="mt-1 min-h-[200px] text-base"
+            />
+          </div>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button variant="outline" onClick={handleCancelEdits} className="text-lg py-3 px-6">
+              <XCircle className="mr-2 h-5 w-5" /> Cancel
+            </Button>
+            <Button onClick={handleSaveChanges} className="text-lg py-3 px-6 bg-green-600 hover:bg-green-700 text-white">
+              <Save className="mr-2 h-5 w-5" /> Save Edits
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="w-full max-w-3xl space-y-8">
       <Card className="shadow-xl">
@@ -327,8 +463,9 @@ ${readmeItem.setupInstructions}
               onValueChange={(value: string) => {
                 setInputType(value as InputType);
                 setError(null);
-                setGeneratedReadmeData(null);
-                setCurrentReadmeIdForDetail(null);
+                // Do not clear generatedReadmeData here if we want edit to persist across input type changes before generation
+                // setGeneratedReadmeData(null); 
+                // setCurrentReadmeIdForDetail(null);
                 setPastedCode(""); 
               }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 justify-center"
@@ -361,7 +498,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setRepoUrl(e.target.value)}
                   className="pl-10 text-base"
                   aria-label="GitHub Repository URL"
-                  disabled={isLoading || isGeneratingDetails}
+                  disabled={isLoading || isGeneratingDetails || isEditing}
                 />
               </div>
             )}
@@ -374,7 +511,7 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setPastedCode(e.target.value)}
                   className="pl-10 text-base min-h-[200px]"
                   aria-label="Pasted Code Content"
-                  disabled={isLoading || isGeneratingDetails}
+                  disabled={isLoading || isGeneratingDetails || isEditing}
                 />
                  <p className="mt-1 text-xs text-muted-foreground">
                     Paste one or more code snippets. The AI will analyze the combined content.
@@ -390,11 +527,11 @@ ${readmeItem.setupInstructions}
                   onChange={(e) => setUserPrompt(e.target.value)}
                   className="pl-10 text-base min-h-[150px]"
                   aria-label="User Prompt for README Generation"
-                  disabled={isLoading || isGeneratingDetails}
+                  disabled={isLoading || isGeneratingDetails || isEditing}
                 />
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails}>
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails || isEditing}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -408,7 +545,7 @@ ${readmeItem.setupInstructions}
         </CardContent>
       </Card>
 
-      {error && (
+      {error && !isEditing && ( // Only show general error if not in edit mode
         <Alert variant="destructive" className="shadow-md">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -416,7 +553,7 @@ ${readmeItem.setupInstructions}
         </Alert>
       )}
 
-      {isLoggedIn() && getCurrentUserEmail() && savedReadmes.length > 0 && (
+      {isLoggedIn() && getCurrentUserEmail() && savedReadmes.length > 0 && !isEditing && (
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold font-headline">Saved READMEs</CardTitle>
@@ -455,15 +592,17 @@ ${readmeItem.setupInstructions}
         </Card>
       )}
 
-      {generatedReadmeData && !isLoading && (
+      {generatedReadmeData && !isLoading && !isEditing && (
          <div id="readme-display-card">
             <ReadmeDisplay 
               data={generatedReadmeData} 
               onGenerateDetails={handleGenerateDetails}
               isGeneratingDetails={isGeneratingDetails} 
+              onEditRequest={handleEditRequest} // Pass the edit request handler
             />
          </div>
       )}
     </div>
   );
 }
+
