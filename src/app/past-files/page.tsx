@@ -194,6 +194,7 @@ export default function PastFilesPage() {
 
     for (const fileDetail of selectedFileDetails) {
       try {
+        // Call processGitHubRepo with only the current file's content
         const result = await processGitHubRepo({ codeContent: fileDetail.content });
 
         if (result && "error" in result) {
@@ -231,33 +232,42 @@ export default function PastFilesPage() {
   };
 
   const formatReadmeForTxt = (readmeData: FullReadmeData): string => {
+    // Helper to clean markdown-like syntax for plain text
+    const cleanText = (text: string) => {
+        return text
+            .replace(/^#+\s*/gm, '') // Remove markdown headers
+            .replace(/^- /gm, '* ') // Convert markdown list items
+            .replace(/```[\s\S]*?```/g, '(Code Block)') // Replace code blocks
+            .replace(/`([^`]+)`/g, '$1'); // Remove inline code backticks
+    };
+    
     return `
-Project Name: ${readmeData.projectName}
+Project Name: ${cleanText(readmeData.projectName)}
 
 --------------------
 Project Description:
 --------------------
-${readmeData.projectDescription.replace(/###\s*/g, '').replace(/##\s*/g, '').replace(/#\s*/g, '')}
+${cleanText(readmeData.projectDescription)}
 
 --------------------
 Features:
 --------------------
-${readmeData.features.replace(/^- /gm, '* ').replace(/###\s*/g, '').replace(/##\s*/g, '').replace(/#\s*/g, '')}
+${cleanText(readmeData.features)}
 
 --------------------
 Technologies Used:
 --------------------
-${readmeData.technologiesUsed.replace(/^- /gm, '* ').replace(/###\s*/g, '').replace(/##\s*/g, '').replace(/#\s*/g, '')}
+${cleanText(readmeData.technologiesUsed)}
 
 --------------------
 Folder Structure:
 --------------------
-${readmeData.folderStructure.replace(/```[\s\S]*?\n/g, '').replace(/```/g, '')} 
+${cleanText(readmeData.folderStructure)}
 
 --------------------
 Setup Instructions:
 --------------------
-${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replace(/`([^`]+)`/g, '$1').replace(/^- /gm, '* ').replace(/###\s*/g, '').replace(/##\s*/g, '').replace(/#\s*/g, '')}
+${cleanText(readmeData.setupInstructions)}
     `.trim().replace(/\n\n\n+/g, '\n\n');
   };
 
@@ -360,7 +370,7 @@ ${readmeData.setupInstructions.replace(/```[\s\S]*?```/g, '(Code Block)').replac
                 disabled={isOverallLoading}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Max total size recommended: ~5MB.
+                Max total size recommended per file for optimal AI processing.
               </p>
             </div>
 
