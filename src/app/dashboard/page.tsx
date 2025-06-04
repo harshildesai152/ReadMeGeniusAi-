@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -8,7 +9,7 @@ import { isLoggedIn, setLoggedIn, getUserByEmail, getCurrentUserEmail } from '@/
 import type { User } from '@/lib/auth/storage';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Home } from 'lucide-react'; // Added Home icon
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,6 +34,10 @@ export default function DashboardPage() {
     router.replace('/auth/login');
   };
 
+  const handleGoHome = () => {
+    router.push('/');
+  };
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-background">
@@ -45,6 +50,9 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen flex-col items-center p-6 sm:p-12 md:p-24 bg-background">
       <div className="absolute top-6 right-6 flex items-center space-x-2">
+        <Button onClick={handleGoHome} variant="outline" size="icon" title="Go to Home">
+          <Home className="h-4 w-4" />
+        </Button>
         <ThemeToggle />
         <Button onClick={handleLogout} variant="outline">Logout</Button>
       </div>
