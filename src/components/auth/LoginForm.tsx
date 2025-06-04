@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -13,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
 import { comparePasswordSync } from "@/lib/auth/password";
-import { getUserByEmail, setLoggedIn, addUser, hashPasswordSync } from "@/lib/auth/storage";
+import { getUserByEmail, setLoggedIn, addUser } from "@/lib/auth/storage"; // Removed hashPasswordSync as it's not used here
 import type { User } from "@/lib/auth/storage";
 
 export function LoginForm() {
@@ -56,14 +57,10 @@ export function LoginForm() {
 
     if (!user.verified) {
       setError("Account not verified. Please check your email for OTP or sign up again.");
-      // Optionally redirect to OTP page if logic allows
-      // router.push(`/auth/otp?email=${encodeURIComponent(data.email)}`);
       setIsLoading(false);
       return;
     }
     
-    // For Google mock users, they might not have a password set this way.
-    // We allow them to login directly if provider is google.
     if (user.provider === 'google') {
         setLoggedIn(true, user.email);
         router.push("/dashboard");
@@ -91,19 +88,17 @@ export function LoginForm() {
   const handleGoogleSignIn = () => {
     setIsLoading(true);
     setError(null);
-    // Mock Google Sign-In
     const mockUser: User = {
       id: 'google-' + Date.now().toString(),
       fullName: "Google User",
-      email: "google.user."+ Date.now().toString(36).substring(2, 7) +"@example.com", // Unique mock email
+      email: "google.user."+ Date.now().toString(36).substring(2, 7) +"@example.com", 
       phone: "0000000000",
       verified: true,
       provider: 'google',
-      // No hashedPassword for Google mock, or can add one if login flow expects it
     };
     
     try {
-        addUser(mockUser); // This will add or update the mock user
+        addUser(mockUser); 
         setLoggedIn(true, mockUser.email);
         router.push("/dashboard?googlesignin=true");
     } catch (e: any) {
@@ -140,25 +135,27 @@ export function LoginForm() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>
             )}
           </div>
-          <div className="relative">
+          <div>
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type={showPassword ? "text" : "password"} 
-              {...form.register("password")} 
-              disabled={isLoading}
-              className="pr-10"
-            />
-             <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
+            <div className="relative">
+              <Input 
+                id="password" 
+                type={showPassword ? "text" : "password"} 
+                {...form.register("password")} 
                 disabled={isLoading}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+                className="pr-10"
+              />
+              <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+            </div>
             {form.formState.errors.password && (
               <p className="text-sm text-destructive mt-1">{form.formState.errors.password.message}</p>
             )}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -105,48 +106,52 @@ export function SignupForm() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.phone.message}</p>
             )}
           </div>
-          <div className="relative">
+          <div>
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type={showPassword ? "text" : "password"} 
-              {...form.register("password")} 
-              disabled={isLoading}
-              className="pr-10"
-            />
-            <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
+            <div className="relative">
+              <Input 
+                id="password" 
+                type={showPassword ? "text" : "password"} 
+                {...form.register("password")} 
                 disabled={isLoading}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+                className="pr-10"
+              />
+              <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+            </div>
             {form.formState.errors.password && (
               <p className="text-sm text-destructive mt-1">{form.formState.errors.password.message}</p>
             )}
           </div>
-          <div className="relative">
+          <div>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              {...form.register("confirmPassword")}
-              disabled={isLoading}
-              className="pr-10"
-            />
-             <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                {...form.register("confirmPassword")}
                 disabled={isLoading}
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+                className="pr-10"
+              />
+              <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+            </div>
             {form.formState.errors.confirmPassword && (
               <p className="text-sm text-destructive mt-1">{form.formState.errors.confirmPassword.message}</p>
             )}
