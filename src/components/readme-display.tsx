@@ -2,118 +2,62 @@
 // src/components/readme-display.tsx
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Ensured React is imported
 import type { FullReadmeData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Check, FileText, Loader2, Edit3 } from "lucide-react"; // Added Edit3 icon
-import { useState, useEffect } from "react";
+import { Copy, Check, FileText as FileTextIcon, Loader2, Edit3, Maximize, Minimize } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 interface ReadmeDisplayProps {
   data: FullReadmeData;
   onGenerateDetails: (currentData: FullReadmeData) => Promise<void>;
   isGeneratingDetails: boolean;
-  onEditRequest: () => void; // New prop for edit request
+  onEditRequest: () => void;
 }
 
 // A simple component to render markdown-like text.
-const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
+// Using dangerouslySetInnerHTML for simplicity as per previous implementation.
+// For a production app, consider a safer Markdown renderer if complex user input is allowed in future.
+const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean }> = ({ content, isFullScreen }) => {
   if (!content && content !== "") return <p className="text-muted-foreground italic text-sm">Not available or empty.</p>;
 
-  const lines = content.split('\n').map((line, index, arr) => {
-    // Headings
-    if (line.match(/^#{1,6}\s/)) {
-        const level = line.match(/^#+/)![0].length;
-        const text = line.replace(/^#+\s/, '');
-        const Tag = `h${level + 2}` as keyof JSX.IntrinsicElements;
-        let headingClass = "font-semibold text-foreground"; 
-        if (level === 1) headingClass += " text-xl mt-4 mb-2 font-bold"; 
-        else if (level === 2) headingClass += " text-lg mt-3 mb-1.5 font-semibold";
-        else if (level === 3) headingClass += " text-base mt-2 mb-1 text-foreground/80";
-        else headingClass += " text-sm mt-1.5 mb-0.5 text-foreground/70"; 
-        // Attempt to render <u> tags if present
-        const parts = text.split(/<\/?u>/g);
-        if (parts.length > 1) {
-          return (
-            <Tag key={index} className={headingClass}>
-              {parts.map((part, i) => i % 2 === 1 ? <u key={i}>{part}</u> : part)}
-            </Tag>
-          );
-        }
-        return <Tag key={index} className={headingClass}>{text}</Tag>;
-    }
-    // Lists
-    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-6 list-disc space-y-1 my-1 text-foreground/90">{line.substring(line.indexOf(' ') + 1)}</li>;
-    }
-    // Code blocks
-    if (line.trim().startsWith('```')) {
-      const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
-      const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
-      if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) {
-         return <pre key={index} className="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 text-foreground/90">{line.substring(3).trim()}</pre>;
-      }
-      return null; 
-    }
-    if (index > 0 && arr[index-1].trim().startsWith('```') && !arr[index-1].trim().endsWith('```') ) {
-        if(index === (arr.slice(0, arr.findIndex((l,i)=> i > index && l.trim().startsWith('```'))).findLastIndex(l => l.trim().startsWith('```')) +1 ) || (index > 0 && arr[index-1].trim().startsWith('```') && arr.findIndex((l,i)=> i > index && l.trim().startsWith('```')) === -1) ){
-            const blockLines = [];
-            let i = index -1;
-            while(i >= 0 && !arr[i].trim().startsWith('```')) i--;
-            if(i<0) i=0;
-            const lang = arr[i].trim().substring(3);
-            let j = i + 1;
-            while(j < arr.length && !arr[j].trim().startsWith('```')){
-                blockLines.push(arr[j]);
-                j++;
-            }
-            return <pre key={index} className="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 text-foreground/90" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
-        }
-        return null; 
-    }
-    // For folder structures or indented text (heuristic)
-    if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
-      return <p key={index} className="mb-1 whitespace-pre-wrap font-mono text-xs bg-muted/60 p-1.5 rounded border border-border/50 shadow-sm text-foreground/80">{line || <>&nbsp;</>}</p>;
-    }
-     // Default paragraphs, attempting to render <u> tags
-    const paragraphParts = line.split(/<\/?u>/g);
-    if (paragraphParts.length > 1) {
-        return (
-            <p key={index} className="mb-2.5 leading-relaxed text-foreground/90">
-                {paragraphParts.map((part, i) => i % 2 === 1 ? <u key={i}>{part}</u> : part)}
-                {line.length === 0 && <>&nbsp;</>}
-            </p>
-        );
-    }
-    return <p key={index} className="mb-2.5 leading-relaxed text-foreground/90">{line || <>&nbsp;</>}</p>;
-  });
+  // Basic replacements for Markdown-like syntax to HTML
+  // This is a simplified parser. For robust Markdown, a library like 'marked' or 'react-markdown' is recommended.
+  let htmlContent = content
+    .replace(/^### (.*$)/gim, `<h4 class="text-base font-semibold mt-2.5 mb-1 ${isFullScreen ? 'text-foreground' : 'text-primary/80'}">${'$1'}</h4>`)
+    .replace(/^## (.*$)/gim, `<h3 class="text-lg font-semibold mt-3 mb-1.5 ${isFullScreen ? 'text-foreground' : 'text-primary/90'} underline underline-offset-2 decoration-primary/50">${'$1'}</h3>`)
+    .replace(/^# (.*$)/gim, `<h2 class="text-xl font-bold mt-4 mb-2 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-4 decoration-primary/60">${'$1'}</h2>`)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')     // Italic
+    .replace(/`([^`]+)`/g, '<code class="bg-muted/70 px-1 py-0.5 rounded text-sm font-mono">$1</code>') // Inline code
+    .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => { // Unordered lists
+      const items = match.trim().split('\n').map(item => `<li class="ml-6 list-disc space-y-1 my-1 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
+      return `<ul class="space-y-0.5 mb-2.5">${items}</ul>`;
+    })
+    .replace(/^(?:\d+\.\s*.*(?:\n|$))+/gm, (match) => { // Ordered lists
+        const items = match.trim().split('\n').map(item => `<li class="ml-6 list-decimal space-y-1 my-1 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${item.replace(/^\d+\.\s*/, '')}</li>`).join('');
+        return `<ol class="space-y-0.5 mb-2.5">${items}</ol>`;
+    })
+    .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre class="bg-muted/80 p-3.5 rounded-md text-sm overflow-x-auto my-2.5 font-mono shadow-md border border-border/70 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${p1.trim()}</pre>`) // Code blocks
+    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>') // Underline
+    .replace(/\n/g, '<br />'); // Newlines to <br>
 
-  const validLines = lines.filter(line => line !== null);
-  const structuredLines: (JSX.Element | null)[] = [];
-  let inList = false;
-
-  for (const line of validLines) {
-    if (React.isValidElement(line) && line.type === 'li') {
-      if (!inList) {
-        inList = true;
-        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-2.5">{line}</ul>);
-      } else {
-        const lastElement = structuredLines[structuredLines.length - 1];
-        if (React.isValidElement(lastElement) && lastElement.type === 'ul') {
-          structuredLines[structuredLines.length - 1] = React.cloneElement(lastElement, {}, [...React.Children.toArray(lastElement.props.children), line]);
-        }
-      }
-    } else {
-      if (inList) {
-        inList = false;
-      }
-      structuredLines.push(line);
+  // For lines that are not part of other structures, wrap them in <p>
+  // This is a very rough way to do it and might need refinement.
+  htmlContent = htmlContent.split('<br />').map(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('<h') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<pre') || trimmedLine.startsWith('<li') || trimmedLine === '') {
+      return line;
     }
-  }
+    return `<p class="mb-2.5 leading-relaxed ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${line}</p>`;
+  }).join('<br />').replace(/<br \/>(<p)/g, '$1').replace(/(<\/p>)<br \/>/g, '$1');
 
-  return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />').replace(/<\/?u>(.*?)<\/?u>/g, '<u>$1</u>') || '' }} />;
+
+  return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent || '' }} />;
 };
 
 
@@ -121,10 +65,33 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+
+    if (isFullScreen) {
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', handleEsc);
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isFullScreen, mounted]);
 
 
   const formatReadmeForCopy = (readmeData: FullReadmeData): string => {
@@ -165,28 +132,41 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
   };
   
   const handleEditClick = () => {
-    if (!mounted || isGeneratingDetails) return; // Prevent editing while details are generating
+    if (!mounted || isGeneratingDetails) return;
     onEditRequest();
   };
 
+  const toggleFullScreen = () => {
+    if (!mounted) return;
+    setIsFullScreen(!isFullScreen);
+  }
 
   if (!mounted) {
     return null; 
   }
 
   return (
-    <Card className="w-full shadow-xl">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold font-headline text-primary">
-          Generated README.md
+    <Card className={cn(
+        "w-full shadow-xl", 
+        isFullScreen && "fixed inset-0 z-50 m-0 rounded-none border-none flex flex-col overflow-y-auto"
+      )}>
+      <CardHeader className={cn(
+        "flex flex-row items-center justify-between space-y-0 pb-2",
+        isFullScreen && "px-4 pt-4 sm:px-6 md:px-8 border-b sticky top-0 bg-background z-10"
+      )}>
+        <CardTitle className={cn(
+            "text-2xl font-bold font-headline text-primary",
+            isFullScreen && "text-xl"
+            )}>
+          {isFullScreen ? data.projectName : "Generated README.md"}
         </CardTitle>
         <div className="flex items-center space-x-2">
            <Button 
             variant="outline" 
             size="sm" 
             onClick={handleEditClick} 
-            disabled={isGeneratingDetails} // Disable if generating details
-            className="bg-blue-500 hover:bg-blue-600 text-white" // Example styling for Edit
+            disabled={isGeneratingDetails || isFullScreen}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
           >
             <Edit3 className="mr-2 h-4 w-4" />
             Edit
@@ -195,65 +175,101 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             variant="outline" 
             size="sm" 
             onClick={handleMoreDetailClick} 
-            disabled={isGeneratingDetails}
+            disabled={isGeneratingDetails || isFullScreen}
             className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
           >
             {isGeneratingDetails ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <FileText className="mr-2 h-4 w-4" />
+              <FileTextIcon className="mr-2 h-4 w-4" />
             )}
             {isGeneratingDetails ? "Generating..." : "More Detail"}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopy} className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCopy} 
+            disabled={isFullScreen}
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
+          >
             {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
             {isCopied ? "Copied!" : "Copy"}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleFullScreen}
+            disabled={isGeneratingDetails}
+            className="bg-muted text-muted-foreground hover:bg-muted/80"
+          >
+            {isFullScreen ? <Minimize className="mr-2 h-4 w-4" /> : <Maximize className="mr-2 h-4 w-4" />}
+            {isFullScreen ? "Exit Full" : "Full Screen"}
+          </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[500px] w-full rounded-md border p-4 bg-background">
-          <div className="space-y-4"> 
-            <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                1. Project Name:
-              </h2>
-              <p className="text-2xl font-bold text-accent-foreground/90 ml-1">{data.projectName}</p> 
+      <CardContent className={cn(isFullScreen && "flex-grow p-4 sm:p-6 md:p-8")}>
+        <ScrollArea className={cn(
+          "h-[500px] w-full rounded-md border p-4 bg-background",
+          isFullScreen && "h-full w-full border-0 rounded-none p-0 bg-transparent"
+          )}>
+          <div className={cn("space-y-4", isFullScreen && "max-w-4xl mx-auto")}> 
+            {!isFullScreen && (
+              <div className="py-3 border-b border-border/50">
+                <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
+                  1. Project Name:
+                </h2>
+                <p className="text-2xl font-bold text-accent-foreground/90 ml-1">{data.projectName}</p> 
+              </div>
+            )}
+
+            <div className={cn(!isFullScreen && "py-3 border-b border-border/50")}>
+              {!isFullScreen && (
+                <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
+                  {isFullScreen ? "Project Description" : "2. Project Description:"}
+                </h2>
+              )}
+               {isFullScreen && <h1 className="text-3xl font-bold text-primary mb-4 mt-2">{data.projectName}</h1>}
+              <MarkdownContent content={data.projectDescription} isFullScreen={isFullScreen} />
             </div>
 
-            <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                2. Project Description:
+            <div className={cn(!isFullScreen && "py-3 border-b border-border/50")}>
+              <h2 className={cn(
+                !isFullScreen && "text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline",
+                isFullScreen && "text-2xl font-semibold text-primary mt-6 mb-3"
+              )}>
+                {isFullScreen ? "Features" : "3. Features:"}
               </h2>
-              <MarkdownContent content={data.projectDescription} />
+              <MarkdownContent content={data.features} isFullScreen={isFullScreen} />
             </div>
 
-            <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                3. Features:
+            <div className={cn(!isFullScreen && "py-3 border-b border-border/50")}>
+              <h2 className={cn(
+                !isFullScreen && "text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline",
+                 isFullScreen && "text-2xl font-semibold text-primary mt-6 mb-3"
+              )}>
+                {isFullScreen ? "Technologies Used" : "4. Technologies Used:"}
               </h2>
-              <MarkdownContent content={data.features} />
-            </div>
-
-            <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                4. Technologies Used:
-              </h2>
-              <MarkdownContent content={data.technologiesUsed} />
+              <MarkdownContent content={data.technologiesUsed} isFullScreen={isFullScreen} />
             </div>
             
-            <div className="py-3 border-b border-border/50">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                5. Folder Structure:
+            <div className={cn(!isFullScreen && "py-3 border-b border-border/50")}>
+              <h2 className={cn(
+                !isFullScreen && "text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline",
+                isFullScreen && "text-2xl font-semibold text-primary mt-6 mb-3"
+              )}>
+                {isFullScreen ? "Folder Structure" : "5. Folder Structure:"}
               </h2>
-              <MarkdownContent content={data.folderStructure} />
+              <MarkdownContent content={data.folderStructure} isFullScreen={isFullScreen} />
             </div>
 
-            <div className="py-3 last:border-b-0">
-              <h2 className="text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline">
-                6. Setup Instructions:
+            <div className={cn(!isFullScreen && "py-3 last:border-b-0")}>
+              <h2 className={cn(
+                !isFullScreen && "text-xl font-bold text-primary underline decoration-primary/60 underline-offset-4 mb-2.5 font-headline",
+                 isFullScreen && "text-2xl font-semibold text-primary mt-6 mb-3"
+              )}>
+                {isFullScreen ? "Setup Instructions" : "6. Setup Instructions:"}
               </h2>
-              <MarkdownContent content={data.setupInstructions} />
+              <MarkdownContent content={data.setupInstructions} isFullScreen={isFullScreen}/>
             </div>
           </div>
         </ScrollArea>
@@ -262,3 +278,4 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
   );
 }
 
+    
