@@ -3,20 +3,38 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, AlertTriangle, UploadCloud, FileText, Download, Trash2, Home, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
+import { Loader2, AlertTriangle, UploadCloud, Download, Trash2, Home, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
 import { processGitHubRepo, type FullReadmeData } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getCurrentUserEmail } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import React from 'react'; 
+import { cn } from "@/lib/utils";
+
+
+// SVG for ClipboardCopy (Copy icon)
+const ClipboardCopySvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+</svg>
+`;
+
+// SVG for Check icon
+const CheckSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="20 6 9 17 4 12"></polyline>
+</svg>
+`;
+const FileTextIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
 
 
 interface FileDetail {
@@ -33,89 +51,63 @@ interface GeneratedReadmeForFile {
   readmeData: FullReadmeData | null;
   error?: string | null;
   isLoading: boolean;
+  contentWrapperId: string;
 }
 
-const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ content, title }) => {
+const MarkdownContentDisplay: React.FC<{ content: string; title: string; isFullScreen?: boolean; contentWrapperId: string; }> = ({ content, title, isFullScreen, contentWrapperId }) => {
   if (!content && content !== "") return <p className="text-muted-foreground italic text-xs sm:text-sm">Not available or empty.</p>;
   
-  const lines = content.split('\n').map((line, index, arr) => {
-    // Headings
-    if (line.match(/^#{1,6}\s/)) {
-      const level = line.match(/^#+/)![0].length;
-      const text = line.replace(/^#+\s/, '');
-      const Tag = `h${level + 3}` as keyof JSX.IntrinsicElements; // Start from h4 for these sections
-      let headingClass = "font-semibold";
-      if (level === 1) headingClass += " text-sm sm:text-md mt-2 sm:mt-2.5 mb-0.5 sm:mb-1";
-      else if (level === 2) headingClass += " text-xs sm:text-sm mt-1.5 sm:mt-2 mb-0.5";
-      else headingClass += " text-xs mt-1 sm:mt-1.5 mb-0.5";
-      return <Tag key={index} className={headingClass}>{text}</Tag>;
-    }
-    // Lists
-    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-4 sm:ml-5 list-disc text-xs sm:text-sm space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
-    }
-   
-    // Code blocks (simple heuristic for ``` blocks)
-    if (line.trim().startsWith('```')) {
-      const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
-      const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
-      if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) {
-         return <pre key={index} className="bg-muted/70 p-2 sm:p-2.5 rounded-md text-xs overflow-x-auto my-1 sm:my-1.5 font-mono shadow-sm">{line.substring(3).trim()}</pre>;
-      }
-      return null; 
-    }
-    if (index > 0 && arr[index-1].trim().startsWith('```') && !arr[index-1].trim().endsWith('```') ) {
-        if(index === (arr.slice(0, arr.findIndex((l,i)=> i > index && l.trim().startsWith('```'))).findLastIndex(l => l.trim().startsWith('```')) +1 ) || (index > 0 && arr[index-1].trim().startsWith('```') && arr.findIndex((l,i)=> i > index && l.trim().startsWith('```')) === -1) ){
-            const blockLines = [];
-            let i = index -1;
-            while(i >= 0 && !arr[i].trim().startsWith('```')) i--;
-            if(i<0) i=0;
-            const lang = arr[i].trim().substring(3);
-            let j = i + 1;
-            while(j < arr.length && !arr[j].trim().startsWith('```')){
-                blockLines.push(arr[j]);
-                j++;
-            }
-            return <pre key={index} className="bg-muted/70 p-2 sm:p-2.5 rounded-md text-xs overflow-x-auto my-1 sm:my-1.5 font-mono shadow-sm" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
-        }
-        return null; 
-    }
-    
-    // Indented lines for folder structure or simple code
-    if (line.trim().startsWith('    ') || line.trim().startsWith('\t') || line.match(/^(\s{2,})[^-\s*]/)) {
-      return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-xs bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
-    }
-    // Default paragraphs
-    return <p key={index} className="mb-1 sm:mb-1.5 leading-relaxed text-xs sm:text-sm">{line || <>&nbsp;</>}</p>;
-  });
+  let htmlContent = content
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/^### (.*$)/gim, `<h4 class="text-xs sm:text-sm font-semibold mt-1.5 sm:mt-2 mb-0.5 ${isFullScreen ? 'text-foreground/80' : 'text-primary/80'}">${'$1'}</h4>`)
+    .replace(/^## (.*$)/gim, `<h3 class="text-sm sm:text-base font-semibold mt-2 sm:mt-2.5 mb-1 ${isFullScreen ? 'text-foreground/90' : 'text-primary/90'} underline underline-offset-2 decoration-primary/40">${'$1'}</h3>`)
+    .replace(/^# (.*$)/gim, `<h2 class="text-base sm:text-lg font-bold mt-2.5 sm:mt-3 mb-1.5 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-2 sm:underline-offset-4 decoration-primary/50">${'$1'}</h2>`)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
+    .replace(/`([^`]+)`/g, (match, p1) => `<code class="bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-300 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono shadow-sm border border-border/30">${p1}</code>`)
+    .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => {
+      const items = match.trim().split('\n').map(item => `<li class="ml-4 sm:ml-5 list-disc space-y-0.5 my-0.5 sm:my-1 text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
+      return `<ul class="space-y-0.5 mb-1 sm:mb-1.5">${items}</ul>`;
+    })
+    .replace(/^(?:\d+\.\s*.*(?:\n|$))+/gm, (match) => {
+        const items = match.trim().split('\n').map(item => `<li class="ml-4 sm:ml-5 list-decimal space-y-0.5 my-0.5 sm:my-1 text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${item.replace(/^\d+\.\s*/, '')}</li>`).join('');
+        return `<ol class="space-y-0.5 mb-1 sm:mb-1.5">${items}</ol>`;
+    })
+   .replace(/```([\s\S]*?)```/g, (match, p1, offset) => {
+      const uniqueId = `codeblock-file-${contentWrapperId}-${offset}-${Math.random().toString(36).substring(2,9)}`;
+      return `
+        <div class="code-block-container group relative my-1.5 rounded-lg shadow-md overflow-hidden bg-neutral-800 dark:bg-black sm:my-2">
+          <button 
+            class="code-block-copy-button absolute top-1 right-1 z-10 p-1 rounded-md text-neutral-400 hover:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 opacity-60 group-hover:opacity-100 transition-opacity duration-150" 
+            data-target-id="${uniqueId}"
+            data-copy-icon='${ClipboardCopySvg.replace(/'/g, "&apos;")}'
+            data-check-icon='${CheckSvg.replace(/'/g, "&apos;")}'
+            aria-label="Copy code to clipboard"
+          >
+            ${ClipboardCopySvg}
+          </button>
+          <pre id="${uniqueId}" class="text-neutral-200 dark:text-neutral-100 p-2 pt-7 sm:p-3 sm:pt-8 text-xs overflow-x-auto font-mono">${p1.trim()}</pre>
+        </div>
+      `;
+    })
+    .replace(/\n/g, '<br />');
 
-  const validLines = lines.filter(line => line !== null);
-  const structuredLines: (JSX.Element | null)[] = [];
-  let inList = false;
-
-  for (const line of validLines) {
-    if (React.isValidElement(line) && line.type === 'li') {
-      if (!inList) {
-        inList = true;
-        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-1 sm:mb-1.5">{line}</ul>);
-      } else {
-        const lastElement = structuredLines[structuredLines.length - 1];
-        if (React.isValidElement(lastElement) && lastElement.type === 'ul') {
-          structuredLines[structuredLines.length - 1] = React.cloneElement(lastElement, {}, [...React.Children.toArray(lastElement.props.children), line]);
-        }
-      }
-    } else {
-      if (inList) {
-        inList = false;
-      }
-      structuredLines.push(line);
+  htmlContent = htmlContent.split('<br />').map(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('<h') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<div class="code-block-container') || trimmedLine.startsWith('<li') || trimmedLine === '') {
+      return line;
     }
-  }
+    return `<p class="mb-1 sm:mb-1.5 leading-relaxed text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${line || <>&nbsp;</>}</p>`;
+  }).join('<br />').replace(/<br \/>(<p|<div class="code-block-container)/g, '$1').replace(/(<\/p>|<\/div>)<br \/>/g, '$1');
+
 
   return (
     <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none">
       <h4 className="text-xs sm:text-sm font-semibold mb-1 pb-1 border-b border-border/70 text-primary/90">{title}:</h4>
-      {structuredLines}
+      <div dangerouslySetInnerHTML={{ __html: htmlContent || '' }} />
     </div>
   );
 };
@@ -130,6 +122,7 @@ export default function PastFilesPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [loggedIn, setLoggedInStatus] = useState(false);
+  const activeReadmeRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
 
   useEffect(() => {
@@ -143,6 +136,45 @@ export default function PastFilesPage() {
       window.removeEventListener('storage', checkLoginStatus);
     };
   }, []);
+  
+  useEffect(() => {
+    if (!mounted || generatedFileReadmes.length === 0) return;
+
+    generatedFileReadmes.forEach(genFile => {
+        if (genFile.readmeData && !genFile.isLoading) {
+            const contentWrapperElement = document.getElementById(genFile.contentWrapperId);
+            if (!contentWrapperElement) return;
+
+            const copyButtons = contentWrapperElement.querySelectorAll('.code-block-copy-button');
+            copyButtons.forEach(buttonEl => {
+                const newButton = buttonEl.cloneNode(true) as HTMLButtonElement;
+                buttonEl.parentNode?.replaceChild(newButton, buttonEl);
+
+                newButton.addEventListener('click', async () => {
+                    const targetId = newButton.dataset.targetId;
+                    if (!targetId) return;
+                    const preElement = contentWrapperElement.querySelector(`#${targetId}`); // Query within the specific wrapper
+                    if (preElement && preElement.textContent) {
+                        try {
+                            await navigator.clipboard.writeText(preElement.textContent);
+                            newButton.innerHTML = newButton.dataset.checkIcon || CheckSvg;
+                            newButton.classList.add('text-green-500');
+                            toast({ title: "Code Copied!", description: `Code from ${genFile.fileName} copied.` });
+                            setTimeout(() => {
+                                newButton.innerHTML = newButton.dataset.copyIcon || ClipboardCopySvg;
+                                newButton.classList.remove('text-green-500');
+                            }, 2000);
+                        } catch (err) {
+                            console.error("Failed to copy code: ", err);
+                            toast({ title: "Error Copying Code", variant: "destructive" });
+                        }
+                    }
+                });
+            });
+        }
+    });
+
+  }, [generatedFileReadmes, mounted, toast]);
 
 
   const handleLogout = () => {
@@ -240,6 +272,7 @@ export default function PastFilesPage() {
       readmeData: null,
       error: null,
       isLoading: true,
+      contentWrapperId: `file-readme-content-${file.id}`
     }));
     setGeneratedFileReadmes(initialReadmeStates); 
 
@@ -282,14 +315,13 @@ export default function PastFilesPage() {
   };
 
   const formatReadmeForTxt = (readmeData: FullReadmeData): string => {
-    // Basic text formatting, attempts to mimic markdown structure simply
     const cleanText = (text: string) => {
         if (!text) return "N/A";
         return text
-            .replace(/^#+\s*/gm, '') // Remove markdown headings
-            .replace(/^- /gm, '* ')   // Standardize list markers
-            .replace(/```[\s\S]*?```/g, '(Code Block)') // Placeholder for code blocks
-            .replace(/`([^`]+)`/g, '$1'); // Remove inline code backticks
+            .replace(/^#+\s*/gm, '') 
+            .replace(/^- /gm, '* ')   
+            .replace(/```[\s\S]*?```/g, '(Code Block)') 
+            .replace(/`([^`]+)`/g, '$1'); 
     };
     
     return `
@@ -320,7 +352,7 @@ ${cleanText(readmeData.folderStructure)}
 Setup Instructions:
 --------------------
 ${cleanText(readmeData.setupInstructions)}
-    `.trim().replace(/\n\n\n+/g, '\n\n'); // Normalize multiple newlines
+    `.trim().replace(/\n\n\n+/g, '\n\n'); 
   };
 
   const handleDownloadIndividualReadme = (readmeData: FullReadmeData, originalFileName: string) => {
@@ -331,7 +363,7 @@ ${cleanText(readmeData.setupInstructions)}
     link.href = URL.createObjectURL(blob);
     
     const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
-    const sanitizedBaseName = baseName.replace(/[^a-z0-9_.]/gi, '_').toLowerCase(); // Allow dots in filename
+    const sanitizedBaseName = baseName.replace(/[^a-z0-9_.]/gi, '_').toLowerCase(); 
     link.download = `${sanitizedBaseName || 'readme'}_readme.txt`;
     
     document.body.appendChild(link);
@@ -349,7 +381,7 @@ ${cleanText(readmeData.setupInstructions)}
     return (
       <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 bg-background">
         <div className="w-full max-w-4xl mx-auto text-center">
-          <Loader2 className="mx-auto h-10 sm:h-12 w-10 sm:w-12 animate-spin text-primary" />
+          <Loader2 className="mx-auto h-10 sm:h-12 w-10 sm:h-12 animate-spin text-primary" />
           <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground">Loading Past Files Section...</p>
         </div>
       </main>
@@ -360,8 +392,8 @@ ${cleanText(readmeData.setupInstructions)}
     <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 lg:p-24 bg-background">
       <div className="container mx-auto flex flex-col items-center gap-6 sm:gap-8 w-full max-w-4xl">
         
-        <header className="w-full mb-6 sm:mb-8">
-          <nav className="flex justify-between items-center w-full py-3 sm:py-4 border-b mb-4 sm:mb-6">
+        <header className="w-full mb-4 sm:mb-6">
+          <nav className="flex justify-between items-center w-full py-2 sm:py-3 border-b mb-3 sm:mb-4">
             <div className="flex items-center space-x-1 sm:space-x-2">
               <Link href="/" passHref>
                 <Button variant="outline" size="icon" title="Go to Home Page" className="h-8 w-8 sm:h-9 sm:w-9">
@@ -373,27 +405,27 @@ ${cleanText(readmeData.setupInstructions)}
               {loggedIn ? (
                 <>
                   <Link href="/dashboard" passHref>
-                    <Button variant="outline" size="sm" className="px-2 sm:px-3">
-                      <LayoutDashboard className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <Button variant="outline" size="sm" className="px-2 text-xs sm:px-3 sm:text-sm">
+                      <LayoutDashboard className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> 
                       <span className="hidden sm:inline">Dashboard</span>
                     </Button>
                   </Link>
-                  <Button variant="destructive" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
-                    <LogOut className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                  <Button variant="destructive" size="sm" onClick={handleLogout} className="px-2 text-xs sm:px-3 sm:text-sm">
+                    <LogOut className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> 
                     <span className="hidden sm:inline">Logout</span>
                   </Button>
                 </>
               ) : (
                 <>
                   <Link href="/auth/login" passHref>
-                    <Button variant="outline" size="sm" className="px-2 sm:px-3">
-                      <LogIn className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <Button variant="outline" size="sm" className="px-2 text-xs sm:px-3 sm:text-sm">
+                      <LogIn className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> 
                       <span className="hidden sm:inline">Login</span>
                     </Button>
                   </Link>
                   <Link href="/auth/signup" passHref>
-                    <Button variant="default" size="sm" className="px-2 sm:px-3">
-                      <UserPlus className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <Button variant="default" size="sm" className="px-2 text-xs sm:px-3 sm:text-sm">
+                      <UserPlus className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> 
                       <span className="hidden sm:inline">Sign Up</span>
                     </Button>
                   </Link>
@@ -405,18 +437,18 @@ ${cleanText(readmeData.setupInstructions)}
           
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
-            <p className="mt-2 sm:mt-3 text-md sm:text-lg text-muted-foreground">
+            <p className="mt-1.5 sm:mt-2 text-sm sm:text-base md:text-lg text-muted-foreground">
               Upload project files to generate individual READMEs for each. Login required.
             </p>
           </div>
         </header>
 
-        <Card className="w-full shadow-xl">
+        <Card className="w-full shadow-xl border hover:border-foreground transition-colors duration-200">
           <CardHeader>
-            <CardTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <UploadCloud className="h-6 sm:h-7 w-6 sm:w-7 text-primary" /> Upload Files
+            <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
+              <UploadCloud className="h-5 sm:h-6 w-5 sm:h-6 text-primary" /> Upload Files
             </CardTitle>
-            <CardDescription className="text-sm sm:text-base">
+            <CardDescription className="text-xs sm:text-sm">
               Select one or more files. A separate README will be generated for each file. Max total size recommended: ~5MB per file.
             </CardDescription>
           </CardHeader>
@@ -435,14 +467,14 @@ ${cleanText(readmeData.setupInstructions)}
 
             {selectedFileDetails.length > 0 && (
               <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-md sm:text-lg font-semibold">Selected Files:</h3>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold">Selected Files:</h3>
                 <ScrollArea className="h-[150px] sm:h-[200px] w-full rounded-md border p-2 sm:p-3 bg-muted/30">
                   <ul className="space-y-1.5 sm:space-y-2">
                     {selectedFileDetails.map((file) => (
                       <li key={file.id} className="flex justify-between items-center p-1.5 sm:p-2 bg-background rounded shadow-sm hover:bg-accent/50 transition-colors">
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                           <FileText className="h-4 sm:h-5 w-4 sm:h-5 text-primary" />
-                           <span className="font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-xs md:max-w-sm" title={file.name}>{file.name}</span>
+                           <span dangerouslySetInnerHTML={{__html: FileTextIconSvg}} className="h-4 w-4 sm:h-5 sm:w-5 text-primary [&_svg]:h-full [&_svg]:w-full"></span>
+                           <span className="font-medium text-xs sm:text-sm truncate max-w-[120px] xs:max-w-[150px] sm:max-w-xs md:max-w-sm" title={file.name}>{file.name}</span>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2">
                           <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
@@ -456,7 +488,7 @@ ${cleanText(readmeData.setupInstructions)}
                 </ScrollArea>
                  <Button 
                     onClick={handleGenerateAllReadmes} 
-                    className="w-full text-md sm:text-lg py-2.5 sm:py-3" 
+                    className="w-full text-sm sm:text-base md:text-lg py-2 sm:py-2.5" 
                     disabled={isOverallLoading || selectedFileDetails.length === 0}
                   >
                   {isOverallLoading ? (
@@ -482,17 +514,17 @@ ${cleanText(readmeData.setupInstructions)}
         )}
         
         {generatedFileReadmes.length > 0 && (
-            <Card className="w-full shadow-xl mt-6 sm:mt-8" id="generated-readmes-display">
+            <Card className="w-full shadow-xl mt-6 sm:mt-8 border hover:border-foreground transition-colors duration-200" id="generated-readmes-display">
                 <CardHeader>
-                    <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Generated READMEs</CardTitle>
-                    <CardDescription className="text-sm sm:text-base">Below are the individually generated READMEs for your uploaded files.</CardDescription>
+                    <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold font-headline">Generated READMEs</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Below are the individually generated READMEs for your uploaded files.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 sm:space-y-6">
                     {generatedFileReadmes.map(genFile => (
-                        <Card key={genFile.fileId} className="p-3 sm:p-4 rounded-md shadow-md bg-card">
+                        <Card key={genFile.fileId} className="p-3 sm:p-4 rounded-md shadow-md bg-card border hover:border-foreground transition-colors duration-200">
                             <CardHeader className="p-0 pb-2 sm:pb-3 mb-2 sm:mb-3 border-b border-border/60">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                    <CardTitle className="text-lg sm:text-xl font-semibold text-primary mb-1 sm:mb-0 truncate max-w-full sm:max-w-[calc(100%-150px)]" title={genFile.fileName}>{genFile.fileName}</CardTitle>
+                                    <CardTitle className="text-md sm:text-lg font-semibold text-primary mb-1 sm:mb-0 truncate max-w-full sm:max-w-[calc(100%-120px)]" title={genFile.fileName}>{genFile.fileName}</CardTitle>
                                     {genFile.readmeData && !genFile.isLoading && (
                                     <Button 
                                         onClick={() => handleDownloadIndividualReadme(genFile.readmeData!, genFile.fileName)} 
@@ -501,16 +533,16 @@ ${cleanText(readmeData.setupInstructions)}
                                         className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-2 py-1 self-start sm:self-center"
                                         disabled={!genFile.readmeData}
                                     >
-                                        <Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Download .txt
+                                        <Download className="mr-1 h-3.5 w-3.5 sm:mr-1.5 sm:h-4 sm:w-4" /> Download .txt
                                     </Button>
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-0">
+                            <CardContent className="p-0" id={genFile.contentWrapperId}>
                                 {genFile.isLoading && (
                                 <div className="flex items-center space-x-2 py-4">
                                     <Loader2 className="h-4 sm:h-5 w-4 sm:h-5 animate-spin text-primary" />
-                                    <span className="text-muted-foreground text-sm">Generating README for {genFile.fileName}...</span>
+                                    <span className="text-muted-foreground text-xs sm:text-sm">Generating README for {genFile.fileName}...</span>
                                 </div>
                                 )}
                                 {genFile.error && !genFile.isLoading && (
@@ -521,25 +553,25 @@ ${cleanText(readmeData.setupInstructions)}
                                 </Alert>
                                 )}
                                 {genFile.readmeData && !genFile.isLoading && (
-                                <ScrollArea className="h-[300px] sm:h-[400px] md:h-[450px] w-full rounded-md border border-border/50 p-2 sm:p-3 bg-background/50">
+                                <ScrollArea className="h-[calc(100vh-400px)] min-h-[250px] sm:h-[300px] md:h-[400px] w-full rounded-md border border-border/50 p-2 sm:p-3 bg-background/50">
                                     <div className="space-y-1.5 sm:space-y-2">
                                       <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.projectName} title="AI Suggested Project Name" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-pn"} content={genFile.readmeData.projectName} title="AI Suggested Project Name" />
                                       </div>
                                       <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.projectDescription} title="Project Description" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-pd"} content={genFile.readmeData.projectDescription} title="Project Description" />
                                       </div>
                                       <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.features} title="Features" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-ft"} content={genFile.readmeData.features} title="Features" />
                                       </div>
                                       <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.technologiesUsed} title="Technologies Used" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-tu"} content={genFile.readmeData.technologiesUsed} title="Technologies Used" />
                                       </div>
                                       <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.folderStructure} title="Folder Structure" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-fs"} content={genFile.readmeData.folderStructure} title="Folder Structure" />
                                       </div>
                                       <div className="py-1.5 sm:py-2 last:border-b-0">
-                                        <MarkdownContentDisplay content={genFile.readmeData.setupInstructions} title="Setup Instructions" />
+                                        <MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-si"} content={genFile.readmeData.setupInstructions} title="Setup Instructions" />
                                       </div>
                                     </div>
                                 </ScrollArea>
