@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   fullName: string;
@@ -15,10 +16,40 @@ export interface PendingOTP {
 }
 
 const USERS_KEY = 'auth_users';
-const LOGGED_IN_KEY = 'auth_isLoggedIn';
-const CURRENT_USER_EMAIL_KEY = 'auth_currentUserEmail';
 const PENDING_OTP_KEY = 'auth_pendingOtp';
 const OTP_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
+const SESSION_COOKIE_NAME = 'readme_genius_session_email';
+
+// --- Cookie Helper Functions ---
+function setCookie(name: string, value: string, days?: number): void {
+  if (typeof document === 'undefined') return;
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax";
+}
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+}
+
+function deleteCookie(name: string): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = name + '=; Max-Age=-99999999; path=/; SameSite=Lax';
+}
+// --- End Cookie Helper Functions ---
+
 
 // Helper to safely parse JSON from localStorage
 function getJSONItem<T>(key: string): T | null {
@@ -79,23 +110,22 @@ export function updateUser(updatedUser: User): void {
 }
 
 export function isLoggedIn(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(LOGGED_IN_KEY) === 'true';
+  if (typeof document === 'undefined') return false;
+  return !!getCookie(SESSION_COOKIE_NAME);
 }
 
 export function setLoggedIn(status: boolean, email?: string): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LOGGED_IN_KEY, status.toString());
+  if (typeof document === 'undefined') return;
   if (status && email) {
-    localStorage.setItem(CURRENT_USER_EMAIL_KEY, email);
+    setCookie(SESSION_COOKIE_NAME, email, 7); // Set cookie for 7 days
   } else if (!status) {
-    localStorage.removeItem(CURRENT_USER_EMAIL_KEY);
+    deleteCookie(SESSION_COOKIE_NAME);
   }
 }
 
 export function getCurrentUserEmail(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(CURRENT_USER_EMAIL_KEY);
+  if (typeof document === 'undefined') return null;
+  return getCookie(SESSION_COOKIE_NAME);
 }
 
 export function setPendingOTP(email: string, otp: string): void {
