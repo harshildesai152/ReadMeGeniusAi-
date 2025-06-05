@@ -22,6 +22,7 @@ import { ReadmeDisplay } from "@/components/readme-display";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Logo } from '@/components/logo'; // Added import for Logo
 import {
   DropdownMenu,
   DropdownMenuContent,
