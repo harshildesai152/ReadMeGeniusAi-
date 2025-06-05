@@ -29,6 +29,7 @@ const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean }> = (
     .replace(/^# (.*$)/gim, `<h2 class="text-xl sm:text-2xl font-bold mt-3 sm:mt-4 mb-1.5 sm:mb-2 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-2 sm:underline-offset-4 decoration-primary/60">${'$1'}</h2>`)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
     .replace(/`([^`]+)`/g, '<code class="bg-muted/70 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono shadow-sm border border-border/50">$1</code>')
     .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => {
       const items = match.trim().split('\n').map(item => `<li class="ml-5 sm:ml-6 list-disc space-y-1 my-1 sm:my-1.5 text-sm sm:text-base ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
@@ -39,7 +40,6 @@ const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean }> = (
         return `<ol class="space-y-0.5 mb-2 sm:mb-3">${items}</ol>`;
     })
     .replace(/```([\s\S]*?)```/g, (match, p1) => `<pre class="bg-muted/80 p-3 sm:p-3.5 rounded-md text-xs sm:text-sm overflow-x-auto my-2 sm:my-3 font-mono shadow-md border border-border/70 ${isFullScreen ? 'text-foreground/90' : 'text-foreground/90'}">${p1.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`)
-    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
     .replace(/\n/g, '<br />');
 
   htmlContent = htmlContent.split('<br />').map(line => {
@@ -51,7 +51,7 @@ const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean }> = (
   }).join('<br />').replace(/<br \/>(<p)/g, '$1').replace(/(<\/p>)<br \/>/g, '$1');
 
 
-  return <div className={cn("prose prose-sm sm:prose-base dark:prose-invert max-w-none", isFullScreen ? "text-base" : "text-sm")} dangerouslySetInnerHTML={{ __html: htmlContent || '' }} />;
+  return <div className={cn("prose dark:prose-invert max-w-none", isFullScreen ? "text-base sm:text-lg" : "text-sm sm:text-base")} dangerouslySetInnerHTML={{ __html: htmlContent || '' }} />;
 };
 
 
@@ -142,14 +142,14 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
   return (
     <Card className={cn(
         "w-full shadow-xl",
-        isFullScreen && "fixed inset-0 z-50 m-0 rounded-none border-none flex flex-col" // Removed overflow-y-auto
+        isFullScreen && "fixed inset-0 z-50 m-0 rounded-none border-none flex flex-col h-screen" 
       )}>
       <CardHeader className={cn(
         "flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-3 sm:pb-2",
-        isFullScreen && "px-3 sm:px-4 pt-3 sm:pt-4 md:px-6 border-b sticky top-0 bg-background z-10"
+        isFullScreen && "px-3 sm:px-4 pt-3 sm:pt-4 md:px-6 border-b sticky top-0 bg-background z-10 flex-shrink-0"
       )}>
         <CardTitle className={cn(
-            "text-lg sm:text-xl md:text-2xl font-bold font-headline text-primary",
+            "text-base sm:text-lg md:text-xl font-bold font-headline text-primary",
             isFullScreen && "text-lg sm:text-xl"
             )}>
           {isFullScreen ? data.projectName : "Generated README.md"}
@@ -199,15 +199,16 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
         </div>
       </CardHeader>
       <CardContent className={cn(
-        isFullScreen && "flex-1 overflow-hidden" // Changed from flex-grow and removed padding
+         // Default styles for CardContent
+         isFullScreen && "flex-1 flex flex-col min-h-0 p-0" // Full-screen specific styles for CardContent
         )}>
         <ScrollArea className={cn(
           "h-[calc(100vh-320px)] min-h-[300px] sm:h-[500px] w-full rounded-md border p-3 sm:p-4 bg-background",
-          isFullScreen && "h-full w-full border-0 rounded-none p-0 bg-transparent"
+          isFullScreen && "flex-1 h-auto w-full border-0 rounded-none bg-transparent" 
           )}>
           <div className={cn(
               "space-y-3 sm:space-y-4",
-              isFullScreen && "max-w-4xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4" // Added padding here
+              isFullScreen && "max-w-4xl mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4" 
             )}>
             {!isFullScreen && (
               <div className="py-2 sm:py-3 border-b border-border/50">
