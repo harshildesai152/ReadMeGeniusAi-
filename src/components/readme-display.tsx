@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit3, Maximize, Minimize, Loader2, EyeIcon, CodeIcon, Github, Palette, ImageUp, CircleX, DownloadCloud } from "lucide-react";
+import { Check, Edit3, Maximize, Minimize, Loader2, EyeIcon, CodeIcon, Palette, ImageUp, CircleX, DownloadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import jsPDF from 'jspdf';
@@ -19,7 +19,6 @@ import html2canvas from 'html2canvas';
 const ClipboardCopySvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>`;
 const CheckSvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 const FileTextIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
-const GithubIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>`;
 
 
 interface ReadmeDisplayProps {
@@ -42,7 +41,7 @@ const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean; conte
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
-    .replace(/`([^`]+)`/g, (match, p1) => `<code class="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono border border-border/30 shadow-sm">${p1}</code>`)
+    .replace(/`([^`]+)`/g, (match, p1) => `<code class="bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-300 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono shadow-sm border border-border/30">${p1}</code>`)
     .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => {
       const items = match.trim().split('\n').map(item => `<li class="ml-5 sm:ml-6 list-disc my-1 text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
       return `<ul class="mb-2">${items}</ul>`;
@@ -90,12 +89,6 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
   const [viewMode, setViewMode] = useState<'formatted' | 'raw'>('formatted');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const contentWrapperId = `readme-content-wrapper-${React.useId()}`;
-
-  const [isGithubDialogOpen, setIsGithubDialogOpen] = useState(false);
-  const [githubRepoUrl, setGithubRepoUrl] = useState("");
-  const [githubBranch, setGithubBranch] = useState("main");
-  const [githubCommitMessage, setGithubCommitMessage] = useState("docs: Update README.md via ReadMeGenius");
-  const [isCommittingToGithub, setIsCommittingToGithub] = useState(false);
 
   const [customLogoDataUri, setCustomLogoDataUri] = useState<string | null>(null);
   const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#4285F4"); // Default to app primary
@@ -171,22 +164,6 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
         console.error("Failed to copy: ", err);
         toast({ title: "Error copying", variant: "destructive"});
       });
-  };
-
-  const handleMockCommitToGithub = async () => {
-    if (!mounted) return;
-    if (!githubRepoUrl.trim()) {
-      toast({ title: "Validation Error", description: "GitHub Repository URL is required.", variant: "destructive" });
-      return;
-    }
-    setIsCommittingToGithub(true);
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-    setIsCommittingToGithub(false);
-    setIsGithubDialogOpen(false);
-    toast({ title: "Mock Commit Successful!", description: `README would be committed to ${githubRepoUrl} on branch ${githubBranch}.` });
-    setGithubRepoUrl("");
-    setGithubBranch("main");
-    setGithubCommitMessage("docs: Update README.md via ReadMeGenius");
   };
 
   const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -331,10 +308,6 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             {isCopiedGlobal ? <Check className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <span dangerouslySetInnerHTML={{ __html: ClipboardCopySvgIcon }} className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 [&_svg]:h-full [&_svg]:w-full"></span>}
             {isCopiedGlobal ? "Copied!" : "Copy All"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsGithubDialogOpen(true)} className="bg-gray-700 hover:bg-gray-800 text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-             <span dangerouslySetInnerHTML={{ __html: GithubIconSvg }} className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4 [&_svg]:h-full [&_svg]:w-full"></span>
-            Export to GitHub
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsBrandingDialogOpen(true)} className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
             <Palette className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
             Branding
@@ -387,43 +360,6 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
         </ScrollArea>
       </CardContent>
     </Card>
-
-    <Dialog open={isGithubDialogOpen} onOpenChange={setIsGithubDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-               <span dangerouslySetInnerHTML={{ __html: GithubIconSvg }} className="h-5 w-5 [&_svg]:h-full [&_svg]:w-full"></span>
-              Export README to GitHub (Mock)
-            </DialogTitle>
-            <DialogDescription>
-              Enter the details of the GitHub repository to (mock) commit this README.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label htmlFor="github-repo-url">Repository URL</Label>
-              <Input id="github-repo-url" placeholder="https://github.com/username/repository" value={githubRepoUrl} onChange={(e) => setGithubRepoUrl(e.target.value)} disabled={isCommittingToGithub} />
-            </div>
-            <div>
-              <Label htmlFor="github-branch">Branch Name</Label>
-              <Input id="github-branch" placeholder="e.g., main or develop" value={githubBranch} onChange={(e) => setGithubBranch(e.target.value)} disabled={isCommittingToGithub} />
-            </div>
-            <div>
-              <Label htmlFor="github-commit-message">Commit Message</Label>
-              <Input id="github-commit-message" value={githubCommitMessage} onChange={(e) => setGithubCommitMessage(e.target.value)} disabled={isCommittingToGithub} />
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-end gap-2 sm:gap-0">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isCommittingToGithub}>Cancel</Button>
-            </DialogClose>
-            <Button type="button" onClick={handleMockCommitToGithub} disabled={isCommittingToGithub}>
-              {isCommittingToGithub && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Commit (Mock)
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
     <Dialog open={isBrandingDialogOpen} onOpenChange={setIsBrandingDialogOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -489,4 +425,3 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
     </>
   );
 }
-
