@@ -149,7 +149,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string; isFullS
     if (trimmedLine.startsWith('<h') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<div class="code-block-container') || trimmedLine.startsWith('<li') || trimmedLine === '') {
       return line;
     }
-    return `<p class="mb-1 sm:mb-1.5 leading-relaxed text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${line || <>&nbsp;</>}</p>`;
+    return `<p class="mb-1 sm:mb-1.5 leading-relaxed text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${line || String.fromCharCode(160)}</p>`;
   }).join('<br />').replace(/<br \/>(<p|<div class="code-block-container)/g, '$1').replace(/(<\/p>|<\/div>)<br \/>/g, '$1');
 
 
@@ -737,7 +737,7 @@ ${readmeItem.setupInstructions}
 
         {globalError && !isEditingSavedReadme && (
           <Alert variant="destructive" className="shadow-md w-full text-xs sm:text-sm">
-            <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle <AlertDescription>{globalError}</AlertDescription>
+            <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle> <AlertDescription>{globalError}</AlertDescription>
           </Alert>
         )}
         
@@ -841,7 +841,7 @@ ${readmeItem.setupInstructions}
                     <CardDescription className="text-center text-xs sm:text-sm text-muted-foreground">Modify the sections below. Use Markdown.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0 space-y-1.5 sm:space-y-2">
-                    <div><Label htmlFor="edit-saved-projectName" className="font-semibold text-xs sm:text-sm">Project Name</Label><Input id="edit-saved-projectName" value={editableSavedReadmeData.projectName} onChange={(e) => handleEditableSavedInputChange(e, 'projectName')} className="mt-0.5 text-xs sm:text-sm h-8 sm:h-9" /></div>
+                    <div><Label htmlFor="edit-saved-projectName" className="font-semibold text-xs sm:text-sm">Project Name</Label><Input id="edit-saved-projectName" value={editableSavedReadmeData.projectName} onChange={(e) => handleEditableSavedInputChange(e as React.ChangeEvent<HTMLInputElement>, 'projectName')} className="mt-0.5 text-xs sm:text-sm h-8 sm:h-9" /></div>
                     <div><Label htmlFor="edit-saved-projectDescription" className="font-semibold text-xs sm:text-sm">Project Description</Label><Textarea id="edit-saved-projectDescription" value={editableSavedReadmeData.projectDescription} onChange={(e) => handleEditableSavedInputChange(e, 'projectDescription')} className="mt-0.5 min-h-[70px] sm:min-h-[80px] text-xs sm:text-sm"/></div>
                     <div><Label htmlFor="edit-saved-features" className="font-semibold text-xs sm:text-sm">Features</Label><Textarea id="edit-saved-features" value={editableSavedReadmeData.features} onChange={(e) => handleEditableSavedInputChange(e, 'features')} className="mt-0.5 min-h-[80px] sm:min-h-[100px] text-xs sm:text-sm"/></div>
                     <div><Label htmlFor="edit-saved-technologiesUsed" className="font-semibold text-xs sm:text-sm">Technologies Used</Label><Textarea id="edit-saved-technologiesUsed" value={editableSavedReadmeData.technologiesUsed} onChange={(e) => handleEditableSavedInputChange(e, 'technologiesUsed')} className="mt-0.5 min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm"/></div>
@@ -875,3 +875,4 @@ ${readmeItem.setupInstructions}
   );
 }
 
+    
