@@ -22,7 +22,7 @@ import { ReadmeDisplay } from "@/components/readme-display";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Logo } from '@/components/logo'; // Added import for Logo
+import { Logo } from '@/components/logo';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,7 +60,7 @@ interface GeneratedReadmeForFile {
 interface SavedReadmeItem extends FullReadmeData {
   id: string;
   savedDate: string;
-  inputTypeUsed?: string; // Keep this generic for items saved elsewhere
+  inputTypeUsed?: string; 
   originalInput?: string;
 }
 
@@ -172,7 +172,6 @@ export default function PastFilesPage() {
   const router = useRouter();
   const [loggedIn, setLoggedInStatus] = useState(false);
   
-  // State for Saved READMEs functionality
   const [savedReadmesList, setSavedReadmesList] = useState<SavedReadmeItem[]>([]);
   const [selectedSavedReadmeForDisplay, setSelectedSavedReadmeForDisplay] = useState<FullReadmeData | null>(null);
   const [currentSavedReadmeIdForDisplay, setCurrentSavedReadmeIdForDisplay] = useState<string | null>(null);
@@ -334,7 +333,7 @@ export default function PastFilesPage() {
       ...readmeToSave,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       savedDate: new Date().toISOString(),
-      inputTypeUsed: "file-upload", // Specific type for this page
+      inputTypeUsed: "file-upload", 
       originalInput: originalFileName,
     };
     setSavedReadmesList((prev) => {
@@ -363,7 +362,7 @@ export default function PastFilesPage() {
     }
     setGlobalError(null);
     setIsOverallLoading(true);
-    setSelectedSavedReadmeForDisplay(null); // Clear any viewed saved README
+    setSelectedSavedReadmeForDisplay(null); 
 
     const initialReadmeStates = selectedFileDetails.map(file => ({
       fileId: file.id,
@@ -384,7 +383,7 @@ export default function PastFilesPage() {
           toast({ title: `Generation Failed: ${fileDetail.name}`, description: result.error, variant: "destructive", duration: 5000 });
         } else if (result) {
           setGeneratedFileReadmes(prev => prev.map(item => item.fileId === fileDetail.id ? { ...item, readmeData: result, error: null, isLoading: false } : item));
-          handleSaveGeneratedFileReadme(result, fileDetail.name); // Save the generated README
+          handleSaveGeneratedFileReadme(result, fileDetail.name); 
           toast({ title: `README Generated & Saved: ${fileDetail.name}`, duration: 3000 });
         } else {
            setGeneratedFileReadmes(prev => prev.map(item => item.fileId === fileDetail.id ? { ...item, error: "An unknown error occurred.", readmeData: null, isLoading: false } : item));
@@ -419,7 +418,6 @@ export default function PastFilesPage() {
     toast({ title: "README Downloading...", description: `${link.download} will be downloaded.`});
   };
 
-  // Functions for Saved READMEs section
   const handleDeleteSavedReadme = (id: string) => {
     if (!mounted || !loggedIn) return;
     setSavedReadmesList((prev) => prev.filter((item) => item.id !== id));
@@ -440,7 +438,6 @@ export default function PastFilesPage() {
     setIsEditingSavedReadme(false); 
     setEditableSavedReadmeData(null);
     toast({ title: "Saved README Loaded", description: `${readmeItem.projectName} is now displayed.` });
-    // Scroll to the display area
     const displayElement = document.getElementById("saved-readme-display-area");
     if (displayElement) displayElement.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -570,21 +567,74 @@ ${readmeItem.setupInstructions}
 
   if (!mounted) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 bg-background">
-        <div className="w-full max-w-4xl mx-auto text-center">
-          <Loader2 className="mx-auto h-10 sm:h-12 w-10 sm:h-12 animate-spin text-primary" />
-          <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground">Loading Past Files Section...</p>
+      <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 bg-background animate-pulse">
+        <div className="container mx-auto flex flex-col items-center gap-6 sm:gap-8 w-full max-w-4xl">
+          {/* Header Skeleton */}
+          <header className="w-full mb-1 sm:mb-2">
+            <nav className="flex justify-between items-center w-full py-2 sm:py-3 border-b mb-3 sm:mb-4">
+              {/* Logo Placeholder */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="h-6 w-6 sm:h-8 sm:w-8 bg-muted rounded-full"></div>
+                <div className="h-5 w-20 sm:h-6 sm:w-24 bg-muted rounded-md"></div>
+                <div className="h-5 w-16 sm:h-6 sm:w-20 bg-muted rounded-md"></div>
+              </div>
+              {/* Auth Buttons & Theme Toggle Placeholder */}
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="h-8 w-20 sm:h-9 sm:w-24 bg-muted rounded-md"></div>
+                <div className="h-8 w-20 sm:h-9 sm:w-24 bg-muted rounded-md"></div>
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted rounded-full"></div>
+              </div>
+            </nav>
+            {/* Page Title/Description Placeholder */}
+            <div className="text-center space-y-1 mt-2">
+              <div className="h-7 w-3/4 sm:w-1/2 mx-auto bg-muted rounded-md"></div>
+              <div className="h-4 w-full sm:w-3/4 mx-auto bg-muted rounded-md mt-1.5"></div>
+            </div>
+          </header>
+
+          {/* Upload Files Card Skeleton */}
+          <div className="w-full shadow-xl border bg-card p-4 sm:p-6 rounded-lg">
+            <div className="space-y-2 mb-4">
+              <div className="h-6 w-1/3 bg-muted rounded-md"></div> {/* CardTitle */}
+              <div className="h-4 w-2/3 bg-muted rounded-md"></div> {/* CardDescription */}
+            </div>
+            <div className="h-10 bg-muted rounded-md"></div> {/* File input placeholder */}
+          </div>
+
+          {/* Saved READMEs Card Skeleton (Placeholder) */}
+          <div className="w-full shadow-lg border bg-card p-4 sm:p-6 rounded-lg mt-4 sm:mt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
+              <div className="flex-1 space-y-1.5">
+                <div className="h-6 w-1/2 bg-muted rounded-md"></div> {/* CardTitle */}
+                <div className="h-4 w-3/4 bg-muted rounded-md"></div> {/* CardDescription */}
+              </div>
+              <div className="h-8 w-28 bg-muted rounded-md mt-2 sm:mt-0"></div> {/* PDF Actions button */}
+            </div>
+            <div className="h-[200px] sm:h-[250px] w-full rounded-md border bg-muted/30 p-2 mt-2">
+              {/* Placeholder for list items */}
+              <div className="space-y-2">
+                <div className="h-10 bg-muted rounded-md"></div>
+                <div className="h-10 bg-muted rounded-md"></div>
+                <div className="h-10 bg-muted rounded-md"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Skeleton */}
+          <footer className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-muted-foreground">
+            <div className="h-4 w-1/3 mx-auto bg-muted rounded-md"></div>
+          </footer>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 lg:p-24 bg-background">
-      <div className="container mx-auto flex flex-col items-center gap-6 sm:gap-8 w-full max-w-4xl">
+    <main className="flex min-h-screen flex-col items-center justify-start p-2 sm:p-4 md:p-8 lg:p-12 bg-background">
+      <div className="container mx-auto flex flex-col items-center gap-4 sm:gap-6 w-full max-w-4xl">
         
         <header className="w-full mb-1 sm:mb-2">
-          <nav className="flex justify-between items-center w-full py-2 sm:py-3 border-b mb-3 sm:mb-4">
+          <nav className="flex justify-between items-center w-full py-2 sm:py-3 border-b mb-2 sm:mb-3">
              <Link href="/" passHref> <Logo /> </Link>
             <div className="flex items-center space-x-1 sm:space-x-2">
               {loggedIn ? (
@@ -621,7 +671,7 @@ ${readmeItem.setupInstructions}
           </nav>
           
           <div className="text-center">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
             <p className="mt-1 sm:mt-1.5 text-xs sm:text-sm md:text-base text-muted-foreground">
               Upload project files to generate individual READMEs for each. Login required.
             </p>
@@ -630,14 +680,14 @@ ${readmeItem.setupInstructions}
 
         <Card className="w-full shadow-xl border hover:border-foreground transition-colors duration-200">
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
-              <UploadCloud className="h-5 sm:h-6 w-5 sm:h-6 text-primary" /> Upload Files
+            <CardTitle className="text-md sm:text-lg md:text-xl font-bold flex items-center gap-2">
+              <UploadCloud className="h-4 sm:h-5 w-4 sm:h-5 text-primary" /> Upload Files
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Select one or more files. A separate README will be generated and saved for each file.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
+          <CardContent className="space-y-2 sm:space-y-3">
             <div>
               <label htmlFor="file-upload" className="sr-only">Choose files</label>
               <Input
@@ -645,26 +695,26 @@ ${readmeItem.setupInstructions}
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="block w-full text-xs sm:text-sm text-slate-500 file:mr-3 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                className="block w-full text-xs sm:text-sm text-slate-500 file:mr-2 sm:file:mr-3 file:py-1 sm:file:py-1.5 file:px-2 sm:file:px-3 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}
               />
             </div>
 
             {selectedFileDetails.length > 0 && (
               <div className="space-y-2 sm:space-y-3">
-                <h3 className="text-sm sm:text-base md:text-lg font-semibold">Selected Files:</h3>
-                <ScrollArea className="h-[120px] sm:h-[150px] w-full rounded-md border p-2 sm:p-3 bg-muted/30">
-                  <ul className="space-y-1.5 sm:space-y-2">
+                <h3 className="text-sm sm:text-base font-semibold">Selected Files:</h3>
+                <ScrollArea className="h-[100px] sm:h-[120px] w-full rounded-md border p-1.5 sm:p-2 bg-muted/30">
+                  <ul className="space-y-1 sm:space-y-1.5">
                     {selectedFileDetails.map((file) => (
-                      <li key={file.id} className="flex justify-between items-center p-1.5 sm:p-2 bg-background rounded shadow-sm hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                           <span dangerouslySetInnerHTML={{__html: FileTextIconSvg}} className="h-4 w-4 sm:h-5 sm:w-5 text-primary [&_svg]:h-full [&_svg]:w-full shrink-0"></span>
-                           <span className="font-medium text-xs sm:text-sm truncate max-w-[100px] xs:max-w-[120px] sm:max-w-[200px] md:max-w-xs" title={file.name}>{file.name}</span>
+                      <li key={file.id} className="flex justify-between items-center p-1 sm:p-1.5 bg-background rounded shadow-sm hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
+                           <span dangerouslySetInnerHTML={{__html: FileTextIconSvg}} className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary [&_svg]:h-full [&_svg]:w-full shrink-0"></span>
+                           <span className="font-medium text-xs sm:text-sm truncate max-w-[100px] xs:max-w-[120px] sm:max-w-[180px] md:max-w-xs" title={file.name}>{file.name}</span>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-0.5 sm:gap-1">
                           <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-6 w-6 sm:h-7 sm:w-7 text-destructive hover:text-destructive/80 shrink-0" title="Remove file" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}>
-                            <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:h-4" />
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-5 w-5 sm:h-6 sm:w-6 text-destructive hover:text-destructive/80 shrink-0" title="Remove file" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}>
+                            <Trash2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                           </Button>
                         </div>
                       </li>
@@ -673,11 +723,11 @@ ${readmeItem.setupInstructions}
                 </ScrollArea>
                  <Button 
                     onClick={handleGenerateAllReadmes} 
-                    className="w-full text-sm sm:text-base py-2 sm:py-2.5" 
+                    className="w-full text-xs sm:text-sm py-1.5 sm:py-2" 
                     disabled={isOverallLoading || selectedFileDetails.length === 0 || isGeneratingSavedPdf || isEditingSavedReadme}
                   >
                   {isOverallLoading ? (
-                    <> <Loader2 className="mr-2 h-4 sm:h-5 w-4 sm:h-5 animate-spin" /> Generating READMEs... </>
+                    <> <Loader2 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> Generating READMEs... </>
                   ) : ( "Generate & Save READMEs from Files" )}
                 </Button>
               </div>
@@ -686,36 +736,36 @@ ${readmeItem.setupInstructions}
         </Card>
 
         {globalError && !isEditingSavedReadme && (
-          <Alert variant="destructive" className="shadow-md w-full">
-            <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle> <AlertDescription>{globalError}</AlertDescription>
+          <Alert variant="destructive" className="shadow-md w-full text-xs sm:text-sm">
+            <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle <AlertDescription>{globalError}</AlertDescription>
           </Alert>
         )}
         
         {generatedFileReadmes.length > 0 && !isOverallLoading && !selectedSavedReadmeForDisplay && !isEditingSavedReadme && (
-            <Card className="w-full shadow-xl mt-4 sm:mt-6 border hover:border-foreground transition-colors duration-200" id="generated-readmes-display">
-                <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold font-headline">Newly Generated READMEs</CardTitle>
+            <Card className="w-full shadow-xl mt-3 sm:mt-4 border hover:border-foreground transition-colors duration-200" id="generated-readmes-display">
+                <CardHeader className="p-3 sm:p-4">
+                    <CardTitle className="text-md sm:text-lg md:text-xl font-bold font-headline">Newly Generated READMEs</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">Below are the READMEs generated in this session. They have also been added to your "Saved READMEs" list.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4">
+                <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 pt-0">
                     {generatedFileReadmes.map(genFile => (
-                        <Card key={genFile.fileId} className="p-3 sm:p-4 rounded-md shadow-md bg-card border hover:border-foreground/50 transition-colors duration-200">
-                            <CardHeader className="p-0 pb-2 sm:pb-3 mb-2 sm:mb-3 border-b border-border/60">
+                        <Card key={genFile.fileId} className="p-2 sm:p-3 rounded-md shadow-md bg-card border hover:border-foreground/50 transition-colors duration-200">
+                            <CardHeader className="p-0 pb-1.5 sm:pb-2 mb-1.5 sm:mb-2 border-b border-border/60">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                    <CardTitle className="text-md sm:text-lg font-semibold text-primary mb-1 sm:mb-0 truncate max-w-full sm:max-w-[calc(100%-120px)]" title={genFile.fileName}>{genFile.fileName}</CardTitle>
+                                    <CardTitle className="text-sm sm:text-base font-semibold text-primary mb-1 sm:mb-0 truncate max-w-full sm:max-w-[calc(100%-100px)]" title={genFile.fileName}>{genFile.fileName}</CardTitle>
                                     {genFile.readmeData && !genFile.isLoading && (
-                                    <Button onClick={() => handleDownloadIndividualReadme(genFile.readmeData!, genFile.fileName)} variant="outline" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-2 py-1 self-start sm:self-center mt-1 sm:mt-0" disabled={!genFile.readmeData}>
-                                        <Download className="mr-1 h-3.5 w-3.5 sm:mr-1.5 sm:h-4 sm:w-4" /> Download .txt
+                                    <Button onClick={() => handleDownloadIndividualReadme(genFile.readmeData!, genFile.fileName)} variant="outline" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-1.5 py-0.5 self-start sm:self-center mt-1 sm:mt-0" disabled={!genFile.readmeData}>
+                                        <Download className="mr-1 h-3 w-3 sm:mr-1.5 sm:h-3.5 sm:w-3.5" /> Download .txt
                                     </Button>
                                     )}
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0" id={genFile.contentWrapperId}>
-                                {genFile.isLoading && ( <div className="flex items-center space-x-2 py-4"> <Loader2 className="h-4 sm:h-5 w-4 sm:h-5 animate-spin text-primary" /> <span className="text-muted-foreground text-xs sm:text-sm">Generating for {genFile.fileName}...</span> </div> )}
-                                {genFile.error && !genFile.isLoading && ( <Alert variant="destructive" className="my-2 text-xs sm:text-sm"> <AlertTriangle className="h-4 w-4" /> <AlertTitle>Gen Error</AlertTitle> <AlertDescription>{genFile.error}</AlertDescription> </Alert> )}
+                                {genFile.isLoading && ( <div className="flex items-center space-x-1.5 py-3"> <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-primary" /> <span className="text-muted-foreground text-xs sm:text-sm">Generating for {genFile.fileName}...</span> </div> )}
+                                {genFile.error && !genFile.isLoading && ( <Alert variant="destructive" className="my-1.5 text-xs sm:text-sm"> <AlertTriangle className="h-3.5 w-3.5" /> <AlertTitle>Gen Error</AlertTitle> <AlertDescription>{genFile.error}</AlertDescription> </Alert> )}
                                 {genFile.readmeData && !genFile.isLoading && (
-                                <ScrollArea className="h-[calc(100vh-450px)] min-h-[200px] sm:h-[250px] md:h-[300px] w-full rounded-md border border-border/50 p-2 sm:p-3 bg-background/50">
-                                    <div className="space-y-1.5 sm:space-y-2">
+                                <ScrollArea className="h-[calc(100vh-500px)] min-h-[180px] sm:h-[200px] md:h-[250px] w-full rounded-md border border-border/50 p-1.5 sm:p-2 bg-background/50">
+                                    <div className="space-y-1 sm:space-y-1.5">
                                       <div className="py-1 sm:py-1.5 border-b border-border/30 last:border-b-0"><MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-pn"} content={genFile.readmeData.projectName} title="AI Name" /></div>
                                       <div className="py-1 sm:py-1.5 border-b border-border/30 last:border-b-0"><MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-pd"} content={genFile.readmeData.projectDescription} title="Description" /></div>
                                       <div className="py-1 sm:py-1.5 border-b border-border/30 last:border-b-0"><MarkdownContentDisplay contentWrapperId={genFile.contentWrapperId + "-ft"} content={genFile.readmeData.features} title="Features" /></div>
@@ -732,17 +782,16 @@ ${readmeItem.setupInstructions}
             </Card>
         )}
 
-        {/* Saved READMEs Section */}
         {loggedIn && savedReadmesList.length > 0 && !isEditingSavedReadme && (
-            <Card className="w-full shadow-lg mt-4 sm:mt-6 border hover:border-foreground transition-colors duration-200">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
+            <Card className="w-full shadow-lg mt-3 sm:mt-4 border hover:border-foreground transition-colors duration-200">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0 p-3 sm:p-4 pb-1.5 sm:pb-2">
                     <div className="flex-1">
-                        <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold font-headline">Saved READMEs</CardTitle>
+                        <CardTitle className="text-md sm:text-lg md:text-xl font-bold font-headline">Saved READMEs</CardTitle>
                         <CardDescription className="text-xs sm:text-sm">Manage your saved READMEs. (Max 20, visible only to you)</CardDescription>
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="mt-2 sm:mt-0 w-full sm:w-auto text-xs px-2 py-1" disabled={isGeneratingSavedPdf || isOverallLoading || isEditingSavedReadme}>
+                            <Button variant="outline" size="sm" className="mt-1 sm:mt-0 w-full sm:w-auto text-xs px-2 py-1" disabled={isGeneratingSavedPdf || isOverallLoading || isEditingSavedReadme}>
                                 {isGeneratingSavedPdf ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <span dangerouslySetInnerHTML={{__html: FileTextIconSvg}} className="mr-1.5 h-3.5 w-3.5 [&_svg]:h-full [&_svg]:w-full"></span>}
                                 PDF Actions
                             </Button>
@@ -754,62 +803,60 @@ ${readmeItem.setupInstructions}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </CardHeader>
-                <CardContent>
-                    <ScrollArea className="h-[200px] sm:h-[250px] w-full rounded-md border p-2">
-                        <ul className="space-y-1.5 sm:space-y-2">
+                <CardContent className="p-3 sm:p-4 pt-1.5 sm:pt-2">
+                    <ScrollArea className="h-[180px] sm:h-[200px] w-full rounded-md border p-1.5 sm:p-2">
+                        <ul className="space-y-1.5">
                             {savedReadmesList.map((item) => (
-                            <li key={item.id} className="p-1.5 sm:p-2 bg-muted/50 rounded-md shadow-sm hover:bg-muted transition-colors">
+                            <li key={item.id} className="p-1 sm:p-1.5 bg-muted/50 rounded-md shadow-sm hover:bg-muted transition-colors">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                <div className="flex items-center flex-1 min-w-0 space-x-1.5 sm:space-x-2 mb-1.5 sm:mb-0">
-                                    <Checkbox id={`select-saved-pdf-${item.id}`} checked={selectedSavedReadmeIdsForPdf.includes(item.id)} onCheckedChange={(checked) => handleSavedPdfSelectionChange(item.id, checked)} aria-label={`Select ${item.projectName} for PDF`} disabled={isGeneratingSavedPdf || isOverallLoading || isEditingSavedReadme} className="mt-0.5 sm:mt-0 shrink-0"/>
+                                <div className="flex items-center flex-1 min-w-0 space-x-1 sm:space-x-1.5 mb-1 sm:mb-0">
+                                    <Checkbox id={`select-saved-pdf-${item.id}`} checked={selectedSavedReadmeIdsForPdf.includes(item.id)} onCheckedChange={(checked) => handleSavedPdfSelectionChange(item.id, checked)} aria-label={`Select ${item.projectName} for PDF`} disabled={isGeneratingSavedPdf || isOverallLoading || isEditingSavedReadme} className="mt-0.5 sm:mt-0 shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4"/>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-xs sm:text-sm text-primary truncate" title={item.projectName}>{item.projectName}</p>
+                                        <p className="font-semibold text-xs text-primary truncate" title={item.projectName}>{item.projectName}</p>
                                         <p className="text-xs text-muted-foreground">
                                             Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             {item.inputTypeUsed && <span className="hidden sm:inline"> (via {item.inputTypeUsed === 'file-upload' ? `file: ${item.originalInput?.substring(0,15)}...` : item.inputTypeUsed})</span>}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-1 self-end sm:self-center sm:space-x-1.5 ml-auto sm:ml-2 flex-shrink-0">
-                                    <Button onClick={() => handleLoadSavedReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 h-7 w-auto text-xs" title="View README" disabled={isGeneratingDetailsForSaved || isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Eye className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:ml-1">View</span></Button>
-                                    <Button onClick={() => handleDownloadSavedReadmeMd(item)} variant="outline" size="sm" className="p-1 h-7 w-auto text-xs" title="Download .md" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Download className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:ml-1">.MD</span></Button>
-                                    <Button onClick={() => handleDeleteSavedReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 h-7 w-auto text-xs" title="Delete" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Trash2 className="h-3.5 w-3.5" /> <span className="sr-only sm:not-sr-only sm:ml-1">Del</span></Button>
+                                <div className="flex items-center space-x-0.5 self-end sm:self-center sm:space-x-1 ml-auto sm:ml-1.5 flex-shrink-0">
+                                    <Button onClick={() => handleLoadSavedReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-0.5 h-6 w-auto text-xs" title="View README" disabled={isGeneratingDetailsForSaved || isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Eye className="h-3 w-3" /> <span className="sr-only sm:not-sr-only sm:ml-0.5">View</span></Button>
+                                    <Button onClick={() => handleDownloadSavedReadmeMd(item)} variant="outline" size="sm" className="p-0.5 h-6 w-auto text-xs" title="Download .md" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Download className="h-3 w-3" /> <span className="sr-only sm:not-sr-only sm:ml-0.5">.MD</span></Button>
+                                    <Button onClick={() => handleDeleteSavedReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-0.5 h-6 w-auto text-xs" title="Delete" disabled={isOverallLoading || isGeneratingSavedPdf || isEditingSavedReadme}><Trash2 className="h-3 w-3" /> <span className="sr-only sm:not-sr-only sm:ml-0.5">Del</span></Button>
                                 </div>
                                 </div>
                             </li>
                             ))}
                         </ul>
                     </ScrollArea>
-                    {savedReadmesList.length > 0 && (<p className="text-xs text-muted-foreground mt-2">{selectedSavedReadmeIdsForPdf.length} README(s) selected for PDF. Max 20 saved.</p>)}
+                    {savedReadmesList.length > 0 && (<p className="text-xs text-muted-foreground mt-1.5">{selectedSavedReadmeIdsForPdf.length} README(s) selected for PDF. Max 20 saved.</p>)}
                 </CardContent>
             </Card>
         )}
 
-        {/* Editor for Saved README */}
         {isEditingSavedReadme && editableSavedReadmeData && (
-            <Card className="w-full max-w-3xl shadow-xl space-y-3 sm:space-y-4 border hover:border-foreground transition-colors duration-200 mt-4 sm:mt-6 p-3 sm:p-4 md:p-6">
-                <CardHeader className="p-0 pb-2 sm:pb-3">
-                    <CardTitle className="text-lg sm:text-xl font-bold text-center font-headline">Edit Saved README</CardTitle>
+            <Card className="w-full max-w-3xl shadow-xl space-y-2 sm:space-y-3 border hover:border-foreground transition-colors duration-200 mt-3 sm:mt-4 p-2 sm:p-3 md:p-4">
+                <CardHeader className="p-0 pb-1.5 sm:pb-2">
+                    <CardTitle className="text-md sm:text-lg font-bold text-center font-headline">Edit Saved README</CardTitle>
                     <CardDescription className="text-center text-xs sm:text-sm text-muted-foreground">Modify the sections below. Use Markdown.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0 space-y-2 sm:space-y-3">
-                    <div><Label htmlFor="edit-saved-projectName" className="font-semibold text-xs sm:text-sm">Project Name</Label><Input id="edit-saved-projectName" value={editableSavedReadmeData.projectName} onChange={(e) => handleEditableSavedInputChange(e, 'projectName')} className="mt-1 text-xs sm:text-sm" /></div>
-                    <div><Label htmlFor="edit-saved-projectDescription" className="font-semibold text-xs sm:text-sm">Project Description</Label><Textarea id="edit-saved-projectDescription" value={editableSavedReadmeData.projectDescription} onChange={(e) => handleEditableSavedInputChange(e, 'projectDescription')} className="mt-1 min-h-[80px] sm:min-h-[100px] text-xs sm:text-sm"/></div>
-                    <div><Label htmlFor="edit-saved-features" className="font-semibold text-xs sm:text-sm">Features</Label><Textarea id="edit-saved-features" value={editableSavedReadmeData.features} onChange={(e) => handleEditableSavedInputChange(e, 'features')} className="mt-1 min-h-[100px] sm:min-h-[120px] text-xs sm:text-sm"/></div>
-                    <div><Label htmlFor="edit-saved-technologiesUsed" className="font-semibold text-xs sm:text-sm">Technologies Used</Label><Textarea id="edit-saved-technologiesUsed" value={editableSavedReadmeData.technologiesUsed} onChange={(e) => handleEditableSavedInputChange(e, 'technologiesUsed')} className="mt-1 min-h-[60px] sm:min-h-[80px] text-xs sm:text-sm"/></div>
-                    <div><Label htmlFor="edit-saved-folderStructure" className="font-semibold text-xs sm:text-sm">Folder Structure</Label><Textarea id="edit-saved-folderStructure" value={editableSavedReadmeData.folderStructure} onChange={(e) => handleEditableSavedInputChange(e, 'folderStructure')} className="mt-1 min-h-[100px] sm:min-h-[120px] text-xs sm:text-sm font-mono"/></div>
-                    <div><Label htmlFor="edit-saved-setupInstructions" className="font-semibold text-xs sm:text-sm">Setup Instructions</Label><Textarea id="edit-saved-setupInstructions" value={editableSavedReadmeData.setupInstructions} onChange={(e) => handleEditableSavedInputChange(e, 'setupInstructions')} className="mt-1 min-h-[120px] sm:min-h-[150px] text-xs sm:text-sm"/></div>
-                    <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2 sm:pt-3">
-                        <Button variant="outline" onClick={handleCancelEditsForSavedItem} className="text-xs py-1.5 px-3 w-full sm:w-auto"><XCircle className="mr-1.5 h-3.5 w-3.5" /> Cancel</Button>
-                        <Button onClick={handleSaveChangesForSavedItem} className="text-xs py-1.5 px-3 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"><Save className="mr-1.5 h-3.5 w-3.5" /> Save Edits</Button>
+                <CardContent className="p-0 space-y-1.5 sm:space-y-2">
+                    <div><Label htmlFor="edit-saved-projectName" className="font-semibold text-xs sm:text-sm">Project Name</Label><Input id="edit-saved-projectName" value={editableSavedReadmeData.projectName} onChange={(e) => handleEditableSavedInputChange(e, 'projectName')} className="mt-0.5 text-xs sm:text-sm h-8 sm:h-9" /></div>
+                    <div><Label htmlFor="edit-saved-projectDescription" className="font-semibold text-xs sm:text-sm">Project Description</Label><Textarea id="edit-saved-projectDescription" value={editableSavedReadmeData.projectDescription} onChange={(e) => handleEditableSavedInputChange(e, 'projectDescription')} className="mt-0.5 min-h-[70px] sm:min-h-[80px] text-xs sm:text-sm"/></div>
+                    <div><Label htmlFor="edit-saved-features" className="font-semibold text-xs sm:text-sm">Features</Label><Textarea id="edit-saved-features" value={editableSavedReadmeData.features} onChange={(e) => handleEditableSavedInputChange(e, 'features')} className="mt-0.5 min-h-[80px] sm:min-h-[100px] text-xs sm:text-sm"/></div>
+                    <div><Label htmlFor="edit-saved-technologiesUsed" className="font-semibold text-xs sm:text-sm">Technologies Used</Label><Textarea id="edit-saved-technologiesUsed" value={editableSavedReadmeData.technologiesUsed} onChange={(e) => handleEditableSavedInputChange(e, 'technologiesUsed')} className="mt-0.5 min-h-[50px] sm:min-h-[60px] text-xs sm:text-sm"/></div>
+                    <div><Label htmlFor="edit-saved-folderStructure" className="font-semibold text-xs sm:text-sm">Folder Structure</Label><Textarea id="edit-saved-folderStructure" value={editableSavedReadmeData.folderStructure} onChange={(e) => handleEditableSavedInputChange(e, 'folderStructure')} className="mt-0.5 min-h-[80px] sm:min-h-[100px] text-xs sm:text-sm font-mono"/></div>
+                    <div><Label htmlFor="edit-saved-setupInstructions" className="font-semibold text-xs sm:text-sm">Setup Instructions</Label><Textarea id="edit-saved-setupInstructions" value={editableSavedReadmeData.setupInstructions} onChange={(e) => handleEditableSavedInputChange(e, 'setupInstructions')} className="mt-0.5 min-h-[100px] sm:min-h-[120px] text-xs sm:text-sm"/></div>
+                    <div className="flex flex-col sm:flex-row justify-end space-y-1 sm:space-y-0 sm:space-x-2 pt-1.5 sm:pt-2">
+                        <Button variant="outline" onClick={handleCancelEditsForSavedItem} className="text-xs py-1 px-2.5 w-full sm:w-auto h-8 sm:h-9"><XCircle className="mr-1.5 h-3.5 w-3.5" /> Cancel</Button>
+                        <Button onClick={handleSaveChangesForSavedItem} className="text-xs py-1 px-2.5 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto h-8 sm:h-9"><Save className="mr-1.5 h-3.5 w-3.5" /> Save Edits</Button>
                     </div>
                 </CardContent>
             </Card>
         )}
 
-        {/* Display Area for a single loaded/viewed Saved README */}
         {selectedSavedReadmeForDisplay && !isEditingSavedReadme && (
-            <div id="saved-readme-display-area" className="w-full mt-4 sm:mt-6">
+            <div id="saved-readme-display-area" className="w-full mt-3 sm:mt-4">
                 <ReadmeDisplay 
                     data={selectedSavedReadmeForDisplay} 
                     onGenerateDetails={handleGenerateDetailsForSavedItem}
@@ -820,7 +867,7 @@ ${readmeItem.setupInstructions}
         )}
 
 
-         <footer className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-muted-foreground">
+         <footer className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
       </div>

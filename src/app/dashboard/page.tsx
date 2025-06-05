@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Set to true initially
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editableFullName, setEditableFullName] = useState('');
@@ -32,14 +32,16 @@ export default function DashboardPage() {
     } else {
       const plainUserEmailForSession = getCurrentUserEmail(); 
       if (plainUserEmailForSession) {
-        const currentUser = getUserByEmail(plainUserEmailForSession); // Fetches user with plain text details
+        const currentUser = getUserByEmail(plainUserEmailForSession); 
         setUser(currentUser || null);
         if (currentUser) {
-          setEditableFullName(currentUser.fullName); // Pre-fill with plain text
-          setEditablePhone(currentUser.phone);     // Pre-fill with plain text
+          setEditableFullName(currentUser.fullName); 
+          setEditablePhone(currentUser.phone);     
         }
       }
-      setIsLoading(false);
+      // Simulate loading delay for skeleton visibility, remove in production
+      // setTimeout(() => setIsLoading(false), 1500); 
+      setIsLoading(false); // Set to false after data is fetched
     }
   }, [router]);
 
@@ -54,8 +56,8 @@ export default function DashboardPage() {
 
   const handleEditProfileToggle = () => {
     if (user) {
-      setEditableFullName(user.fullName); // Pre-fill with current plain text name
-      setEditablePhone(user.phone);       // Pre-fill with current plain text phone
+      setEditableFullName(user.fullName); 
+      setEditablePhone(user.phone);       
     }
     setIsEditingProfile(!isEditingProfile);
     setEditError(null); 
@@ -79,20 +81,19 @@ export default function DashboardPage() {
     }
     setEditError(null);
 
-    const updatedUserData: Partial<User> = { // Only pass fields that are being updated
+    const updatedUserData: Partial<User> = { 
       fullName: editableFullName.trim(),
       phone: editablePhone.trim(),
     };
 
     try {
-      // updateUser will take the plain text values and store them as plain text
       updateUser({ ...user, ...updatedUserData }); 
       
       const plainUserEmailForSession = getCurrentUserEmail();
       if(plainUserEmailForSession){
-        const reFetchedUser = getUserByEmail(plainUserEmailForSession); // Re-fetch to get updated plain text
+        const reFetchedUser = getUserByEmail(plainUserEmailForSession); 
         setUser(reFetchedUser || null);
-        if (reFetchedUser) { // Update editable fields again after re-fetch
+        if (reFetchedUser) { 
             setEditableFullName(reFetchedUser.fullName);
             setEditablePhone(reFetchedUser.phone);
         }
@@ -114,9 +115,64 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 bg-background">
-        <Loader2 className="h-12 sm:h-16 w-12 sm:w-16 animate-spin text-primary" />
-        <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-muted-foreground">Loading Dashboard...</p>
+     <main className="flex min-h-screen flex-col bg-muted/40 animate-pulse">
+        {/* Header Skeleton */}
+        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container mx-auto flex h-14 sm:h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="h-6 w-6 sm:h-7 bg-muted rounded-full"></div>
+              <div className="h-5 w-20 sm:h-6 bg-muted rounded-md"></div>
+              <div className="h-5 w-16 sm:h-6 bg-muted rounded-md"></div>
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <div className="h-8 w-8 sm:h-9 bg-muted rounded-md"></div> {/* Home icon */}
+              <div className="h-8 w-8 sm:h-9 bg-muted rounded-full"></div> {/* Theme toggle */}
+              <div className="h-8 w-20 sm:h-9 bg-muted rounded-md"></div> {/* Logout button */}
+            </div>
+          </div>
+        </header>
+
+        {/* Main Card Skeleton */}
+        <div className="flex-1 p-4 sm:p-6 md:p-8">
+            <div className="container mx-auto max-w-screen-lg">
+                <div className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden bg-card">
+                    {/* Card Header Skeleton */}
+                    <div className="p-4 sm:p-6 md:p-8 border-b bg-card-foreground/5">
+                        <div className="h-7 sm:h-8 w-1/2 bg-muted rounded-md"></div> {/* Welcome Title */}
+                        <div className="h-4 sm:h-5 w-3/4 bg-muted rounded-md mt-2"></div> {/* Description */}
+                    </div>
+                    {/* Card Content Skeleton */}
+                    <div className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+                        {/* Profile Details Skeleton */}
+                        <div className="space-y-4 sm:space-y-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 border-b pb-3 sm:pb-4">
+                            <div className="h-6 w-1/3 bg-muted rounded-md mb-2 sm:mb-0"></div> {/* Section Title */}
+                            <div className="h-8 w-28 bg-muted rounded-md mt-2 sm:mt-0 self-start sm:self-center"></div> {/* Edit Button */}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-4 sm:gap-y-6">
+                            {[...Array(4)].map((_, i) => (
+                            <div className="space-y-1" key={i}>
+                                <div className="h-4 w-1/4 bg-muted rounded-md"></div> {/* Label */}
+                                <div className="h-5 w-3/4 bg-muted rounded-md"></div> {/* Value */}
+                            </div>
+                            ))}
+                        </div>
+                        </div>
+                        {/* Application Content Skeleton */}
+                        <div className="pt-4 sm:pt-6 border-t">
+                        <div className="h-6 w-1/3 bg-muted rounded-md mb-2 sm:mb-3"></div> {/* Title */}
+                        <div className="h-4 w-full bg-muted rounded-md mb-1"></div> {/* Paragraph Line 1 */}
+                        <div className="h-4 w-5/6 bg-muted rounded-md mb-3 sm:mb-4"></div> {/* Paragraph Line 2 */}
+                        <div className="h-9 w-32 bg-muted rounded-md"></div> {/* Button */}
+                        </div>
+                    </div>
+                    {/* Card Footer Skeleton */}
+                    <div className="p-4 sm:p-6 md:p-8 bg-card-foreground/5 border-t">
+                        <div className="h-3 w-1/2 bg-muted rounded-md"></div> {/* Copyright */}
+                    </div>
+                </div>
+            </div>
+        </div>
       </main>
     );
   }
@@ -141,7 +197,7 @@ export default function DashboardPage() {
 
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="container mx-auto max-w-screen-lg">
-          <Card className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden">
+          <Card className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden hover:border-foreground transition-colors duration-200">
             <CardHeader className="bg-card-foreground/5 p-4 sm:p-6 md:p-8 border-b">
               <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
                 Welcome, {user?.fullName || getCurrentUserEmail() || 'User'}! 
@@ -165,7 +221,7 @@ export default function DashboardPage() {
                           <XCircle className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" /> Cancel
                         </Button>
                         <Button size="sm" onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-xs sm:text-sm">
-                          <Save className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Save Changes
+                          <Save className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" /> Save Changes
                         </Button>
                       </div>
                     )}
@@ -188,7 +244,6 @@ export default function DashboardPage() {
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-4 sm:gap-y-6">
-                    {/* Full Name */}
                     <div className="space-y-1">
                       <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
                         <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name
@@ -198,7 +253,7 @@ export default function DashboardPage() {
                           id="fullName"
                           value={editableFullName} 
                           onChange={(e) => setEditableFullName(e.target.value)}
-                          className="text-sm sm:text-md font-semibold text-foreground"
+                          className="text-sm sm:text-base font-semibold text-foreground"
                           placeholder="Enter new full name"
                         />
                       ) : (
@@ -206,7 +261,6 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Email Address (Not Editable on Dashboard) */}
                     <div className="space-y-1">
                       <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
                         <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address
@@ -214,7 +268,6 @@ export default function DashboardPage() {
                       <p className="text-sm sm:text-base text-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
                     </div>
                     
-                    {/* Phone Number */}
                     <div className="space-y-1">
                       <Label htmlFor="phone" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
                         <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number
@@ -225,7 +278,7 @@ export default function DashboardPage() {
                           type="tel"
                           value={editablePhone} 
                           onChange={(e) => setEditablePhone(e.target.value)}
-                          className="text-sm sm:text-md font-semibold text-foreground"
+                          className="text-sm sm:text-base font-semibold text-foreground"
                           placeholder="Enter new phone number"
                         />
                       ) : (
@@ -233,7 +286,6 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Account Status (Not Editable) */}
                     <div className="space-y-1">
                       <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
                         <CheckCircle className={`mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5 ${user.verified ? 'text-green-500' : 'text-red-500'}`} /> Account Status
@@ -243,7 +295,6 @@ export default function DashboardPage() {
                       </p>
                     </div>
 
-                    {/* Sign-in Method (Not Editable) */}
                     {user.provider && (
                        <div className="space-y-1 md:col-span-2">
                          <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
@@ -277,3 +328,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
