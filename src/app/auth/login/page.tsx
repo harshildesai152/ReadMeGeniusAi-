@@ -1,3 +1,4 @@
+
 "use client"; // Required because useSearchParams is a client hook
 
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -19,11 +20,11 @@ function LoginSuspenseWrapper() {
 
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-background">
-      <div className="absolute top-6 right-6">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 bg-background">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
         <ThemeToggle />
       </div>
-       <div className="absolute top-6 left-6">
+       <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
         <Logo />
       </div>
       <LoginForm />
@@ -34,7 +35,7 @@ function LoginSuspenseWrapper() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading login form...</div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Loading login form...</div>}>
       <LoginSuspenseWrapper />
     </Suspense>
   );

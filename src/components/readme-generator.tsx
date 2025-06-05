@@ -43,16 +43,16 @@ interface SavedReadmeItem extends FullReadmeData {
 const readmeToSimplifiedHtml = (readme: SavedReadmeItem): string => {
   let html = `<div style="font-family: Arial, sans-serif; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; page-break-inside: avoid;">`;
 
-  html += `<h1 style="font-size: 22px; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">${readme.projectName || 'Untitled Project'}</h1>`;
+  html += `<h1 style="font-size: 20px; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">${readme.projectName || 'Untitled Project'}</h1>`;
 
   const formatSection = (title: string, content: string | undefined, isPreformatted = false) => {
     if (!content || content.trim() === "" || content.trim().toLowerCase() === "not applicable" || content.trim().toLowerCase() === "n/a") {
-      return `<p style="font-size: 14px; color: #7f8c8d; font-style: italic;">${title}: Not available</p>`;
+      return `<p style="font-size: 13px; color: #7f8c8d; font-style: italic;">${title}: Not available</p>`;
     }
-    let sectionHtml = `<div style="margin-top: 15px;">`;
-    sectionHtml += `<h2 style="font-size: 18px; color: #34495e; margin-bottom: 8px;">${title}</h2>`;
+    let sectionHtml = `<div style="margin-top: 12px;">`;
+    sectionHtml += `<h2 style="font-size: 16px; color: #34495e; margin-bottom: 6px;">${title}</h2>`;
     if (isPreformatted) {
-      sectionHtml += `<pre style="background-color: #f9f9f9; border: 1px solid #ecf0f1; padding: 10px; border-radius: 4px; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; color: #555;">${content}</pre>`;
+      sectionHtml += `<pre style="background-color: #f9f9f9; border: 1px solid #ecf0f1; padding: 8px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; color: #555;">${content}</pre>`;
     } else {
       // Basic Markdown-like list handling for HTML
       const lines = content.split('\n');
@@ -62,15 +62,15 @@ const readmeToSimplifiedHtml = (readme: SavedReadmeItem): string => {
         if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
           if (!listOpen) {
             listOpen = true;
-            return `<ul><li>${trimmedLine.substring(2)}</li>`;
+            return `<ul><li style="font-size: 13px; line-height: 1.5; color: #555; margin-bottom: 4px;">${trimmedLine.substring(2)}</li>`;
           }
-          return `<li>${trimmedLine.substring(2)}</li>`;
+          return `<li style="font-size: 13px; line-height: 1.5; color: #555; margin-bottom: 4px;">${trimmedLine.substring(2)}</li>`;
         } else {
           if (listOpen) {
             listOpen = false;
-            return `</ul><p style="font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 5px;">${line}</p>`;
+            return `</ul><p style="font-size: 13px; line-height: 1.5; color: #555; margin-bottom: 4px;">${line}</p>`;
           }
-          return `<p style="font-size: 14px; line-height: 1.6; color: #555; margin-bottom: 5px;">${line}</p>`;
+          return `<p style="font-size: 13px; line-height: 1.5; color: #555; margin-bottom: 4px;">${line}</p>`;
         }
       }).join('');
       sectionHtml += listOpen ? processedContent + '</ul>' : processedContent;
@@ -489,15 +489,15 @@ ${readmeItem.setupInstructions}
       <div className="w-full max-w-3xl space-y-8">
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
-            <CardDescription className="text-center text-muted-foreground">
+            <CardTitle className="text-2xl sm:text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
+            <CardDescription className="text-center text-sm sm:text-base text-muted-foreground">
               Loading README generator...
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="animate-pulse space-y-4">
               <div className="h-10 bg-muted rounded-md"></div>
-              <div className="h-10 bg-muted rounded-md w-1/3 mx-auto"></div>
+              <div className="h-10 bg-muted rounded-md w-1/2 sm:w-1/3 mx-auto"></div>
             </div>
           </CardContent>
         </Card>
@@ -507,74 +507,74 @@ ${readmeItem.setupInstructions}
 
   if (isEditing && editableReadmeData) {
     return (
-      <Card className="w-full max-w-3xl shadow-xl space-y-6">
+      <Card className="w-full max-w-3xl shadow-xl space-y-4 sm:space-y-6">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center font-headline">Edit README Content</CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-center font-headline">Edit README Content</CardTitle>
+          <CardDescription className="text-center text-sm sm:text-base text-muted-foreground">
             Modify the sections below. Use Markdown for formatting (e.g., ## for headings, **bold**).
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <div>
-            <Label htmlFor="edit-projectName" className="font-semibold text-lg">Project Name</Label>
+            <Label htmlFor="edit-projectName" className="font-semibold text-md sm:text-lg">Project Name</Label>
             <Input 
               id="edit-projectName" 
               value={editableReadmeData.projectName} 
               onChange={(e) => handleEditableInputChange(e, 'projectName')}
-              className="mt-1 text-base" 
+              className="mt-1 text-sm sm:text-base" 
             />
           </div>
           <div>
-            <Label htmlFor="edit-projectDescription" className="font-semibold text-lg">Project Description</Label>
+            <Label htmlFor="edit-projectDescription" className="font-semibold text-md sm:text-lg">Project Description</Label>
             <Textarea 
               id="edit-projectDescription" 
               value={editableReadmeData.projectDescription} 
               onChange={(e) => handleEditableInputChange(e, 'projectDescription')}
-              className="mt-1 min-h-[120px] text-base"
+              className="mt-1 min-h-[100px] sm:min-h-[120px] text-sm sm:text-base"
             />
           </div>
           <div>
-            <Label htmlFor="edit-features" className="font-semibold text-lg">Features</Label>
+            <Label htmlFor="edit-features" className="font-semibold text-md sm:text-lg">Features</Label>
             <Textarea 
               id="edit-features" 
               value={editableReadmeData.features} 
               onChange={(e) => handleEditableInputChange(e, 'features')}
-              className="mt-1 min-h-[150px] text-base"
+              className="mt-1 min-h-[120px] sm:min-h-[150px] text-sm sm:text-base"
             />
           </div>
           <div>
-            <Label htmlFor="edit-technologiesUsed" className="font-semibold text-lg">Technologies Used</Label>
+            <Label htmlFor="edit-technologiesUsed" className="font-semibold text-md sm:text-lg">Technologies Used</Label>
             <Textarea 
               id="edit-technologiesUsed" 
               value={editableReadmeData.technologiesUsed} 
               onChange={(e) => handleEditableInputChange(e, 'technologiesUsed')}
-              className="mt-1 min-h-[100px] text-base"
+              className="mt-1 min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
             />
           </div>
           <div>
-            <Label htmlFor="edit-folderStructure" className="font-semibold text-lg">Folder Structure</Label>
+            <Label htmlFor="edit-folderStructure" className="font-semibold text-md sm:text-lg">Folder Structure</Label>
             <Textarea 
               id="edit-folderStructure" 
               value={editableReadmeData.folderStructure} 
               onChange={(e) => handleEditableInputChange(e, 'folderStructure')}
-              className="mt-1 min-h-[150px] text-base font-mono"
+              className="mt-1 min-h-[120px] sm:min-h-[150px] text-sm sm:text-base font-mono"
             />
           </div>
           <div>
-            <Label htmlFor="edit-setupInstructions" className="font-semibold text-lg">Setup Instructions</Label>
+            <Label htmlFor="edit-setupInstructions" className="font-semibold text-md sm:text-lg">Setup Instructions</Label>
             <Textarea 
               id="edit-setupInstructions" 
               value={editableReadmeData.setupInstructions} 
               onChange={(e) => handleEditableInputChange(e, 'setupInstructions')}
-              className="mt-1 min-h-[200px] text-base"
+              className="mt-1 min-h-[150px] sm:min-h-[200px] text-sm sm:text-base"
             />
           </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={handleCancelEdits} className="text-lg py-3 px-6">
-              <XCircle className="mr-2 h-5 w-5" /> Cancel
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
+            <Button variant="outline" onClick={handleCancelEdits} className="text-md sm:text-lg py-2.5 sm:py-3 px-5 sm:px-6 w-full sm:w-auto">
+              <XCircle className="mr-2 h-4 sm:h-5 w-4 sm:w-5" /> Cancel
             </Button>
-            <Button onClick={handleSaveChanges} className="text-lg py-3 px-6 bg-green-600 hover:bg-green-700 text-white">
-              <Save className="mr-2 h-5 w-5" /> Save Edits
+            <Button onClick={handleSaveChanges} className="text-md sm:text-lg py-2.5 sm:py-3 px-5 sm:px-6 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
+              <Save className="mr-2 h-4 sm:h-5 w-4 sm:w-5" /> Save Edits
             </Button>
           </div>
         </CardContent>
@@ -583,16 +583,16 @@ ${readmeItem.setupInstructions}
   }
 
   return (
-    <div className="w-full max-w-3xl space-y-8">
+    <div className="w-full max-w-3xl space-y-6 sm:space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
+          <CardDescription className="text-center text-sm sm:text-base text-muted-foreground">
             Choose your input method. Generated READMEs are automatically saved. Login required.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <RadioGroup
               defaultValue="url"
               onValueChange={(value: string) => {
@@ -600,35 +600,35 @@ ${readmeItem.setupInstructions}
                 setError(null);
                 setPastedCode(""); 
               }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 justify-center"
+              className="flex flex-col sm:flex-row sm:grid sm:grid-cols-3 gap-3 sm:gap-4 mb-4 justify-center"
               aria-label="Input method"
             >
               <Label htmlFor="url-input" className={`flex items-center justify-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'url' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
                 <RadioGroupItem value="url" id="url-input" className="sr-only" />
-                <Github className="h-5 w-5" />
-                <span>GitHub URL</span>
+                <Github className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="text-sm sm:text-base">GitHub URL</span>
               </Label>
               <Label htmlFor="code-input" className={`flex items-center justify-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'code' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
                 <RadioGroupItem value="code" id="code-input" className="sr-only" />
-                <ClipboardPaste className="h-5 w-5" />
-                <span>Paste Code</span>
+                <ClipboardPaste className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="text-sm sm:text-base">Paste Code</span>
               </Label>
               <Label htmlFor="prompt-input" className={`flex items-center justify-center space-x-2 p-3 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground ${inputType === 'prompt' ? 'bg-accent text-accent-foreground ring-2 ring-ring' : 'bg-background'}`}>
                 <RadioGroupItem value="prompt" id="prompt-input" className="sr-only" />
-                <MessagesSquare className="h-5 w-5" />
-                <span>From Prompt</span>
+                <MessagesSquare className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="text-sm sm:text-base">From Prompt</span>
               </Label>
             </RadioGroup>
 
             {inputType === "url" && (
               <div className="relative">
-                <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
                 <Input
                   type="url"
                   placeholder="e.g., https://github.com/username/repository"
                   value={repoUrl}
                   onChange={(e) => setRepoUrl(e.target.value)}
-                  className="pl-10 text-base"
+                  className="pl-10 text-sm sm:text-base"
                   aria-label="GitHub Repository URL"
                   disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
@@ -636,12 +636,12 @@ ${readmeItem.setupInstructions}
             )}
             {inputType === "code" && (
               <div className="relative">
-                <ClipboardPaste className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                <ClipboardPaste className="absolute left-3 top-3 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
                 <Textarea
                   placeholder="Paste your code snippet(s) here. If pasting multiple code blocks/files, clearly separate them or add comments like // FILE: filename.js"
                   value={pastedCode}
                   onChange={(e) => setPastedCode(e.target.value)}
-                  className="pl-10 text-base min-h-[200px]"
+                  className="pl-10 text-sm sm:text-base min-h-[150px] sm:min-h-[200px]"
                   aria-label="Pasted Code Content"
                   disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
@@ -652,21 +652,21 @@ ${readmeItem.setupInstructions}
             )}
             {inputType === "prompt" && (
               <div className="relative">
-                 <MessagesSquare className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                 <MessagesSquare className="absolute left-3 top-3 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
                 <Textarea
                   placeholder="Describe your project, its purpose, key functionalities, and any specific technologies you'd like mentioned..."
                   value={userPrompt}
                   onChange={(e) => setUserPrompt(e.target.value)}
-                  className="pl-10 text-base min-h-[150px]"
+                  className="pl-10 text-sm sm:text-base min-h-[120px] sm:min-h-[150px]"
                   aria-label="User Prompt for README Generation"
                   disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}
                 />
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}>
+            <Button type="submit" className="w-full text-md sm:text-lg py-3 sm:py-6" disabled={isLoading || isGeneratingDetails || isEditing || isGeneratingPdf}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 sm:h-5 w-4 sm:w-5 animate-spin" />
                   Generating...
                 </>
               ) : (
@@ -687,14 +687,14 @@ ${readmeItem.setupInstructions}
 
       {isLoggedIn() && getCurrentUserEmail() && savedReadmes.length > 0 && !isEditing && (
         <Card className="shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-                <CardTitle className="text-2xl font-bold font-headline">Saved READMEs</CardTitle>
-                <CardDescription>View, download, or delete your previously generated READMEs. (Visible only to you)</CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
+            <div className="flex-1">
+                <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Saved READMEs</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">View, download, or delete your previously generated READMEs. (Max 20, visible only to you)</CardDescription>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={isGeneratingPdf || isLoading || isGeneratingDetails || isEditing}>
+                <Button variant="outline" size="sm" className="mt-2 sm:mt-0 w-full sm:w-auto" disabled={isGeneratingPdf || isLoading || isGeneratingDetails || isEditing}>
                   {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileTextIcon className="mr-2 h-4 w-4" />}
                   Generate PDF
                 </Button>
@@ -712,36 +712,37 @@ ${readmeItem.setupInstructions}
             </DropdownMenu>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[300px] w-full rounded-md border p-2">
-              <ul className="space-y-3">
+            <ScrollArea className="h-[250px] sm:h-[300px] w-full rounded-md border p-2">
+              <ul className="space-y-2 sm:space-y-3">
                 {savedReadmes.map((item) => (
-                  <li key={item.id} className="p-3 bg-muted/50 rounded-md shadow-sm hover:bg-muted transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center flex-1 min-w-0 space-x-3">
+                  <li key={item.id} className="p-2 sm:p-3 bg-muted/50 rounded-md shadow-sm hover:bg-muted transition-colors">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                      <div className="flex items-center flex-1 min-w-0 space-x-2 sm:space-x-3 mb-2 sm:mb-0">
                         <Checkbox
                           id={`select-pdf-${item.id}`}
                           checked={selectedReadmeIdsForPdf.includes(item.id)}
                           onCheckedChange={(checked) => handlePdfSelectionChange(item.id, checked)}
                           aria-label={`Select ${item.projectName} for PDF export`}
                           disabled={isGeneratingPdf || isLoading || isGeneratingDetails || isEditing}
+                          className="mt-1 sm:mt-0"
                         />
                         <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-primary truncate" title={item.projectName}>{item.projectName}</p>
+                            <p className="font-semibold text-sm sm:text-base text-primary truncate" title={item.projectName}>{item.projectName}</p>
                             <p className="text-xs text-muted-foreground">
-                            Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString()}
-                            {item.inputTypeUsed && ` (via ${item.inputTypeUsed}${item.inputTypeUsed === 'code' && item.originalInput && item.originalInput.length > 50 ? ' (pasted code snippet)' : ''})`}
+                            Saved: {new Date(item.savedDate).toLocaleDateString()} {new Date(item.savedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {item.inputTypeUsed && <span className="hidden sm:inline"> (via {item.inputTypeUsed}{item.inputTypeUsed === 'code' && item.originalInput && item.originalInput.length > 50 ? ' snippet' : ''})</span>}
                             </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1 sm:space-x-2 ml-2 flex-shrink-0">
-                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1 sm:p-2" title="View README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
-                          <Eye className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">View</span>
+                      <div className="flex items-center space-x-1 self-end sm:self-center sm:space-x-2 ml-auto sm:ml-2 flex-shrink-0">
+                        <Button onClick={() => handleLoadReadme(item)} variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-1" title="View README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
+                          <Eye className="h-4 w-4" /> <span className="sr-only sm:not-sr-only sm:ml-1">View</span>
                         </Button>
-                         <Button onClick={() => handleDownloadReadmeMd(item)} variant="outline" size="sm" className="p-1 sm:p-2" title="Download README.md" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
-                          <Download className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">.MD</span>
+                         <Button onClick={() => handleDownloadReadmeMd(item)} variant="outline" size="sm" className="p-1" title="Download README.md" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
+                          <Download className="h-4 w-4" /> <span className="sr-only sm:not-sr-only sm:ml-1">.MD</span>
                         </Button>
-                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1 sm:p-2" title="Delete README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
-                          <Trash2 className="mr-0 sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Delete</span>
+                        <Button onClick={() => handleDeleteReadme(item.id)} variant="ghost" size="sm" className="text-destructive hover:text-destructive/80 p-1" title="Delete README" disabled={isGeneratingDetails || isLoading || isGeneratingPdf || isEditing}>
+                          <Trash2 className="h-4 w-4" /> <span className="sr-only sm:not-sr-only sm:ml-1">Delete</span>
                         </Button>
                       </div>
                     </div>
@@ -751,7 +752,7 @@ ${readmeItem.setupInstructions}
             </ScrollArea>
              {savedReadmes.length > 0 && (
                  <p className="text-xs text-muted-foreground mt-2">
-                    {selectedReadmeIdsForPdf.length} README(s) selected for PDF export.
+                    {selectedReadmeIdsForPdf.length} README(s) selected for PDF export. Max 20 saved.
                 </p>
             )}
           </CardContent>

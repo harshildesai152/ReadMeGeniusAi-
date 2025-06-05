@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getCurrentUserEmail } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
-import React from 'react'; // Added import
+import React from 'react'; 
 
 
 interface FileDetail {
@@ -36,7 +36,7 @@ interface GeneratedReadmeForFile {
 }
 
 const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ content, title }) => {
-  if (!content && content !== "") return <p className="text-muted-foreground italic text-sm">Not available or empty.</p>;
+  if (!content && content !== "") return <p className="text-muted-foreground italic text-xs sm:text-sm">Not available or empty.</p>;
   
   const lines = content.split('\n').map((line, index, arr) => {
     // Headings
@@ -45,14 +45,14 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
       const text = line.replace(/^#+\s/, '');
       const Tag = `h${level + 3}` as keyof JSX.IntrinsicElements; // Start from h4 for these sections
       let headingClass = "font-semibold";
-      if (level === 1) headingClass += " text-md mt-2.5 mb-1";
-      else if (level === 2) headingClass += " text-sm mt-2 mb-0.5";
-      else headingClass += " text-xs mt-1.5 mb-0.5";
+      if (level === 1) headingClass += " text-sm sm:text-md mt-2 sm:mt-2.5 mb-0.5 sm:mb-1";
+      else if (level === 2) headingClass += " text-xs sm:text-sm mt-1.5 sm:mt-2 mb-0.5";
+      else headingClass += " text-xs mt-1 sm:mt-1.5 mb-0.5";
       return <Tag key={index} className={headingClass}>{text}</Tag>;
     }
     // Lists
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      return <li key={index} className="ml-5 list-disc text-sm space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
+      return <li key={index} className="ml-4 sm:ml-5 list-disc text-xs sm:text-sm space-y-0.5">{line.substring(line.indexOf(' ') + 1)}</li>;
     }
    
     // Code blocks (simple heuristic for ``` blocks)
@@ -60,7 +60,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
       const isBlockStart = index === 0 || !arr[index - 1].trim().startsWith('```');
       const isBlockEnd = index === arr.length - 1 || !arr[index + 1].trim().startsWith('```');
       if (isBlockStart && isBlockEnd && arr.slice(index + 1).findIndex(l => l.trim().startsWith('```')) === -1 ) {
-         return <pre key={index} className="bg-muted/70 p-2.5 rounded-md text-xs overflow-x-auto my-1.5 font-mono shadow-sm">{line.substring(3).trim()}</pre>;
+         return <pre key={index} className="bg-muted/70 p-2 sm:p-2.5 rounded-md text-xs overflow-x-auto my-1 sm:my-1.5 font-mono shadow-sm">{line.substring(3).trim()}</pre>;
       }
       return null; 
     }
@@ -76,7 +76,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
                 blockLines.push(arr[j]);
                 j++;
             }
-            return <pre key={index} className="bg-muted/70 p-2.5 rounded-md text-xs overflow-x-auto my-1.5 font-mono shadow-sm" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
+            return <pre key={index} className="bg-muted/70 p-2 sm:p-2.5 rounded-md text-xs overflow-x-auto my-1 sm:my-1.5 font-mono shadow-sm" data-lang={lang || undefined}>{blockLines.join('\n')}</pre>;
         }
         return null; 
     }
@@ -86,7 +86,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
       return <p key={index} className="mb-0.5 whitespace-pre-wrap font-mono text-xs bg-muted/50 p-1 rounded">{line || <>&nbsp;</>}</p>;
     }
     // Default paragraphs
-    return <p key={index} className="mb-1.5 leading-relaxed text-sm">{line || <>&nbsp;</>}</p>;
+    return <p key={index} className="mb-1 sm:mb-1.5 leading-relaxed text-xs sm:text-sm">{line || <>&nbsp;</>}</p>;
   });
 
   const validLines = lines.filter(line => line !== null);
@@ -97,7 +97,7 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
     if (React.isValidElement(line) && line.type === 'li') {
       if (!inList) {
         inList = true;
-        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-1.5">{line}</ul>);
+        structuredLines.push(<ul key={`ul-${structuredLines.length}`} className="space-y-0.5 mb-1 sm:mb-1.5">{line}</ul>);
       } else {
         const lastElement = structuredLines[structuredLines.length - 1];
         if (React.isValidElement(lastElement) && lastElement.type === 'ul') {
@@ -113,8 +113,8 @@ const MarkdownContentDisplay: React.FC<{ content: string; title: string }> = ({ 
   }
 
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
-      <h4 className="text-sm font-semibold mb-1 pb-1 border-b border-border/70 text-primary/90">{title}:</h4>
+    <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none">
+      <h4 className="text-xs sm:text-sm font-semibold mb-1 pb-1 border-b border-border/70 text-primary/90">{title}:</h4>
       {structuredLines}
     </div>
   );
@@ -347,50 +347,54 @@ ${cleanText(readmeData.setupInstructions)}
 
   if (!mounted) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
+      <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 bg-background">
         <div className="w-full max-w-4xl mx-auto text-center">
-          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg text-muted-foreground">Loading Past Files Section...</p>
+          <Loader2 className="mx-auto h-10 sm:h-12 w-10 sm:w-12 animate-spin text-primary" />
+          <p className="mt-3 sm:mt-4 text-md sm:text-lg text-muted-foreground">Loading Past Files Section...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-      <div className="container mx-auto flex flex-col items-center gap-8 w-full max-w-4xl">
+    <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 lg:p-24 bg-background">
+      <div className="container mx-auto flex flex-col items-center gap-6 sm:gap-8 w-full max-w-4xl">
         
-        <header className="w-full mb-8">
-          <nav className="flex justify-between items-center w-full py-4 border-b mb-6">
-            <div className="flex items-center space-x-2">
+        <header className="w-full mb-6 sm:mb-8">
+          <nav className="flex justify-between items-center w-full py-3 sm:py-4 border-b mb-4 sm:mb-6">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <Link href="/" passHref>
-                <Button variant="outline" size="icon" title="Go to Home Page">
-                  <Home className="h-5 w-5" />
+                <Button variant="outline" size="icon" title="Go to Home Page" className="h-8 w-8 sm:h-9 sm:w-9">
+                  <Home className="h-4 sm:h-5 w-4 sm:h-5" />
                 </Button>
               </Link>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               {loggedIn ? (
                 <>
                   <Link href="/dashboard" passHref>
-                    <Button variant="outline" size="default">
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                    <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                      <LayoutDashboard className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                      <span className="hidden sm:inline">Dashboard</span>
                     </Button>
                   </Link>
-                  <Button variant="destructive" onClick={handleLogout} size="default">
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                  <Button variant="destructive" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
+                    <LogOut className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <span className="hidden sm:inline">Logout</span>
                   </Button>
                 </>
               ) : (
                 <>
                   <Link href="/auth/login" passHref>
-                    <Button variant="outline" size="default">
-                      <LogIn className="mr-2 h-4 w-4" /> Login
+                    <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                      <LogIn className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                      <span className="hidden sm:inline">Login</span>
                     </Button>
                   </Link>
                   <Link href="/auth/signup" passHref>
-                    <Button variant="default" size="default">
-                      <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+                    <Button variant="default" size="sm" className="px-2 sm:px-3">
+                      <UserPlus className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                      <span className="hidden sm:inline">Sign Up</span>
                     </Button>
                   </Link>
                 </>
@@ -400,8 +404,8 @@ ${cleanText(readmeData.setupInstructions)}
           </nav>
           
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
-            <p className="mt-3 text-lg text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary font-headline">Past Files Inventory &amp; README Generator</h1>
+            <p className="mt-2 sm:mt-3 text-md sm:text-lg text-muted-foreground">
               Upload project files to generate individual READMEs for each. Login required.
             </p>
           </div>
@@ -409,14 +413,14 @@ ${cleanText(readmeData.setupInstructions)}
 
         <Card className="w-full shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <UploadCloud className="h-7 w-7 text-primary" /> Upload Files
+            <CardTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <UploadCloud className="h-6 sm:h-7 w-6 sm:w-7 text-primary" /> Upload Files
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm sm:text-base">
               Select one or more files. A separate README will be generated for each file. Max total size recommended: ~5MB per file.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="file-upload" className="sr-only">Choose files</label>
               <Input
@@ -424,26 +428,26 @@ ${cleanText(readmeData.setupInstructions)}
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                className="block w-full text-xs sm:text-sm text-slate-500 file:mr-3 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                 disabled={isOverallLoading}
               />
             </div>
 
             {selectedFileDetails.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Selected Files:</h3>
-                <ScrollArea className="h-[200px] w-full rounded-md border p-3 bg-muted/30">
-                  <ul className="space-y-2">
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="text-md sm:text-lg font-semibold">Selected Files:</h3>
+                <ScrollArea className="h-[150px] sm:h-[200px] w-full rounded-md border p-2 sm:p-3 bg-muted/30">
+                  <ul className="space-y-1.5 sm:space-y-2">
                     {selectedFileDetails.map((file) => (
-                      <li key={file.id} className="flex justify-between items-center p-2 bg-background rounded shadow-sm hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center gap-2">
-                           <FileText className="h-5 w-5 text-primary" />
-                           <span className="font-medium text-sm">{file.name}</span>
+                      <li key={file.id} className="flex justify-between items-center p-1.5 sm:p-2 bg-background rounded shadow-sm hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                           <FileText className="h-4 sm:h-5 w-4 sm:h-5 text-primary" />
+                           <span className="font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-xs md:max-w-sm" title={file.name}>{file.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-7 w-7 text-destructive hover:text-destructive/80" title="Remove file" disabled={isOverallLoading}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(file.id)} className="h-6 w-6 sm:h-7 sm:w-7 text-destructive hover:text-destructive/80" title="Remove file" disabled={isOverallLoading}>
+                            <Trash2 className="h-3.5 sm:h-4 w-3.5 sm:h-4" />
                           </Button>
                         </div>
                       </li>
@@ -452,12 +456,12 @@ ${cleanText(readmeData.setupInstructions)}
                 </ScrollArea>
                  <Button 
                     onClick={handleGenerateAllReadmes} 
-                    className="w-full text-lg py-3" 
+                    className="w-full text-md sm:text-lg py-2.5 sm:py-3" 
                     disabled={isOverallLoading || selectedFileDetails.length === 0}
                   >
                   {isOverallLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      <Loader2 className="mr-2 h-4 sm:h-5 w-4 sm:h-5 animate-spin" />
                       Generating READMEs...
                     </>
                   ) : (
@@ -478,26 +482,26 @@ ${cleanText(readmeData.setupInstructions)}
         )}
         
         {generatedFileReadmes.length > 0 && (
-            <Card className="w-full shadow-xl mt-8" id="generated-readmes-display">
+            <Card className="w-full shadow-xl mt-6 sm:mt-8" id="generated-readmes-display">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-bold font-headline">Generated READMEs</CardTitle>
-                    <CardDescription>Below are the individually generated READMEs for your uploaded files.</CardDescription>
+                    <CardTitle className="text-xl sm:text-2xl font-bold font-headline">Generated READMEs</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">Below are the individually generated READMEs for your uploaded files.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 sm:space-y-6">
                     {generatedFileReadmes.map(genFile => (
-                        <Card key={genFile.fileId} className="p-4 rounded-md shadow-md bg-card">
-                            <CardHeader className="p-0 pb-3 mb-3 border-b border-border/60">
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="text-xl font-semibold text-primary">{genFile.fileName}</CardTitle>
+                        <Card key={genFile.fileId} className="p-3 sm:p-4 rounded-md shadow-md bg-card">
+                            <CardHeader className="p-0 pb-2 sm:pb-3 mb-2 sm:mb-3 border-b border-border/60">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                    <CardTitle className="text-lg sm:text-xl font-semibold text-primary mb-1 sm:mb-0 truncate max-w-full sm:max-w-[calc(100%-150px)]" title={genFile.fileName}>{genFile.fileName}</CardTitle>
                                     {genFile.readmeData && !genFile.isLoading && (
                                     <Button 
                                         onClick={() => handleDownloadIndividualReadme(genFile.readmeData!, genFile.fileName)} 
                                         variant="outline" 
                                         size="sm"
-                                        className="bg-accent text-accent-foreground hover:bg-accent/90"
+                                        className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-2 py-1 self-start sm:self-center"
                                         disabled={!genFile.readmeData}
                                     >
-                                        <Download className="mr-2 h-4 w-4" /> Download README.txt
+                                        <Download className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Download .txt
                                     </Button>
                                     )}
                                 </div>
@@ -505,36 +509,36 @@ ${cleanText(readmeData.setupInstructions)}
                             <CardContent className="p-0">
                                 {genFile.isLoading && (
                                 <div className="flex items-center space-x-2 py-4">
-                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                    <span className="text-muted-foreground">Generating README for {genFile.fileName}...</span>
+                                    <Loader2 className="h-4 sm:h-5 w-4 sm:h-5 animate-spin text-primary" />
+                                    <span className="text-muted-foreground text-sm">Generating README for {genFile.fileName}...</span>
                                 </div>
                                 )}
                                 {genFile.error && !genFile.isLoading && (
-                                <Alert variant="destructive" className="my-2">
+                                <Alert variant="destructive" className="my-2 text-xs sm:text-sm">
                                     <AlertTriangle className="h-4 w-4" />
                                     <AlertTitle>Generation Error</AlertTitle>
                                     <AlertDescription>{genFile.error}</AlertDescription>
                                 </Alert>
                                 )}
                                 {genFile.readmeData && !genFile.isLoading && (
-                                <ScrollArea className="h-[450px] w-full rounded-md border border-border/50 p-3 bg-background/50">
-                                    <div className="space-y-2">
-                                      <div className="py-2 border-b border-border/30 last:border-b-0">
+                                <ScrollArea className="h-[300px] sm:h-[400px] md:h-[450px] w-full rounded-md border border-border/50 p-2 sm:p-3 bg-background/50">
+                                    <div className="space-y-1.5 sm:space-y-2">
+                                      <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.projectName} title="AI Suggested Project Name" />
                                       </div>
-                                      <div className="py-2 border-b border-border/30 last:border-b-0">
+                                      <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.projectDescription} title="Project Description" />
                                       </div>
-                                      <div className="py-2 border-b border-border/30 last:border-b-0">
+                                      <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.features} title="Features" />
                                       </div>
-                                      <div className="py-2 border-b border-border/30 last:border-b-0">
+                                      <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.technologiesUsed} title="Technologies Used" />
                                       </div>
-                                      <div className="py-2 border-b border-border/30 last:border-b-0">
+                                      <div className="py-1.5 sm:py-2 border-b border-border/30 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.folderStructure} title="Folder Structure" />
                                       </div>
-                                      <div className="py-2 last:border-b-0">
+                                      <div className="py-1.5 sm:py-2 last:border-b-0">
                                         <MarkdownContentDisplay content={genFile.readmeData.setupInstructions} title="Setup Instructions" />
                                       </div>
                                     </div>
@@ -547,7 +551,7 @@ ${cleanText(readmeData.setupInstructions)}
             </Card>
         )}
 
-         <footer className="mt-12 text-center text-sm text-muted-foreground">
+         <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
       </div>

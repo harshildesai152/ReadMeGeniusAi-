@@ -43,50 +43,54 @@ export default function PastPage() {
 
   if (!mounted) {
      return (
-      <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-        <div className="container mx-auto flex flex-col items-center gap-12">
+      <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 bg-background">
+        <div className="container mx-auto flex flex-col items-center gap-8 sm:gap-12">
            <header className="text-center w-full flex justify-between items-center">
-             <Logo />
-             <div className="h-10 w-24 bg-muted rounded-md animate-pulse"></div>
+             <div className="h-7 sm:h-8 w-auto bg-muted rounded-md animate-pulse"><Logo /></div>
+             <div className="h-8 sm:h-10 w-20 sm:w-24 bg-muted rounded-md animate-pulse"></div>
            </header>
-           <p className="mt-3 text-lg text-muted-foreground">Loading...</p>
+           <p className="mt-2 sm:mt-3 text-md sm:text-lg text-muted-foreground">Loading...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-6 sm:p-12 md:p-24 bg-background">
-      <div className="container mx-auto flex flex-col items-center gap-12">
+    <main className="flex min-h-screen flex-col items-center justify-start p-4 sm:p-6 md:p-12 lg:p-24 bg-background">
+      <div className="container mx-auto flex flex-col items-center gap-8 sm:gap-12">
         <header className="text-center w-full flex justify-between items-center">
           <Logo />
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <Link href="/" passHref>
-              <Button variant="outline" size="icon" title="Go to Home">
-                <Home className="h-4 w-4" />
+              <Button variant="outline" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
+                <Home className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
               </Button>
             </Link>
             {loggedInStatus ? (
               <>
                 <Link href="/dashboard" passHref>
-                  <Button variant="outline">
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                    <LayoutDashboard className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <span className="hidden sm:inline">Dashboard</span>
                   </Button>
                 </Link>
-                <Button variant="destructive" onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                <Button variant="destructive" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
+                  <LogOut className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                   <span className="hidden sm:inline">Logout</span>
                 </Button>
               </>
             ) : (
               <>
                 <Link href="/auth/login" passHref>
-                  <Button variant="outline">
-                    <LogIn className="mr-2 h-4 w-4" /> Login
+                  <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                    <LogIn className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <span className="hidden sm:inline">Login</span>
                   </Button>
                 </Link>
                 <Link href="/auth/signup" passHref>
-                  <Button variant="default">
-                    <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+                  <Button variant="default" size="sm" className="px-2 sm:px-3">
+                    <UserPlus className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
+                    <span className="hidden sm:inline">Sign Up</span>
                   </Button>
                 </Link>
               </>
@@ -94,11 +98,11 @@ export default function PastPage() {
             <ThemeToggle /> 
           </div>
         </header>
-        <p className="mt-3 text-lg text-muted-foreground">
+        <p className="mt-2 sm:mt-3 text-md sm:text-lg text-center text-muted-foreground">
           Generate a README from a GitHub URL, direct code upload (single or multiple files), or a textual prompt. Login required.
         </p>
         <ReadmeGenerator />
-        <footer className="mt-12 text-center text-sm text-muted-foreground">
+        <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
       </div>

@@ -105,9 +105,9 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-background">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <p className="mt-6 text-xl text-muted-foreground">Loading Dashboard...</p>
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 bg-background">
+        <Loader2 className="h-12 sm:h-16 w-12 sm:w-16 animate-spin text-primary" />
+        <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-muted-foreground">Loading Dashboard...</p>
       </main>
     );
   }
@@ -115,15 +115,15 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-muted/40">
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex h-14 sm:h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo />
-          <div className="flex items-center space-x-3">
-            <Button onClick={handleGoHome} variant="ghost" size="icon" title="Go to Home">
-              <Home className="h-5 w-5" />
+          <div className="flex items-center space-x-1 sm:space-x-3">
+            <Button onClick={handleGoHome} variant="ghost" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
+              <Home className="h-4 sm:h-5 w-4 sm:h-5" />
             </Button>
             <ThemeToggle />
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOutIcon className="mr-2 h-4 w-4" />
+            <Button onClick={handleLogout} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
+              <LogOutIcon className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
               Logout
             </Button>
           </div>
@@ -132,82 +132,82 @@ export default function DashboardPage() {
 
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="container mx-auto max-w-screen-lg">
-          <Card className="w-full shadow-xl rounded-xl overflow-hidden">
-            <CardHeader className="bg-card-foreground/5 p-6 sm:p-8 border-b">
-              <CardTitle className="text-3xl font-bold text-foreground">
+          <Card className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="bg-card-foreground/5 p-4 sm:p-6 md:p-8 border-b">
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
                 Welcome, {user?.fullName?.split(' ')[0] || user?.email || 'User'}!
               </CardTitle>
-              <CardDescription className="text-lg text-muted-foreground mt-1">
+              <CardDescription className="text-md sm:text-lg text-muted-foreground mt-1">
                 This is your personal dashboard. Manage your account and explore features.
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6 sm:p-8 space-y-8">
+            <CardContent className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
               {user && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 className="text-xl font-semibold text-primary">Your Profile Details</h2>
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3 sm:mb-4 border-b pb-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-0">Your Profile Details</h2>
                     {!isEditingProfile ? (
-                      <Button variant="outline" size="sm" onClick={handleEditProfileToggle} disabled={user.provider === 'google'}>
-                        <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+                      <Button variant="outline" size="sm" onClick={handleEditProfileToggle} disabled={user.provider === 'google'} className="w-full sm:w-auto text-xs sm:text-sm">
+                        <Edit3 className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Edit Profile
                       </Button>
                     ) : (
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={handleEditProfileToggle}>
-                          <XCircle className="mr-2 h-4 w-4" /> Cancel
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" onClick={handleEditProfileToggle} className="w-full sm:w-auto text-xs sm:text-sm">
+                          <XCircle className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Cancel
                         </Button>
-                        <Button size="sm" onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700 text-white">
-                          <Save className="mr-2 h-4 w-4" /> Save Changes
+                        <Button size="sm" onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-xs sm:text-sm">
+                          <Save className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Save Changes
                         </Button>
                       </div>
                     )}
                   </div>
 
                   {user.provider === 'google' && !isEditingProfile && (
-                     <Alert variant="default" className="bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
-                        <AlertTriangle className="h-4 w-4 !text-blue-600 dark:!text-blue-400" />
+                     <Alert variant="default" className="bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 text-xs sm:text-sm">
+                        <AlertTriangle className="h-3.5 sm:h-4 w-3.5 sm:w-4 !text-blue-600 dark:!text-blue-400" />
                         <AlertTitle>Google Sign-In</AlertTitle>
                         <AlertDescription>Profile details managed by Google. To change your name or phone, please update them in your Google account settings.</AlertDescription>
                     </Alert>
                   )}
 
                   {editError && isEditingProfile && (
-                    <Alert variant="destructive" className="my-2">
-                      <AlertTriangle className="h-4 w-4" />
+                    <Alert variant="destructive" className="my-2 text-xs sm:text-sm">
+                      <AlertTriangle className="h-3.5 sm:h-4 w-3.5 sm:h-4" />
                       <AlertTitle>Validation Error</AlertTitle>
                       <AlertDescription>{editError}</AlertDescription>
                     </Alert>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-4 sm:gap-y-6">
                     {/* Full Name */}
                     <div className="space-y-1">
-                      <Label htmlFor="fullName" className="text-sm font-medium text-muted-foreground flex items-center">
-                        <UserCircle2 className="mr-2 h-5 w-5" /> Full Name
+                      <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
+                        <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
                           id="fullName"
                           value={editableFullName}
                           onChange={(e) => setEditableFullName(e.target.value)}
-                          className="text-md font-semibold text-foreground"
+                          className="text-sm sm:text-md font-semibold text-foreground"
                         />
                       ) : (
-                        <p className="text-md font-semibold text-foreground pt-1.5">{user.fullName}</p>
+                        <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5">{user.fullName}</p>
                       )}
                     </div>
 
                     {/* Email Address (Not Editable) */}
                     <div className="space-y-1">
-                      <Label className="text-sm font-medium text-muted-foreground flex items-center">
-                        <Mail className="mr-2 h-5 w-5" /> Email Address
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
+                        <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address
                       </Label>
-                      <p className="text-md font-semibold text-foreground pt-1.5">{user.email}</p>
+                      <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
                     </div>
                     
                     {/* Phone Number */}
                     <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-sm font-medium text-muted-foreground flex items-center">
-                        <Phone className="mr-2 h-5 w-5" /> Phone Number
+                      <Label htmlFor="phone" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
+                        <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
@@ -215,19 +215,19 @@ export default function DashboardPage() {
                           type="tel"
                           value={editablePhone}
                           onChange={(e) => setEditablePhone(e.target.value)}
-                          className="text-md font-semibold text-foreground"
+                          className="text-sm sm:text-md font-semibold text-foreground"
                         />
                       ) : (
-                        <p className="text-md font-semibold text-foreground pt-1.5">{user.phone}</p>
+                        <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5">{user.phone}</p>
                       )}
                     </div>
 
                     {/* Account Status (Not Editable) */}
                     <div className="space-y-1">
-                      <Label className="text-sm font-medium text-muted-foreground flex items-center">
-                        <CheckCircle className={`mr-2 h-5 w-5 ${user.verified ? 'text-green-500' : 'text-red-500'}`} /> Account Status
+                      <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
+                        <CheckCircle className={`mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5 ${user.verified ? 'text-green-500' : 'text-red-500'}`} /> Account Status
                       </Label>
-                      <p className={`text-md font-semibold pt-1.5 ${user.verified ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`text-sm sm:text-md font-semibold pt-1 sm:pt-1.5 ${user.verified ? 'text-green-600' : 'text-red-600'}`}>
                         {user.verified ? 'Verified' : 'Not Verified'}
                       </p>
                     </div>
@@ -235,27 +235,27 @@ export default function DashboardPage() {
                     {/* Sign-in Method (Not Editable) */}
                     {user.provider && (
                        <div className="space-y-1 md:col-span-2">
-                         <Label className="text-sm font-medium text-muted-foreground flex items-center">
-                           <svg role="img" viewBox="0 0 24 24" className="mr-2 h-5 w-5"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
+                         <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
+                           <svg role="img" viewBox="0 0 24 24" className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
                            Sign-in Method
                          </Label>
-                         <p className="text-md font-semibold text-foreground capitalize pt-1.5">{user.provider}</p>
+                         <p className="text-sm sm:text-md font-semibold text-foreground capitalize pt-1 sm:pt-1.5">{user.provider}</p>
                        </div>
                     )}
                   </div>
                 </div>
               )}
               
-              <div className="pt-6 border-t">
-                <h3 className="text-xl font-semibold text-primary mb-3">Application Content</h3>
-                <p className="text-muted-foreground">
+              <div className="pt-4 sm:pt-6 border-t">
+                <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-3">Application Content</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   This is where you can add your application-specific content and features for logged-in users.
                   For example, you could display user projects, settings, or other personalized information.
                 </p>
-                <Button className="mt-4" onClick={() => router.push('/')}>Explore Features</Button>
+                <Button className="mt-3 sm:mt-4 text-xs sm:text-sm" onClick={() => router.push('/')}>Explore Features</Button>
               </div>
             </CardContent>
-            <CardFooter className="p-6 sm:p-8 bg-card-foreground/5 border-t">
+            <CardFooter className="p-4 sm:p-6 md:p-8 bg-card-foreground/5 border-t">
                 <p className="text-xs text-muted-foreground">
                     &copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.
                 </p>
