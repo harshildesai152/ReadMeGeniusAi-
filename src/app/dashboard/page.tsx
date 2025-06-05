@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { isLoggedIn, setLoggedIn, getUserByEmail, getCurrentUserEmail, updateUser } from '@/lib/auth/storage';
+import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getUserByEmail, getCurrentUserEmail, updateUser } from '@/lib/auth/storage';
 import type { User } from '@/lib/auth/storage';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  // Initialize with empty strings as stored values are hashes
   const [editableFullName, setEditableFullName] = useState('');
   const [editablePhone, setEditablePhone] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
@@ -30,21 +31,20 @@ export default function DashboardPage() {
     if (!isLoggedIn()) {
       router.replace('/auth/login');
     } else {
-      const userEmail = getCurrentUserEmail();
-      if (userEmail) {
-        const currentUser = getUserByEmail(userEmail);
+      const plainUserEmailForSession = getCurrentUserEmail(); // This is plain text email from cookie
+      if (plainUserEmailForSession) {
+        // getUserByEmail compares plain email with stored hashed emails
+        const currentUser = getUserByEmail(plainUserEmailForSession);
         setUser(currentUser || null);
-        if (currentUser) {
-          setEditableFullName(currentUser.fullName);
-          setEditablePhone(currentUser.phone);
-        }
+        // Do NOT pre-fill editable fields with hashes from currentUser.
+        // They will be empty if editing.
       }
       setIsLoading(false);
     }
   }, [router]);
 
   const handleLogout = () => {
-    setLoggedIn(false);
+    setAuthLoggedIn(false);
     router.replace('/auth/login');
   };
 
@@ -54,15 +54,16 @@ export default function DashboardPage() {
 
   const handleEditProfileToggle = () => {
     if (user) {
-      setEditableFullName(user.fullName);
-      setEditablePhone(user.phone);
+      // When starting edit, clear fields because stored values are hashes
+      setEditableFullName(''); 
+      setEditablePhone('');
     }
     setIsEditingProfile(!isEditingProfile);
-    setEditError(null); // Clear any previous errors
+    setEditError(null); 
   };
 
   const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^\+?[0-9\s-()]{10,}$/; // Allows digits, spaces, hyphens, parens, optional +
+    const phoneRegex = /^\+?[0-9\s-()]{10,}$/; 
     return phoneRegex.test(phone);
   };
 
@@ -79,15 +80,22 @@ export default function DashboardPage() {
     }
     setEditError(null);
 
+    // updatedUser will contain plain text for fullName and phone from the form.
+    // The updateUser function in storage.ts will handle re-hashing these.
     const updatedUser: User = {
-      ...user,
-      fullName: editableFullName.trim(),
-      phone: editablePhone.trim(),
+      ...user, // Spread existing user data (id, hashed email, hashedPassword, provider, verified)
+      fullName: editableFullName.trim(), // This is plain text
+      phone: editablePhone.trim(),       // This is plain text
     };
 
     try {
-      updateUser(updatedUser);
-      setUser(updatedUser); // Update local state to reflect changes immediately
+      updateUser(updatedUser); // updateUser in storage.ts will hash fullName & phone
+      // Fetch the user again to get the updated (hashed) values for display
+      const plainUserEmailForSession = getCurrentUserEmail();
+      if(plainUserEmailForSession){
+        const reFetchedUser = getUserByEmail(plainUserEmailForSession);
+        setUser(reFetchedUser || null);
+      }
       setIsEditingProfile(false);
       toast({
         title: "Profile Updated",
@@ -134,24 +142,26 @@ export default function DashboardPage() {
         <div className="container mx-auto max-w-screen-lg">
           <Card className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="bg-card-foreground/5 p-4 sm:p-6 md:p-8 border-b">
-              <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
-                Welcome, {user?.fullName?.split(' ')[0] || user?.email || 'User'}!
+              <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                {/* Displaying user.fullName will show the HASH. This is per request. */}
+                Welcome, {user?.fullName ? user.fullName.substring(0,15)+'...' : getCurrentUserEmail() || 'User'}! 
               </CardTitle>
-              <CardDescription className="text-md sm:text-lg text-muted-foreground mt-1">
-                This is your personal dashboard. Manage your account and explore features.
+              <CardDescription className="text-sm sm:text-md md:text-lg text-muted-foreground mt-1">
+                This is your personal dashboard. Manage your account and explore features. <br/>
+                <span className="text-xs text-destructive">(Note: Full Name, Email, Phone are shown as stored hashes)</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
               {user && (
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3 sm:mb-4 border-b pb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-center mb-3 sm:mb-4 border-b pb-3 sm:pb-4">
                     <h2 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-0">Your Profile Details</h2>
                     {!isEditingProfile ? (
                       <Button variant="outline" size="sm" onClick={handleEditProfileToggle} disabled={user.provider === 'google'} className="w-full sm:w-auto text-xs sm:text-sm">
                         <Edit3 className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Edit Profile
                       </Button>
                     ) : (
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto mt-2 sm:mt-0">
                         <Button variant="outline" size="sm" onClick={handleEditProfileToggle} className="w-full sm:w-auto text-xs sm:text-sm">
                           <XCircle className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Cancel
                         </Button>
@@ -166,7 +176,7 @@ export default function DashboardPage() {
                      <Alert variant="default" className="bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 text-xs sm:text-sm">
                         <AlertTriangle className="h-3.5 sm:h-4 w-3.5 sm:w-4 !text-blue-600 dark:!text-blue-400" />
                         <AlertTitle>Google Sign-In</AlertTitle>
-                        <AlertDescription>Profile details managed by Google. To change your name or phone, please update them in your Google account settings.</AlertDescription>
+                        <AlertDescription>Profile details managed by Google. Editing is disabled for Google accounts in this mock.</AlertDescription>
                     </Alert>
                   )}
 
@@ -182,43 +192,46 @@ export default function DashboardPage() {
                     {/* Full Name */}
                     <div className="space-y-1">
                       <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name
+                        <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name (Stored as Hash)
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
                           id="fullName"
-                          value={editableFullName}
+                          value={editableFullName} // Will be empty on edit start
                           onChange={(e) => setEditableFullName(e.target.value)}
                           className="text-sm sm:text-md font-semibold text-foreground"
+                          placeholder="Enter new full name"
                         />
                       ) : (
-                        <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5">{user.fullName}</p>
+                        <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.fullName}</p>
                       )}
                     </div>
 
-                    {/* Email Address (Not Editable) */}
+                    {/* Email Address (Not Editable on Dashboard) */}
                     <div className="space-y-1">
                       <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address
+                        <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address (Stored as Hash)
                       </Label>
-                      <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
+                      {/* Displaying the stored hash for email */}
+                      <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
                     </div>
                     
                     {/* Phone Number */}
                     <div className="space-y-1">
                       <Label htmlFor="phone" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number
+                        <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number (Stored as Hash)
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
                           id="phone"
                           type="tel"
-                          value={editablePhone}
+                          value={editablePhone} // Will be empty on edit start
                           onChange={(e) => setEditablePhone(e.target.value)}
                           className="text-sm sm:text-md font-semibold text-foreground"
+                          placeholder="Enter new phone number"
                         />
                       ) : (
-                        <p className="text-sm sm:text-md font-semibold text-foreground pt-1 sm:pt-1.5">{user.phone}</p>
+                        <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.phone}</p>
                       )}
                     </div>
 
@@ -236,7 +249,7 @@ export default function DashboardPage() {
                     {user.provider && (
                        <div className="space-y-1 md:col-span-2">
                          <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                           <svg role="img" viewBox="0 0 24 24" className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
+                           <svg role="img" viewBox="0 0 24 24" className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5 fill-current"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
                            Sign-in Method
                          </Label>
                          <p className="text-sm sm:text-md font-semibold text-foreground capitalize pt-1 sm:pt-1.5">{user.provider}</p>
@@ -252,7 +265,7 @@ export default function DashboardPage() {
                   This is where you can add your application-specific content and features for logged-in users.
                   For example, you could display user projects, settings, or other personalized information.
                 </p>
-                <Button className="mt-3 sm:mt-4 text-xs sm:text-sm" onClick={() => router.push('/')}>Explore Features</Button>
+                <Button className="mt-3 sm:mt-4 text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2" onClick={() => router.push('/')}>Explore Features</Button>
               </div>
             </CardContent>
             <CardFooter className="p-4 sm:p-6 md:p-8 bg-card-foreground/5 border-t">
