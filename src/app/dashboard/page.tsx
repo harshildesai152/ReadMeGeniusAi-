@@ -22,7 +22,6 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  // Initialize with empty strings as stored values are hashes
   const [editableFullName, setEditableFullName] = useState('');
   const [editablePhone, setEditablePhone] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
@@ -31,13 +30,14 @@ export default function DashboardPage() {
     if (!isLoggedIn()) {
       router.replace('/auth/login');
     } else {
-      const plainUserEmailForSession = getCurrentUserEmail(); // This is plain text email from cookie
+      const plainUserEmailForSession = getCurrentUserEmail(); 
       if (plainUserEmailForSession) {
-        // getUserByEmail compares plain email with stored hashed emails
-        const currentUser = getUserByEmail(plainUserEmailForSession);
+        const currentUser = getUserByEmail(plainUserEmailForSession); // Fetches user with plain text details
         setUser(currentUser || null);
-        // Do NOT pre-fill editable fields with hashes from currentUser.
-        // They will be empty if editing.
+        if (currentUser) {
+          setEditableFullName(currentUser.fullName); // Pre-fill with plain text
+          setEditablePhone(currentUser.phone);     // Pre-fill with plain text
+        }
       }
       setIsLoading(false);
     }
@@ -54,9 +54,8 @@ export default function DashboardPage() {
 
   const handleEditProfileToggle = () => {
     if (user) {
-      // When starting edit, clear fields because stored values are hashes
-      setEditableFullName(''); 
-      setEditablePhone('');
+      setEditableFullName(user.fullName); // Pre-fill with current plain text name
+      setEditablePhone(user.phone);       // Pre-fill with current plain text phone
     }
     setIsEditingProfile(!isEditingProfile);
     setEditError(null); 
@@ -80,21 +79,23 @@ export default function DashboardPage() {
     }
     setEditError(null);
 
-    // updatedUser will contain plain text for fullName and phone from the form.
-    // The updateUser function in storage.ts will handle re-hashing these.
-    const updatedUser: User = {
-      ...user, // Spread existing user data (id, hashed email, hashedPassword, provider, verified)
-      fullName: editableFullName.trim(), // This is plain text
-      phone: editablePhone.trim(),       // This is plain text
+    const updatedUserData: Partial<User> = { // Only pass fields that are being updated
+      fullName: editableFullName.trim(),
+      phone: editablePhone.trim(),
     };
 
     try {
-      updateUser(updatedUser); // updateUser in storage.ts will hash fullName & phone
-      // Fetch the user again to get the updated (hashed) values for display
+      // updateUser will take the plain text values and store them as plain text
+      updateUser({ ...user, ...updatedUserData }); 
+      
       const plainUserEmailForSession = getCurrentUserEmail();
       if(plainUserEmailForSession){
-        const reFetchedUser = getUserByEmail(plainUserEmailForSession);
+        const reFetchedUser = getUserByEmail(plainUserEmailForSession); // Re-fetch to get updated plain text
         setUser(reFetchedUser || null);
+        if (reFetchedUser) { // Update editable fields again after re-fetch
+            setEditableFullName(reFetchedUser.fullName);
+            setEditablePhone(reFetchedUser.phone);
+        }
       }
       setIsEditingProfile(false);
       toast({
@@ -125,14 +126,14 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 sm:h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo />
-          <div className="flex items-center space-x-1 sm:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <Button onClick={handleGoHome} variant="ghost" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
               <Home className="h-4 sm:h-5 w-4 sm:h-5" />
             </Button>
             <ThemeToggle />
             <Button onClick={handleLogout} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
-              <LogOutIcon className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
-              Logout
+              <LogOutIcon className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>
@@ -143,27 +144,25 @@ export default function DashboardPage() {
           <Card className="w-full shadow-xl rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="bg-card-foreground/5 p-4 sm:p-6 md:p-8 border-b">
               <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-                {/* Displaying user.fullName will show the HASH. This is per request. */}
-                Welcome, {user?.fullName ? user.fullName.substring(0,15)+'...' : getCurrentUserEmail() || 'User'}! 
+                Welcome, {user?.fullName || getCurrentUserEmail() || 'User'}! 
               </CardTitle>
               <CardDescription className="text-sm sm:text-md md:text-lg text-muted-foreground mt-1">
-                This is your personal dashboard. Manage your account and explore features. <br/>
-                <span className="text-xs text-destructive">(Note: Full Name, Email, Phone are shown as stored hashes)</span>
+                This is your personal dashboard. Manage your account and explore features.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
               {user && (
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-center mb-3 sm:mb-4 border-b pb-3 sm:pb-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 border-b pb-3 sm:pb-4">
                     <h2 className="text-lg sm:text-xl font-semibold text-primary mb-2 sm:mb-0">Your Profile Details</h2>
                     {!isEditingProfile ? (
-                      <Button variant="outline" size="sm" onClick={handleEditProfileToggle} disabled={user.provider === 'google'} className="w-full sm:w-auto text-xs sm:text-sm">
+                      <Button variant="outline" size="sm" onClick={handleEditProfileToggle} disabled={user.provider === 'google'} className="w-full sm:w-auto text-xs sm:text-sm mt-2 sm:mt-0">
                         <Edit3 className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Edit Profile
                       </Button>
                     ) : (
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto mt-2 sm:mt-0">
                         <Button variant="outline" size="sm" onClick={handleEditProfileToggle} className="w-full sm:w-auto text-xs sm:text-sm">
-                          <XCircle className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Cancel
+                          <XCircle className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" /> Cancel
                         </Button>
                         <Button size="sm" onClick={handleSaveChanges} className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-xs sm:text-sm">
                           <Save className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> Save Changes
@@ -174,7 +173,7 @@ export default function DashboardPage() {
 
                   {user.provider === 'google' && !isEditingProfile && (
                      <Alert variant="default" className="bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 text-xs sm:text-sm">
-                        <AlertTriangle className="h-3.5 sm:h-4 w-3.5 sm:w-4 !text-blue-600 dark:!text-blue-400" />
+                        <AlertTriangle className="h-3.5 sm:h-4 w-3.5 sm:h-4 !text-blue-600 dark:!text-blue-400" />
                         <AlertTitle>Google Sign-In</AlertTitle>
                         <AlertDescription>Profile details managed by Google. Editing is disabled for Google accounts in this mock.</AlertDescription>
                     </Alert>
@@ -192,46 +191,45 @@ export default function DashboardPage() {
                     {/* Full Name */}
                     <div className="space-y-1">
                       <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name (Stored as Hash)
+                        <UserCircle2 className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Full Name
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
                           id="fullName"
-                          value={editableFullName} // Will be empty on edit start
+                          value={editableFullName} 
                           onChange={(e) => setEditableFullName(e.target.value)}
                           className="text-sm sm:text-md font-semibold text-foreground"
                           placeholder="Enter new full name"
                         />
                       ) : (
-                        <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.fullName}</p>
+                        <p className="text-sm sm:text-base text-foreground pt-1 sm:pt-1.5 break-words">{user.fullName}</p>
                       )}
                     </div>
 
                     {/* Email Address (Not Editable on Dashboard) */}
                     <div className="space-y-1">
                       <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address (Stored as Hash)
+                        <Mail className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Email Address
                       </Label>
-                      {/* Displaying the stored hash for email */}
-                      <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
+                      <p className="text-sm sm:text-base text-foreground pt-1 sm:pt-1.5 break-all">{user.email}</p>
                     </div>
                     
                     {/* Phone Number */}
                     <div className="space-y-1">
                       <Label htmlFor="phone" className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
-                        <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number (Stored as Hash)
+                        <Phone className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5" /> Phone Number
                       </Label>
                       {isEditingProfile && user.provider !== 'google' ? (
                         <Input
                           id="phone"
                           type="tel"
-                          value={editablePhone} // Will be empty on edit start
+                          value={editablePhone} 
                           onChange={(e) => setEditablePhone(e.target.value)}
                           className="text-sm sm:text-md font-semibold text-foreground"
                           placeholder="Enter new phone number"
                         />
                       ) : (
-                        <p className="text-xs sm:text-sm font-mono text-muted-foreground pt-1 sm:pt-1.5 break-all">{user.phone}</p>
+                        <p className="text-sm sm:text-base text-foreground pt-1 sm:pt-1.5 break-words">{user.phone}</p>
                       )}
                     </div>
 
@@ -240,7 +238,7 @@ export default function DashboardPage() {
                       <Label className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center">
                         <CheckCircle className={`mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5 ${user.verified ? 'text-green-500' : 'text-red-500'}`} /> Account Status
                       </Label>
-                      <p className={`text-sm sm:text-md font-semibold pt-1 sm:pt-1.5 ${user.verified ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`text-sm sm:text-base font-semibold pt-1 sm:pt-1.5 ${user.verified ? 'text-green-600' : 'text-red-600'}`}>
                         {user.verified ? 'Verified' : 'Not Verified'}
                       </p>
                     </div>
@@ -252,7 +250,7 @@ export default function DashboardPage() {
                            <svg role="img" viewBox="0 0 24 24" className="mr-1.5 sm:mr-2 h-4 sm:h-5 w-4 sm:h-5 fill-current"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
                            Sign-in Method
                          </Label>
-                         <p className="text-sm sm:text-md font-semibold text-foreground capitalize pt-1 sm:pt-1.5">{user.provider}</p>
+                         <p className="text-sm sm:text-base font-semibold text-foreground capitalize pt-1 sm:pt-1.5">{user.provider}</p>
                        </div>
                     )}
                   </div>

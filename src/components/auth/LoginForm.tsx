@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/schemas/auth";
-import { comparePasswordSync, hashPasswordSync } from "@/lib/auth/password"; // Added hashPasswordSync
+import { comparePasswordSync } from "@/lib/auth/password"; 
 import { getUserByEmail, setLoggedIn, addUser } from "@/lib/auth/storage";
 import type { User } from "@/lib/auth/storage";
 
@@ -47,8 +47,7 @@ export function LoginForm() {
     setError(null);
     setSuccessMessage(null);
 
-    // getUserByEmail now iterates and compares hashes
-    const user = getUserByEmail(data.email);
+    const user = getUserByEmail(data.email); // Email comparison is now plain text
 
     if (!user) {
       setError("User not found. Please check your email or sign up.");
@@ -62,10 +61,8 @@ export function LoginForm() {
       return;
     }
     
-    // For Google users, we assume direct login if user object exists and is verified.
-    // The email in cookie will be plain text from the mock user creation.
     if (user.provider === 'google') {
-        setLoggedIn(true, data.email); // Use the plain email from login form for session cookie
+        setLoggedIn(true, data.email); 
         router.push("/dashboard");
         setIsLoading(false);
         return;
@@ -80,7 +77,7 @@ export function LoginForm() {
     const isPasswordMatch = comparePasswordSync(data.password, user.hashedPassword);
 
     if (isPasswordMatch) {
-      setLoggedIn(true, data.email); // Use the plain email from login form for session cookie
+      setLoggedIn(true, data.email); 
       router.push("/dashboard");
     } else {
       setError("Invalid email or password.");
@@ -92,44 +89,36 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
     
-    // The email for the mock user should be unique for this "session" to avoid collision
-    // if the same mock user tries to "sign up" again via Google.
-    // For storage, this plain email will be hashed by addUser.
     const plainMockEmail = "google.user."+ Date.now().toString(36).substring(2, 9) +"@example.com";
     const plainMockFullName = "Google User";
-    const plainMockPhone = "0000000000";
+    const plainMockPhone = "0000000000"; // Example phone
 
     const mockUser: User = {
       id: 'google-' + Date.now().toString(),
-      // Pass plain text here; addUser will hash them
-      fullName: plainMockFullName,
-      email: plainMockEmail, 
-      phone: plainMockPhone,
+      fullName: plainMockFullName, // Stored as plain text
+      email: plainMockEmail,       // Stored as plain text
+      phone: plainMockPhone,       // Stored as plain text
       verified: true,
       provider: 'google',
-      // No hashedPassword for Google mock users, direct login is assumed
+      // No hashedPassword for Google mock users
     };
     
     try {
-        addUser(mockUser); // addUser will now hash fullName, email, phone.
-        setLoggedIn(true, plainMockEmail); // Use plain mock email for session cookie
-        router.push("/dashboard?googlesignin=true");
-    } catch (e: any) {
-        // Check if it's the "email exists" error from addUser.
-        // If getUserByEmail (which compares hashes) finds a user with this new mock email's hash,
-        // it means there's an unlikely hash collision or the mock email wasn't unique enough.
-        // More likely, if the plainMockEmail itself already led to an existing user (pre-hashing check in addUser).
+        // Check if user with this email already exists (plain text check)
         const existingUser = getUserByEmail(plainMockEmail);
         if (existingUser && existingUser.provider === 'google') {
-            // If a Google user with this (plain) email already exists, log them in.
+             // If Google user exists, just log them in
             setLoggedIn(true, plainMockEmail);
             router.push("/dashboard?googlesignin=true&existing=true");
-        } else if (e.message && e.message.includes("User with this email already exists")) {
+        } else if (existingUser && existingUser.provider !== 'google') {
             setError("This mock Google email is already registered with a non-Google account. Try again or log in normally.");
+        } else {
+            addUser(mockUser); // Adds the new Google user (with plain text details)
+            setLoggedIn(true, plainMockEmail); 
+            router.push("/dashboard?googlesignin=true");
         }
-        else {
-            setError(e.message || "Mock Google Sign-In failed.");
-        }
+    } catch (e: any) {
+        setError(e.message || "Mock Google Sign-In failed.");
     } finally {
         setIsLoading(false);
     }
@@ -137,9 +126,9 @@ export function LoginForm() {
 
   return (
     <Card className="w-full max-w-md shadow-xl">
-      <CardHeader>
-        <CardTitle className="text-2xl sm:text-3xl font-bold">Welcome Back!</CardTitle>
-        <CardDescription className="text-md sm:text-lg">Log in to access your dashboard.</CardDescription>
+      <CardHeader className="items-center">
+        <CardTitle className="text-2xl sm:text-3xl font-bold text-center">Welcome Back!</CardTitle>
+        <CardDescription className="text-md sm:text-lg text-center">Log in to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -154,7 +143,7 @@ export function LoginForm() {
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
           <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" {...form.register("email")} disabled={isLoading} />
@@ -175,10 +164,11 @@ export function LoginForm() {
               <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                  size="icon" 
+                  className="absolute right-1.5 top-1/2 transform -translate-y-1/2 h-7 w-7 hover:bg-transparent text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -187,7 +177,7 @@ export function LoginForm() {
               <p className="text-sm text-destructive mt-1">{form.formState.errors.password.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full text-md sm:text-lg py-2.5 sm:py-3" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Log In
           </Button>
@@ -202,7 +192,7 @@ export function LoginForm() {
             </span>
           </div>
         </div>
-        <Button variant="outline" className="w-full mt-4" onClick={handleGoogleSignIn} disabled={isLoading}>
+        <Button variant="outline" className="w-full mt-4 text-sm sm:text-base py-2.5 sm:py-3" onClick={handleGoogleSignIn} disabled={isLoading}>
           {isLoading && !form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
              <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
           )}
