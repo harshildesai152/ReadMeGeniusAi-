@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
   Check, Edit3, Maximize, Minimize, Loader2, Eye, Palette, ImagePlus, CircleX, DownloadCloud,
-  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp
+  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp, Pencil, FileJson, FileCode2, Copy, Clipboard, Expand, Shrink, Heading1, CheckSquare, LayoutGrid, Rows
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -29,26 +29,26 @@ interface ReadmeDisplayProps {
   data: FullReadmeData;
   onGenerateDetails: (currentData: FullReadmeData) => Promise<void>;
   isGeneratingDetails: boolean;
-  onEditRequest: () => void; // This might be less used now, or repurposed.
+  onEditRequest: () => void; 
 }
 
 type IconName = keyof typeof LUCIDE_ICON_MAP;
 
 const LUCIDE_ICON_MAP = {
-  Edit3, Pencil: Edit3, Edit2: Edit3, Edit: Edit3,
-  FileText, FileJson: FileText, FileCode2: FileText, FileArchive: FileText,
-  ClipboardCopy, Copy: ClipboardCopy, Clipboard: ClipboardCopy, CopyCheck: Check,
+  Edit3, Pencil, Edit2: Edit3, Edit: Edit3,
+  FileText, FileJson, FileCode2, FileArchive: FileText,
+  ClipboardCopy, Copy, Clipboard, CopyCheck: Check,
   Code, Code2: Code, Terminal: Code,
   Eye, EyeOff: Eye, View: Eye,
   Palette, Paintbrush: Palette, Brush: Palette,
   ImagePlus, Image: ImagePlus, FileImage: ImagePlus, ImageUp,
-  Maximize, ExternalLink: Maximize, Expand: Maximize,
-  Minimize, Shrink: Minimize, Minimize2: Minimize,
+  Maximize, ExternalLink: Maximize, Expand,
+  Minimize, Shrink, Minimize2: Minimize,
   DownloadCloud, Download: DownloadCloud, CloudDownload: DownloadCloud,
-  QrCode, QrCodeIcon: QrCode, // Added for QR Code
-  Type, Heading1: Type, Pilcrow: Type, // Added for Font
-  Save, CheckSquare: Save, // Added for potential future Save Raw button
-  Columns, LayoutGrid: Columns, Rows: Columns, // Added for Edit Raw button
+  QrCode, QrCodeIcon: QrCode, 
+  Type, Heading1, Pilcrow: Type, 
+  Save, CheckSquare,
+  Columns, LayoutGrid, Rows,
 };
 
 interface IconOption {
@@ -67,39 +67,36 @@ interface ActionButtonIcons {
   edit: IconName;
   moreDetail: IconName;
   copy: IconName;
-  toggleLiveEdit: IconName; // Replaces viewRaw / viewFormatted
+  toggleLiveEdit: IconName; 
   branding: IconName;
   fullScreen: IconName;
   exitFullScreen: IconName;
   qr: IconName;
   font: IconName;
-  // saveRaw: IconName; // For future "Save Raw Changes" button
 }
 
 const DEFAULT_ACTION_BUTTON_ICONS: ActionButtonIcons = {
   edit: 'Edit3',
   moreDetail: 'FileText',
   copy: 'ClipboardCopy',
-  toggleLiveEdit: 'Columns', // New default for toggling editor
+  toggleLiveEdit: 'Columns', 
   branding: 'Palette',
   fullScreen: 'Maximize',
   exitFullScreen: 'Minimize',
   qr: 'QrCode',
   font: 'Type',
-  // saveRaw: 'Save',
 };
 
 const CUSTOMIZABLE_ACTIONS: CustomizableAction[] = [
-  { id: 'edit', label: 'Structured Edit Button', defaultIcon: 'Edit3', options: [{value: 'Edit3', label: 'Edit 3'}, {value: 'Pencil', label: 'Pencil'}, {value: 'Edit2', label: 'Edit 2'}] },
-  { id: 'moreDetail', label: 'More Detail Button', defaultIcon: 'FileText', options: [{value: 'FileText', label: 'File Text'}, {value: 'FileJson', label: 'File JSON'}, {value: 'FileCode2', label: 'File Code 2'}] },
-  { id: 'copy', label: 'Copy All Button', defaultIcon: 'ClipboardCopy', options: [{value: 'ClipboardCopy', label: 'Clipboard Copy'}, {value: 'Copy', label: 'Copy'}, {value: 'Clipboard', label: 'Clipboard'}] },
-  { id: 'toggleLiveEdit', label: 'Edit Raw / Preview Button', defaultIcon: 'Columns', options: [{value: 'Columns', label: 'Columns (Edit/Preview)'}, {value: 'Code', label: 'Code (Raw)'}, {value: 'Eye', label: 'Eye (Preview)'}] },
-  { id: 'branding', label: 'Branding Button', defaultIcon: 'Palette', options: [{value: 'Palette', label: 'Palette'}, {value: 'Paintbrush', label: 'Paintbrush'}, {value: 'Image', label: 'Image'}] },
-  { id: 'fullScreen', label: 'Full Screen Button', defaultIcon: 'Maximize', options: [{value: 'Maximize', label: 'Maximize'}, {value: 'Expand', label: 'Expand'}] },
-  { id: 'exitFullScreen', label: 'Exit Full Screen Button', defaultIcon: 'Minimize', options: [{value: 'Minimize', label: 'Minimize'}, {value: 'Shrink', label: 'Shrink'}] },
-  { id: 'qr', label: 'QR Code Button', defaultIcon: 'QrCode', options: [{value: 'QrCode', label: 'QR Code Default'}] },
-  { id: 'font', label: 'Font Select Icon', defaultIcon: 'Type', options: [{value: 'Type', label: 'Type Default'}, {value: 'Heading1', label: 'Heading 1'}] },
-  // { id: 'saveRaw', label: 'Save Raw Changes Button', defaultIcon: 'Save', options: [{value: 'Save', label: 'Save'}, {value: 'CheckSquare', label: 'Check Square'}] },
+  { id: 'edit', label: 'Structured Edit Button', defaultIcon: 'Edit3', options: [{value: 'Edit3', label: 'Edit 3 (Default)'}, {value: 'Pencil', label: 'Pencil'}, {value: 'Edit2', label: 'Edit 2'}] },
+  { id: 'moreDetail', label: 'More Detail Button', defaultIcon: 'FileText', options: [{value: 'FileText', label: 'File Text (Default)'}, {value: 'FileJson', label: 'File JSON'}, {value: 'FileCode2', label: 'File Code 2'}] },
+  { id: 'copy', label: 'Copy All Button', defaultIcon: 'ClipboardCopy', options: [{value: 'ClipboardCopy', label: 'Clipboard (Default)'}, {value: 'Copy', label: 'Copy Icon'}] },
+  { id: 'toggleLiveEdit', label: 'Edit Raw / Preview Button', defaultIcon: 'Columns', options: [{value: 'Columns', label: 'Columns (Default)'}, {value: 'Code', label: 'Code Icon (Raw)'}, {value: 'Eye', label: 'Eye Icon (Preview)'}] },
+  { id: 'branding', label: 'Branding Button', defaultIcon: 'Palette', options: [{value: 'Palette', label: 'Palette (Default)'}, {value: 'Paintbrush', label: 'Paintbrush'}, {value: 'Image', label: 'Image Icon'}] },
+  { id: 'fullScreen', label: 'Full Screen Button', defaultIcon: 'Maximize', options: [{value: 'Maximize', label: 'Maximize (Default)'}, {value: 'Expand', label: 'Expand'}] },
+  { id: 'exitFullScreen', label: 'Exit Full Screen Button', defaultIcon: 'Minimize', options: [{value: 'Minimize', label: 'Minimize (Default)'}, {value: 'Shrink', label: 'Shrink'}] },
+  { id: 'qr', label: 'QR Code Button', defaultIcon: 'QrCode', options: [{value: 'QrCode', label: 'QR Code (Default)'}] },
+  { id: 'font', label: 'Font Select Icon', defaultIcon: 'Type', options: [{value: 'Type', label: 'Type (Default)'}, {value: 'Heading1', label: 'Heading 1'}] },
 ];
 
 const FONT_OPTIONS = [
@@ -112,7 +109,7 @@ const FONT_OPTIONS = [
   { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
 ];
 
-const MAX_QR_CODE_DATA_LENGTH = 2000; // Conservative limit for QR data URI
+const MAX_QR_CODE_DATA_LENGTH = 2000; 
 
 export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGeneratingDetails, onEditRequest }: ReadmeDisplayProps) {
   const { toast } = useToast();
@@ -122,7 +119,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const contentWrapperId = `readme-content-wrapper-${useId()}`;
 
   const [customLogoDataUri, setCustomLogoDataUri] = useState<string | null>(null);
-  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#3b82f6"); // Default to a nice blue
+  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#4285F4"); // App primary color
   const [isBrandingDialogOpen, setIsBrandingDialogOpen] = useState<boolean>(false);
   const [isGeneratingBrandedPdf, setIsGeneratingBrandedPdf] = useState<boolean>(false);
 
@@ -133,7 +130,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const [actionButtonIcons, setActionButtonIcons] = useState<ActionButtonIcons>(DEFAULT_ACTION_BUTTON_ICONS);
   const [isIconOptionsDialogOpen, setIsIconOptionsDialogOpen] = useState<boolean>(false);
   
-  const [isCopiedGlobal, setIsCopiedGlobal] = useState(false); // For the main "Copy All" button
+  const [isCopiedGlobal, setIsCopiedGlobal] = useState(false);
 
   const [rawMarkdownContent, setRawMarkdownContent] = useState<string>('');
   const [isLiveEditing, setIsLiveEditing] = useState<boolean>(false);
@@ -161,7 +158,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
       try {
         setActionButtonIcons(JSON.parse(storedIcons));
       } catch (e) {
-        localStorage.removeItem('readmeDisplayIcons'); // Clear corrupted data
+        localStorage.removeItem('readmeDisplayIcons'); 
       }
     }
   }, []);
@@ -209,37 +206,26 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   };
 
   const readmeToBrandedHtml = (
-    readmeMd: string, // Now takes raw Markdown
+    readmeMd: string, 
     logoUri: string | null,
     themeColorHex: string
   ): string => {
-    // This function would ideally use react-markdown to render to a temporary element,
-    // then capture its innerHTML, and then inject logo and theme colors.
-    // For simplicity in this step, we'll do a very basic HTML structure.
-    // A more robust solution would involve a server-side rendering or more complex client-side HTML construction.
-
     let html = `<div style="font-family: ${selectedFontFamily}; padding: 20px; max-width: 800px; margin: auto; border: 1px solid #ddd; color: #333;">`;
     if (logoUri) {
       html += `<div style="text-align: center; margin-bottom: 25px;"><img src="${logoUri}" alt="Custom Logo" style="max-height: 80px; max-width: 200px; display: inline-block;" /></div>`;
     }
-    // Extract project name from Markdown (first H1)
     const projectNameMatch = readmeMd.match(/^# (.*)/m);
     const projectName = projectNameMatch ? projectNameMatch[1] : 'README Document';
     html += `<h1 style="font-size: 26px; color: ${themeColorHex}; border-bottom: 2px solid ${themeColorHex}; padding-bottom: 8px; margin-bottom: 20px; text-align: center;">${projectName}</h1>`;
     
-    // Convert Markdown to HTML (very basic for PDF)
-    // In a real scenario, you'd use react-markdown here on a temp div then get innerHTML
-    // Or use a library that converts MD to HTML string with GFM.
-    // This is a placeholder for proper MD to HTML conversion for PDF.
     const bodyHtml = readmeMd
         .replace(/^## (.*)/gm, `<h2 style="font-size: 20px; color: ${themeColorHex}; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">$1</h2>`)
         .replace(/^### (.*)/gm, `<h3 style="font-size: 16px; color: ${themeColorHex}; margin-top: 15px; margin-bottom: 5px;">$1</h3>`)
-        .replace(/\n/g, '<br />') // Basic newline to <br>
+        .replace(/\n/g, '<br />') 
         .replace(/```([\s\S]*?)```/g, (match, code) => `<pre style="background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; border-radius: 5px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; color: #444;">${code.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`)
         .replace(/`([^`]+)`/g, `<code style="background-color: #eee; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>`);
 
-
-    html += `<div class="prose prose-sm">${bodyHtml.replace(/^# .*/m, '')}</div>`; // Add prose for basic styling, skip H1
+    html += `<div class="prose prose-sm">${bodyHtml.replace(/^# .*/m, '')}</div>`; 
     
     html += `</div>`;
     return html;
@@ -285,8 +271,8 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
         variant: "destructive",
         duration: 7000,
       });
-      setQrCodeValue(''); // Clear previous value if any
-      setIsQrDialogOpen(false); // Don't open dialog
+      setQrCodeValue(''); 
+      setIsQrDialogOpen(false); 
       return;
     }
     setQrCodeValue(dataUri);
@@ -304,22 +290,20 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
     }
   };
 
-  const handleMoreDetailClick = () => { if (!mounted || !initialData) return; onGenerateDetails(initialData); }; // Operates on original structured data
+  const handleMoreDetailClick = () => { if (!mounted || !initialData) return; onGenerateDetails(initialData); }; 
   
   const toggleFullScreen = () => { if (!mounted) return; setIsFullScreen(!isFullScreen); };
 
-  const getIcon = (iconName: IconName | undefined) => {
-    const IconComponent = LUCIDE_ICON_MAP[iconName || 'Edit3']; // Fallback to Edit3 if undefined
+  const getIcon = (iconName: IconName | undefined) : React.ReactElement => {
+    const IconComponent = LUCIDE_ICON_MAP[iconName || 'Edit3']; 
     return <IconComponent />;
   };
 
   const handleToggleLiveEdit = () => {
     setIsLiveEditing(prev => !prev);
-    if (!isLiveEditing && initialData) { // Entering edit mode
+    if (!isLiveEditing && initialData) { 
       setRawMarkdownContent(formatReadmeForMarkdown(initialData));
     }
-    // Note: No saving of rawMarkdownContent back to initialData when toggling off.
-    // This would require a "Save Raw Changes" button and more complex logic.
   };
 
   if (!mounted || !initialData) return (
@@ -369,10 +353,10 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
         </CardTitle>
         <div className={cn(
             "flex items-center flex-wrap w-full sm:w-auto",
-            "gap-1 sm:gap-1.5 justify-start", // Reduced gap slightly
+            "gap-1 sm:gap-1.5 justify-start", 
             "sm:justify-end mt-2 sm:mt-0"
           )}>
-           <Button variant="outline" size="sm" onClick={() => onEditRequest()} className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Edit Structured Data">
+           <Button variant="outline" size="sm" onClick={() => onEditRequest()} className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Edit Structured Data (Opens Form)">
             <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{EditIconToRender}</span> Edit Sections
           </Button>
           <Button variant="outline" size="sm" onClick={handleMoreDetailClick} disabled={isGeneratingDetails || isLiveEditing} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title={isLiveEditing ? "Disabled in live edit mode" : "Generate More Detail"}>
@@ -428,10 +412,11 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             isFullScreen ? "flex-1 h-auto w-full border-0 rounded-none bg-transparent" : "h-[calc(100vh-420px)] min-h-[300px] sm:h-[calc(100vh-380px)] md:h-[500px] rounded-b-lg"
           )}
         >
-          <div className={cn(
+          <div className={cn( /* contentHostDiv */
               isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0 h-full" : "h-full",
               isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto",
-              isFullScreen && isLiveEditing ? "md:gap-0" : "p-0 md:p-1"
+              isFullScreen && isLiveEditing ? "md:gap-0" : 
+                (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")
             )}>
             {isLiveEditing && (
               <div className={cn(
@@ -453,9 +438,9 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             )}
             
             {(!isLiveEditing || (isLiveEditing && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
-               <div className={cn(
-                  "prose prose-sm sm:prose-base dark:prose-invert max-w-none overflow-auto",
-                  "p-3 sm:p-4",
+               <div className={cn( /* markdownWrapperDiv */
+                  "prose prose-sm sm:prose-base dark:prose-invert max-w-none w-full break-words", 
+                  (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", 
                    isLiveEditing ? (isFullScreen ? "md:border-l-0" : "border rounded-md md:rounded-r-md md:rounded-l-none") : "",
                    isFullScreen ? "h-full" : ""
                   )}
@@ -518,7 +503,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
                     type="text"
                     value={selectedThemeColor}
                     onChange={(e) => setSelectedThemeColor(e.target.value)}
-                    placeholder="#3b82f6"
+                    placeholder="#4285F4"
                     className="h-10 flex-1 text-sm"
                     disabled={isGeneratingBrandedPdf}
                 />
