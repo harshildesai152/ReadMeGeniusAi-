@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles } from "lucide-react"; 
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles, Edit } from "lucide-react";
 import { processGitHubRepo, generateDetailedReadme, generateAiSectionAction, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
@@ -151,6 +151,11 @@ export function ReadmeGenerator() {
   const [generatedAiDescription, setGeneratedAiDescription] = useState("");
   const [isGeneratingAiSectionContent, setIsGeneratingAiSectionContent] = useState(false);
   const [aiSectionError, setAiSectionError] = useState<string | null>(null);
+
+  // State for Manual Add Section Dialog
+  const [isManualAddSectionDialogOpen, setIsManualAddSectionDialogOpen] = useState(false);
+  const [manualSectionTitle, setManualSectionTitle] = useState("");
+  const [manualSectionContent, setManualSectionContent] = useState("");
 
 
   const { toast } = useToast();
@@ -542,14 +547,25 @@ ${readmeItem.setupInstructions}
       const listMarkerRegex = /^(\s*([-*+]|\d+\.)\s+)/;
       let marker = "";
 
-      if (selectedText) {
-        const match = selectedText.match(listMarkerRegex);
-        if (match) {
-            marker = match[0];
-            selectedText = selectedText.substring(marker.length);
-            textBefore = textBefore + marker; // Move marker to before selection logic
-        }
+      // Check if the selected text itself starts with a list marker
+      const selectionMatch = selectedText.match(listMarkerRegex);
+      if (selectionMatch) {
+          marker = selectionMatch[0];
+          selectedText = selectedText.substring(marker.length); // Actual text content
+          // The marker should remain outside the formatting tags
+          textBefore = textBefore + marker; 
+      } else {
+          // If selection doesn't start with a marker, check if the line it's on does
+          const lineStart = currentValue.lastIndexOf('\n', start - 1) + 1;
+          const currentLine = currentValue.substring(lineStart, start);
+          const lineMatch = currentLine.match(listMarkerRegex);
+          if (lineMatch && start === lineStart + lineMatch[0].length) { // Cursor is right after marker
+            // This case is complex, for now, let's assume user selected content or we insert at cursor
+          }
+      }
 
+
+      if (selectedText) { // Text was selected
         if (formatType === 'underline') {
           finalNewValue = `${textBefore}<u>${selectedText}</u>${textAfter}`;
           newCursorPos = (textBefore + `<u>${selectedText}</u>`).length;
@@ -557,8 +573,7 @@ ${readmeItem.setupInstructions}
           finalNewValue = `${textBefore}<mark>${selectedText}</mark>${textAfter}`;
           newCursorPos = (textBefore + `<mark>${selectedText}</mark>`).length;
         }
-      } else {
-        // No text selected, insert tags at cursor
+      } else { // No text selected, insert tags at cursor
         if (formatType === 'underline') {
           finalNewValue = `${textBefore}<u></u>${textAfter}`;
           newCursorPos = textBefore.length + 3; // Position cursor inside <u>|</u>
@@ -602,18 +617,35 @@ ${readmeItem.setupInstructions}
 
   const handleAppendAiSectionToDescription = () => {
     if (editableReadmeData && generatedAiTitle && generatedAiDescription) {
+      const currentDescription = editableReadmeData.projectDescription || "";
       const newSectionText = `\n\n${generatedAiTitle}\n${generatedAiDescription}\n`;
       setEditableReadmeData(prev => ({
         ...prev!,
-        projectDescription: (prev!.projectDescription || "") + newSectionText,
+        projectDescription: currentDescription + newSectionText,
       }));
-      toast({ title: "Section Appended", description: `"${generatedAiTitle}" has been added to the Project Description.` });
-      // Reset dialog state
+      toast({ title: "Section Appended", description: `"${generatedAiTitle.replace(/^##\s*/, '')}" has been added to the Project Description.` });
       setIsAiAddSectionDialogOpen(false);
       setAiSectionPrompt("");
       setGeneratedAiTitle("");
       setGeneratedAiDescription("");
       setAiSectionError(null);
+    }
+  };
+
+  const handleSaveManualSection = () => {
+    if (editableReadmeData && manualSectionTitle.trim()) {
+        const currentDescription = editableReadmeData.projectDescription || "";
+        const newSectionText = `\n\n## ${manualSectionTitle.trim()}\n${manualSectionContent.trim()}\n`;
+        setEditableReadmeData(prev => ({
+            ...prev!,
+            projectDescription: currentDescription + newSectionText,
+        }));
+        toast({ title: "Manual Section Appended", description: `"${manualSectionTitle.trim()}" has been added to Project Description.`});
+        setIsManualAddSectionDialogOpen(false);
+        setManualSectionTitle("");
+        setManualSectionContent("");
+    } else if (!manualSectionTitle.trim()) {
+        toast({ title: "Title Required", description: "Please enter a title for your manual section.", variant: "destructive"});
     }
   };
 
@@ -684,57 +716,105 @@ ${readmeItem.setupInstructions}
             </div>
         ))}
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
-            <Dialog open={isAiAddSectionDialogOpen} onOpenChange={setIsAiAddSectionDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="text-sm py-2 px-4 w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
-                  <Sparkles className="mr-1.5 h-4 w-4" /> AI: Add Section
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>AI: Add New Section</DialogTitle>
-                  <DialogDescription>
-                    Describe the new section you want to add (e.g., "How to deploy the app to Vercel", "API usage examples"). The AI will generate a title and description.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-3">
-                  <div>
-                    <Label htmlFor="ai-section-prompt">Your Idea/Prompt for the New Section</Label>
-                    <Textarea 
-                      id="ai-section-prompt"
-                      value={aiSectionPrompt}
-                      onChange={(e) => setAiSectionPrompt(e.target.value)}
-                      placeholder="e.g., Explain the project's architecture..."
-                      className="min-h-[80px]"
-                      disabled={isGeneratingAiSectionContent}
-                    />
-                  </div>
-                  <Button onClick={handleGenerateAiSection} disabled={isGeneratingAiSectionContent || !aiSectionPrompt.trim()} className="w-full">
-                    {isGeneratingAiSectionContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate with AI
-                  </Button>
-                  {aiSectionError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{aiSectionError}</AlertDescription></Alert>}
-                  {generatedAiTitle && (
-                    <div className="space-y-2 mt-3 p-3 border rounded-md bg-muted/50">
-                      <h4 className="font-semibold text-sm">AI Generated Title:</h4>
-                      <p className="text-sm p-2 border rounded bg-background">{generatedAiTitle}</p>
-                      <h4 className="font-semibold text-sm mt-2">AI Generated Description:</h4>
-                      <ScrollArea className="h-[100px] w-full rounded-md border bg-background p-2">
-                        <pre className="text-xs whitespace-pre-wrap">{generatedAiDescription}</pre>
-                      </ScrollArea>
-                       <Button onClick={handleAppendAiSectionToDescription} className="w-full mt-2" variant="default">
-                        Append to Project Description
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline" onClick={() => { setAiSectionPrompt(""); setGeneratedAiTitle(""); setGeneratedAiDescription(""); setAiSectionError(null); }}>Close</Button>
-                  </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                 <Dialog open={isAiAddSectionDialogOpen} onOpenChange={setIsAiAddSectionDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="text-sm py-2 px-4 w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
+                        <Sparkles className="mr-1.5 h-4 w-4" /> AI: Add Section
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                        <DialogTitle>AI: Add New Section</DialogTitle>
+                        <DialogDescription>
+                            Describe the new section you want to add (e.g., "How to deploy the app to Vercel", "API usage examples"). The AI will generate a title and description.
+                        </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-3">
+                        <div>
+                            <Label htmlFor="ai-section-prompt">Your Idea/Prompt for the New Section</Label>
+                            <Textarea 
+                            id="ai-section-prompt"
+                            value={aiSectionPrompt}
+                            onChange={(e) => setAiSectionPrompt(e.target.value)}
+                            placeholder="e.g., Explain the project's architecture..."
+                            className="min-h-[80px]"
+                            disabled={isGeneratingAiSectionContent}
+                            />
+                        </div>
+                        <Button onClick={handleGenerateAiSection} disabled={isGeneratingAiSectionContent || !aiSectionPrompt.trim()} className="w-full">
+                            {isGeneratingAiSectionContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate with AI
+                        </Button>
+                        {aiSectionError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{aiSectionError}</AlertDescription></Alert>}
+                        {generatedAiTitle && (
+                            <div className="space-y-2 mt-3 p-3 border rounded-md bg-muted/50">
+                            <h4 className="font-semibold text-sm">AI Generated Title:</h4>
+                            <p className="text-sm p-2 border rounded bg-background">{generatedAiTitle}</p>
+                            <h4 className="font-semibold text-sm mt-2">AI Generated Description:</h4>
+                            <ScrollArea className="h-[100px] w-full rounded-md border bg-background p-2">
+                                <pre className="text-xs whitespace-pre-wrap">{generatedAiDescription}</pre>
+                            </ScrollArea>
+                            <Button onClick={handleAppendAiSectionToDescription} className="w-full mt-2" variant="default">
+                                Append to Project Description
+                            </Button>
+                            </div>
+                        )}
+                        </div>
+                        <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" onClick={() => { setAiSectionPrompt(""); setGeneratedAiTitle(""); setGeneratedAiDescription(""); setAiSectionError(null); }}>Close</Button>
+                        </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isManualAddSectionDialogOpen} onOpenChange={setIsManualAddSectionDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="text-sm py-2 px-4 w-full sm:w-auto border-green-500/50 text-green-600 hover:bg-green-500/10">
+                            <Edit className="mr-1.5 h-4 w-4" /> Manual: Add Section
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>Manually Add New Section</DialogTitle>
+                            <DialogDescription>
+                                Enter a title and content for your new section. It will be appended to the Project Description.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-3">
+                            <div>
+                                <Label htmlFor="manual-section-title">Section Title</Label>
+                                <Input 
+                                    id="manual-section-title"
+                                    value={manualSectionTitle}
+                                    onChange={(e) => setManualSectionTitle(e.target.value)}
+                                    placeholder="e.g., Installation Steps"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="manual-section-content">Section Content</Label>
+                                <Textarea 
+                                    id="manual-section-content"
+                                    value={manualSectionContent}
+                                    onChange={(e) => setManualSectionContent(e.target.value)}
+                                    placeholder="Enter the content for your section here. You can use Markdown."
+                                    className="min-h-[100px]"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" onClick={() => { setManualSectionTitle(""); setManualSectionContent("");}}>Cancel</Button>
+                            </DialogClose>
+                            <Button type="button" variant="default" onClick={handleSaveManualSection}>
+                                Add Section to Description
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
 
             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                 <Button variant="outline" onClick={handleCancelEdits} className="text-sm py-2 px-4 w-full sm:w-auto">
