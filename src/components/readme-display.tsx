@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
   Check, Edit3, Maximize, Minimize, Loader2, Eye, Palette, ImagePlus, CircleX, DownloadCloud,
-  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp, Pencil, FileJson, FileCode2, Copy, Clipboard, Expand, Shrink, Heading1, CheckSquare, LayoutGrid, Rows, Github
+  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp, Pencil, FileJson, FileCode2, Copy, Clipboard, Expand, Shrink, Heading1, CheckSquare, LayoutGrid, Rows, Github, Pin, PinOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -50,6 +50,7 @@ const LUCIDE_ICON_MAP = {
   Save, CheckSquare,
   Columns, LayoutGrid, Rows,
   Github,
+  Pin, PinOff,
 };
 
 interface IconOption {
@@ -112,6 +113,15 @@ const FONT_OPTIONS = [
 
 const MAX_QR_CODE_DATA_LENGTH = 2000; 
 
+const SECTIONS_CONFIG: Array<{ key: keyof FullReadmeData; title: string; isMarkdown?: boolean; isCode?: boolean }> = [
+  { key: 'projectName', title: 'Project Name' },
+  { key: 'projectDescription', title: 'Project Description', isMarkdown: true },
+  { key: 'features', title: 'Features', isMarkdown: true },
+  { key: 'technologiesUsed', title: 'Technologies Used', isMarkdown: true },
+  { key: 'folderStructure', title: 'Folder Structure', isCode: true },
+  { key: 'setupInstructions', title: 'Setup Instructions', isMarkdown: true },
+];
+
 export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGeneratingDetails, onEditRequest }: ReadmeDisplayProps) {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -120,7 +130,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const contentWrapperId = `readme-content-wrapper-${useId()}`;
 
   const [customLogoDataUri, setCustomLogoDataUri] = useState<string | null>(null);
-  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#4285F4"); // App primary color
+  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#4285F4");
   const [isBrandingDialogOpen, setIsBrandingDialogOpen] = useState<boolean>(false);
   const [isGeneratingBrandedPdf, setIsGeneratingBrandedPdf] = useState<boolean>(false);
 
@@ -137,14 +147,24 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const [isLiveEditing, setIsLiveEditing] = useState<boolean>(false);
   const editorTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [pinnedSections, setPinnedSections] = useState<Array<keyof FullReadmeData>>([]);
+
   const formatReadmeForMarkdown = (readmeData: FullReadmeData): string => {
     if (!readmeData) return '';
     let text = `# ${readmeData.projectName}\n\n`;
-    text += `## Project Description\n${readmeData.projectDescription}\n\n`;
-    text += `## Features\n${readmeData.features}\n\n`;
-    text += `## Technologies Used\n${readmeData.technologiesUsed}\n\n`;
-    text += `## Folder Structure\n\`\`\`\n${readmeData.folderStructure}\n\`\`\`\n\n`;
-    text += `## Setup Instructions\n${readmeData.setupInstructions}\n`;
+    SECTIONS_CONFIG.forEach(section => {
+      if (section.key !== 'projectName') { // Project name is already added as H1
+        const content = readmeData[section.key];
+        if (content) {
+          text += `## ${section.title}\n`;
+          if (section.isCode) {
+            text += `\`\`\`\n${content}\n\`\`\`\n\n`;
+          } else {
+            text += `${content}\n\n`;
+          }
+        }
+      }
+    });
     return text.trim();
   };
 
@@ -160,6 +180,14 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
         setActionButtonIcons(JSON.parse(storedIcons));
       } catch (e) {
         localStorage.removeItem('readmeDisplayIcons'); 
+      }
+    }
+    const storedPinnedSections = localStorage.getItem(`readmePinnedSections_${initialData.projectName}`); // Tie to project name or a unique ID if available
+    if (storedPinnedSections) {
+      try {
+        setPinnedSections(JSON.parse(storedPinnedSections));
+      } catch (e) {
+        localStorage.removeItem(`readmePinnedSections_${initialData.projectName}`);
       }
     }
   }, []);
@@ -181,6 +209,12 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
       localStorage.setItem('readmeDisplayIcons', JSON.stringify(actionButtonIcons));
     }
   }, [actionButtonIcons, mounted]);
+
+  useEffect(() => {
+    if (mounted && initialData.projectName) { // Save pinned sections when they change
+      localStorage.setItem(`readmePinnedSections_${initialData.projectName}`, JSON.stringify(pinnedSections));
+    }
+  }, [pinnedSections, mounted, initialData.projectName]);
 
 
   useEffect(() => {
@@ -307,6 +341,57 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
     }
   };
 
+  const togglePinSection = (sectionKey: keyof FullReadmeData) => {
+    setPinnedSections(prevPinned =>
+      prevPinned.includes(sectionKey)
+        ? prevPinned.filter(key => key !== sectionKey)
+        : [...prevPinned, sectionKey]
+    );
+  };
+
+  const renderSection = (section: typeof SECTIONS_CONFIG[0], isPinnedSection: boolean) => {
+    const content = initialData[section.key];
+    if (!content && section.key !== 'projectName') return null; // Allow empty project name to show with pin
+
+    return (
+      <div key={section.key} className="py-2 sm:py-3 border-b border-border/30 last:border-b-0 group">
+        <div className="flex justify-between items-center mb-1 sm:mb-1.5">
+          <h3 className={cn(
+            "text-sm sm:text-base font-semibold",
+            section.key === 'projectName' ? 'text-lg sm:text-xl text-primary' : 'text-foreground/90 dark:text-foreground/80'
+          )}>
+            {section.key === 'projectName' ? initialData.projectName : section.title}
+          </h3>
+          {!isLiveEditing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => togglePinSection(section.key)}
+              className="h-6 w-6 sm:h-7 sm:w-7 opacity-50 group-hover:opacity-100 transition-opacity"
+              title={pinnedSections.includes(section.key) ? "Unpin Section" : "Pin Section"}
+            >
+              {pinnedSections.includes(section.key) ? <PinOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" /> : <Pin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+            </Button>
+          )}
+        </div>
+        {section.key !== 'projectName' && (
+          section.isCode ? (
+            <pre className="bg-muted/50 p-2 sm:p-3 rounded-md text-xs sm:text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
+              {content}
+            </pre>
+          ) : section.isMarkdown ? (
+            <ReactMarkdown remarkPlugins={[RemarkGfm]} className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words">
+              {content}
+            </ReactMarkdown>
+          ) : (
+            <p className="text-sm sm:text-base text-foreground/80 dark:text-foreground/70 break-words">{content}</p>
+          )
+        )}
+      </div>
+    );
+  };
+
+
   if (!mounted || !initialData) return (
     <Card className="w-full shadow-xl animate-pulse">
         <CardHeader>
@@ -404,7 +489,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
       </CardHeader>
       <CardContent className={cn(
          "p-0",
-         isFullScreen && "flex-1 flex flex-col min-h-0 overflow-hidden" // Added overflow-hidden here
+         isFullScreen && "flex-1 flex flex-col min-h-0 overflow-hidden"
         )}>
         <ScrollArea
           ref={scrollAreaRef}
@@ -414,13 +499,14 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
           )}
         >
           <div className={cn(
-              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0" : "h-full",
+              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0" : "", // Removed h-full from here
               "w-full", 
               isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto", 
               isFullScreen && isLiveEditing ? "p-0 md:gap-0" : 
                 (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")   
             )}
             id="contentHostDiv"
+            style={{ fontFamily: isLiveEditing ? undefined : selectedFontFamily }}
           >
             {isLiveEditing && (
               <div className={cn(
@@ -443,18 +529,33 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             
             {(!isLiveEditing || (isLiveEditing && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
                <div className={cn(
-                  "prose prose-sm sm:prose-base dark:prose-invert max-w-none w-full break-words", 
+                  "max-w-none w-full break-words", 
                   (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", 
                    isLiveEditing && isFullScreen ? "md:border-l-0" : "", 
                    isLiveEditing && !isFullScreen ? "border rounded-md md:rounded-r-md md:rounded-l-none" : "",
-                   isFullScreen && !isLiveEditing ? "h-full" : "" 
+                   isFullScreen && !isLiveEditing ? "h-full" : "" ,
+                   !isLiveEditing ? "prose prose-sm sm:prose-base dark:prose-invert" : "prose prose-sm sm:prose-base dark:prose-invert" // Apply prose for preview in both cases
                   )}
-                  style={{ fontFamily: selectedFontFamily }}
                   id={contentWrapperId}
                 >
-                <ReactMarkdown remarkPlugins={[RemarkGfm]}>
-                  {rawMarkdownContent}
-                </ReactMarkdown>
+                {isLiveEditing ? (
+                     <ReactMarkdown remarkPlugins={[RemarkGfm]}>
+                        {rawMarkdownContent}
+                    </ReactMarkdown>
+                ) : (
+                  // Structured rendering for pinning
+                  <>
+                    {pinnedSections.length > 0 && (
+                      <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg shadow-sm">
+                        <h2 className="text-md sm:text-lg font-semibold text-primary mb-2 flex items-center">
+                          <Pin className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Pinned Sections
+                        </h2>
+                        {SECTIONS_CONFIG.filter(s => pinnedSections.includes(s.key)).map(s => renderSection(s, true))}
+                      </div>
+                    )}
+                    {SECTIONS_CONFIG.filter(s => !pinnedSections.includes(s.key)).map(s => renderSection(s, false))}
+                  </>
+                )}
               </div>
             )}
              {isLiveEditing && typeof window !== 'undefined' && window.innerWidth < 768 && (
@@ -603,3 +704,4 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   );
 }
 
+    
