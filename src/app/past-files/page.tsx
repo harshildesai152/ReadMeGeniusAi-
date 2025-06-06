@@ -580,6 +580,7 @@ ${readmeItem.setupInstructions}
               </div>
               {/* Auth Buttons & Theme Toggle Placeholder */}
               <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted rounded-md"></div> {/* Home Icon */}
                 <div className="h-8 w-20 sm:h-9 sm:w-24 bg-muted rounded-md"></div>
                 <div className="h-8 w-20 sm:h-9 sm:w-24 bg-muted rounded-md"></div>
                 <div className="h-8 w-8 sm:h-9 sm:w-9 bg-muted rounded-full"></div>
@@ -637,6 +638,11 @@ ${readmeItem.setupInstructions}
           <nav className="flex justify-between items-center w-full py-2 sm:py-3 border-b mb-2 sm:mb-3">
              <Link href="/" passHref> <Logo /> </Link>
             <div className="flex items-center space-x-1 sm:space-x-2">
+              <Link href="/" passHref>
+                <Button variant="outline" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
+                    <Home className="h-3.5 sm:h-4 w-3.5 sm:h-4" />
+                </Button>
+              </Link>
               {loggedIn ? (
                 <>
                   <Link href="/dashboard" passHref>
@@ -879,5 +885,7 @@ ${readmeItem.setupInstructions}
     </main>
   );
 }
+
+    
 
     
