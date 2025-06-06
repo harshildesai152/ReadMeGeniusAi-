@@ -9,6 +9,12 @@ import { summarizeCodeContent } from "@/ai/flows/summarize-code-content";
 import { generateReadmeFromPrompt } from "@/ai/flows/generate-readme-from-prompt";
 import { generateDetailedReadme as generateDetailedReadmeCore } from "@/ai/flows/generate-detailed-readme-flow.ts";
 import { explainCodeAi, type ExplainCodeInput, type ExplainCodeOutput } from "@/ai/flows/explain-code-flow";
+import {
+  generateCustomSectionContent,
+  type GenerateCustomSectionInput,
+  type GenerateCustomSectionOutput,
+} from '@/ai/flows/generate-custom-section-flow';
+
 
 export type FullReadmeData = {
   projectName: string;
@@ -200,5 +206,28 @@ export async function explainCodeAction(
       return { error: "The AI model for code explanation is currently overloaded or unavailable. Please try again in a few moments." };
     }
     return { error: e.message || "An unexpected error occurred while explaining code." };
+  }
+}
+
+export async function generateAiSectionAction(
+  userPrompt: string
+): Promise<GenerateCustomSectionOutput | { error: string }> {
+  try {
+    if (!userPrompt.trim()) {
+      return { error: "Prompt for the new section cannot be empty." };
+    }
+    const input: GenerateCustomSectionInput = { userPrompt };
+    const result = await generateCustomSectionContent(input);
+
+    if (!result || !result.sectionTitle || !result.sectionDescription === undefined) {
+      return { error: "AI failed to generate content for the section." };
+    }
+    return result;
+  } catch (e: any) {
+    console.error("Error in generateAiSectionAction:", e);
+    if (e.message && (e.message.includes("503 Service Unavailable") || e.message.includes("model is overloaded") || e.message.includes("upstream connect error"))) {
+      return { error: "The AI model for section generation is currently overloaded or unavailable. Please try again." };
+    }
+    return { error: e.message || "An unexpected error occurred while generating the AI section." };
   }
 }

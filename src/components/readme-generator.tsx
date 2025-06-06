@@ -2,22 +2,32 @@
 // src/components/readme-generator.tsx
 "use client";
 
-import { useState, useEffect, FormEvent, ChangeEvent as ReactTextareaChangeEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent as ReactTextareaChangeEvent, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle } from "lucide-react"; 
-import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions";
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles } from "lucide-react"; 
+import { processGitHubRepo, generateDetailedReadme, generateAiSectionAction, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isLoggedIn, getCurrentUserEmail } from "@/lib/auth/storage";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,6 +100,15 @@ const readmeToSimplifiedHtml = (readme: SavedReadmeItem): string => {
   return html;
 };
 
+const EDITABLE_FIELDS_CONFIG: Array<{key: keyof FullReadmeData, label: string, component: 'input' | 'textarea', type?: string, isMonospace?: boolean}> = [
+    { key: 'projectName', label: 'Project Name', component: 'input', type: 'text' },
+    { key: 'projectDescription', label: 'Project Description', component: 'textarea' },
+    { key: 'features', label: 'Features', component: 'textarea' },
+    { key: 'technologiesUsed', label: 'Technologies Used', component: 'textarea' },
+    { key: 'folderStructure', label: 'Folder Structure', component: 'textarea', isMonospace: true },
+    { key: 'setupInstructions', label: 'Setup Instructions', component: 'textarea' },
+];
+
 
 export function ReadmeGenerator() {
   const [inputType, setInputType] = useState<InputType>("url");
@@ -109,6 +128,29 @@ export function ReadmeGenerator() {
 
   const [selectedReadmeIdsForPdf, setSelectedReadmeIdsForPdf] = useState<string[]>([]);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+
+  // Refs for textareas
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const featuresRef = useRef<HTMLTextAreaElement>(null);
+  const technologiesRef = useRef<HTMLTextAreaElement>(null);
+  const folderStructureRef = useRef<HTMLTextAreaElement>(null);
+  const setupInstructionsRef = useRef<HTMLTextAreaElement>(null);
+
+  const fieldRefs: Record<keyof Omit<FullReadmeData, 'projectName'>, React.RefObject<HTMLTextAreaElement>> = {
+    projectDescription: descriptionRef,
+    features: featuresRef,
+    technologiesUsed: technologiesRef,
+    folderStructure: folderStructureRef,
+    setupInstructions: setupInstructionsRef,
+  };
+
+  // State for AI Add Section Dialog
+  const [isAiAddSectionDialogOpen, setIsAiAddSectionDialogOpen] = useState(false);
+  const [aiSectionPrompt, setAiSectionPrompt] = useState("");
+  const [generatedAiTitle, setGeneratedAiTitle] = useState("");
+  const [generatedAiDescription, setGeneratedAiDescription] = useState("");
+  const [isGeneratingAiSectionContent, setIsGeneratingAiSectionContent] = useState(false);
+  const [aiSectionError, setAiSectionError] = useState<string | null>(null);
 
 
   const { toast } = useToast();
@@ -235,7 +277,7 @@ ${readmeItem.folderStructure}
 ${readmeItem.setupInstructions}
     `.trim();
 
-    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-utf-8' });
+    const blob = new Blob([readmeText], { type: 'text/markdown;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     const sanitizedProjectName = readmeItem.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
@@ -484,6 +526,97 @@ ${readmeItem.setupInstructions}
     generateAndDownloadPdf(selectedReadmes, "selected_readmes_merged");
   };
 
+  const applyFormat = (formatType: 'underline' | 'highlight', fieldName: keyof Omit<FullReadmeData, 'projectName'>) => {
+    const textareaRef = fieldRefs[fieldName];
+    if (textareaRef && textareaRef.current && editableReadmeData) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = textarea.value;
+      let selectedText = currentValue.substring(start, end);
+      let textBefore = currentValue.substring(0, start);
+      let textAfter = currentValue.substring(end);
+      let finalNewValue = '';
+      let newCursorPos = start;
+
+      const listMarkerRegex = /^(\s*([-*+]|\d+\.)\s+)/;
+      let marker = "";
+
+      if (selectedText) {
+        const match = selectedText.match(listMarkerRegex);
+        if (match) {
+            marker = match[0];
+            selectedText = selectedText.substring(marker.length);
+            textBefore = textBefore + marker; // Move marker to before selection logic
+        }
+
+        if (formatType === 'underline') {
+          finalNewValue = `${textBefore}<u>${selectedText}</u>${textAfter}`;
+          newCursorPos = (textBefore + `<u>${selectedText}</u>`).length;
+        } else if (formatType === 'highlight') {
+          finalNewValue = `${textBefore}<mark>${selectedText}</mark>${textAfter}`;
+          newCursorPos = (textBefore + `<mark>${selectedText}</mark>`).length;
+        }
+      } else {
+        // No text selected, insert tags at cursor
+        if (formatType === 'underline') {
+          finalNewValue = `${textBefore}<u></u>${textAfter}`;
+          newCursorPos = textBefore.length + 3; // Position cursor inside <u>|</u>
+        } else if (formatType === 'highlight') {
+          finalNewValue = `${textBefore}<mark></mark>${textAfter}`;
+          newCursorPos = textBefore.length + 6; // Position cursor inside <mark>|</mark>
+        }
+      }
+      
+      setEditableReadmeData(prev => prev ? { ...prev, [fieldName]: finalNewValue } : null);
+
+      // Defer focusing and setting cursor position
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    }
+  };
+
+  const handleGenerateAiSection = async () => {
+    if (!aiSectionPrompt.trim()) {
+      setAiSectionError("Please enter a prompt for the new section.");
+      return;
+    }
+    setIsGeneratingAiSectionContent(true);
+    setAiSectionError(null);
+    setGeneratedAiTitle("");
+    setGeneratedAiDescription("");
+
+    const result = await generateAiSectionAction(aiSectionPrompt);
+    if (result && "error" in result) {
+      setAiSectionError(result.error);
+      toast({ title: "AI Section Generation Failed", description: result.error, variant: "destructive" });
+    } else if (result) {
+      setGeneratedAiTitle(result.sectionTitle);
+      setGeneratedAiDescription(result.sectionDescription);
+      toast({ title: "AI Section Content Generated!", description: "Review and append it to your README." });
+    }
+    setIsGeneratingAiSectionContent(false);
+  };
+
+  const handleAppendAiSectionToDescription = () => {
+    if (editableReadmeData && generatedAiTitle && generatedAiDescription) {
+      const newSectionText = `\n\n${generatedAiTitle}\n${generatedAiDescription}\n`;
+      setEditableReadmeData(prev => ({
+        ...prev!,
+        projectDescription: (prev!.projectDescription || "") + newSectionText,
+      }));
+      toast({ title: "Section Appended", description: `"${generatedAiTitle}" has been added to the Project Description.` });
+      // Reset dialog state
+      setIsAiAddSectionDialogOpen(false);
+      setAiSectionPrompt("");
+      setGeneratedAiTitle("");
+      setGeneratedAiDescription("");
+      setAiSectionError(null);
+    }
+  };
+
 
   if (!mounted) {
     return (
@@ -516,67 +649,101 @@ ${readmeItem.setupInstructions}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
-          <div>
-            <Label htmlFor="edit-projectName" className="font-semibold text-sm sm:text-base">Project Name</Label>
-            <Input 
-              id="edit-projectName" 
-              value={editableReadmeData.projectName} 
-              onChange={(e) => handleEditableInputChange(e, 'projectName')}
-              className="mt-1 text-sm sm:text-base" 
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-projectDescription" className="font-semibold text-sm sm:text-base">Project Description</Label>
-            <Textarea 
-              id="edit-projectDescription" 
-              value={editableReadmeData.projectDescription} 
-              onChange={(e) => handleEditableInputChange(e, 'projectDescription')}
-              className="mt-1 min-h-[100px] sm:min-h-[120px] text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-features" className="font-semibold text-sm sm:text-base">Features</Label>
-            <Textarea 
-              id="edit-features" 
-              value={editableReadmeData.features} 
-              onChange={(e) => handleEditableInputChange(e, 'features')}
-              className="mt-1 min-h-[120px] sm:min-h-[150px] text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-technologiesUsed" className="font-semibold text-sm sm:text-base">Technologies Used</Label>
-            <Textarea 
-              id="edit-technologiesUsed" 
-              value={editableReadmeData.technologiesUsed} 
-              onChange={(e) => handleEditableInputChange(e, 'technologiesUsed')}
-              className="mt-1 min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-folderStructure" className="font-semibold text-sm sm:text-base">Folder Structure</Label>
-            <Textarea 
-              id="edit-folderStructure" 
-              value={editableReadmeData.folderStructure} 
-              onChange={(e) => handleEditableInputChange(e, 'folderStructure')}
-              className="mt-1 min-h-[120px] sm:min-h-[150px] text-sm sm:text-base font-mono"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-setupInstructions" className="font-semibold text-sm sm:text-base">Setup Instructions</Label>
-            <Textarea 
-              id="edit-setupInstructions" 
-              value={editableReadmeData.setupInstructions} 
-              onChange={(e) => handleEditableInputChange(e, 'setupInstructions')}
-              className="mt-1 min-h-[150px] sm:min-h-[200px] text-sm sm:text-base"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
-            <Button variant="outline" onClick={handleCancelEdits} className="text-sm py-2 px-4 w-full sm:w-auto">
-              <XCircle className="mr-1.5 h-4 w-4" /> Cancel
-            </Button>
-            <Button onClick={handleSaveChanges} className="text-sm py-2 px-4 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
-              <Save className="mr-1.5 h-4 w-4" /> Save Edits
-            </Button>
+         {EDITABLE_FIELDS_CONFIG.map(field => (
+            <div key={field.key}>
+                <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor={`edit-${field.key}`} className="font-semibold text-sm sm:text-base">{field.label}</Label>
+                    {field.component === 'textarea' && (
+                        <div className="flex space-x-1">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormat('underline', field.key as keyof Omit<FullReadmeData, 'projectName'>)} title="Underline selected text">
+                                <UnderlineIcon className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormat('highlight', field.key as keyof Omit<FullReadmeData, 'projectName'>)} title="Highlight selected text">
+                                <HighlighterIcon className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+                {field.component === 'input' ? (
+                    <Input 
+                        id={`edit-${field.key}`} 
+                        type={field.type || 'text'}
+                        value={editableReadmeData[field.key]} 
+                        onChange={(e) => handleEditableInputChange(e, field.key)}
+                        className="mt-1 text-sm sm:text-base" 
+                    />
+                ) : (
+                    <Textarea 
+                        id={`edit-${field.key}`}
+                        ref={fieldRefs[field.key as keyof typeof fieldRefs]}
+                        value={editableReadmeData[field.key]} 
+                        onChange={(e) => handleEditableInputChange(e, field.key)}
+                        className={`mt-1 min-h-[100px] sm:min-h-[120px] text-sm sm:text-base ${field.isMonospace ? 'font-mono' : ''}`}
+                    />
+                )}
+            </div>
+        ))}
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
+            <Dialog open={isAiAddSectionDialogOpen} onOpenChange={setIsAiAddSectionDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="text-sm py-2 px-4 w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10">
+                  <Sparkles className="mr-1.5 h-4 w-4" /> AI: Add Section
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>AI: Add New Section</DialogTitle>
+                  <DialogDescription>
+                    Describe the new section you want to add (e.g., "How to deploy the app to Vercel", "API usage examples"). The AI will generate a title and description.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-3">
+                  <div>
+                    <Label htmlFor="ai-section-prompt">Your Idea/Prompt for the New Section</Label>
+                    <Textarea 
+                      id="ai-section-prompt"
+                      value={aiSectionPrompt}
+                      onChange={(e) => setAiSectionPrompt(e.target.value)}
+                      placeholder="e.g., Explain the project's architecture..."
+                      className="min-h-[80px]"
+                      disabled={isGeneratingAiSectionContent}
+                    />
+                  </div>
+                  <Button onClick={handleGenerateAiSection} disabled={isGeneratingAiSectionContent || !aiSectionPrompt.trim()} className="w-full">
+                    {isGeneratingAiSectionContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate with AI
+                  </Button>
+                  {aiSectionError && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{aiSectionError}</AlertDescription></Alert>}
+                  {generatedAiTitle && (
+                    <div className="space-y-2 mt-3 p-3 border rounded-md bg-muted/50">
+                      <h4 className="font-semibold text-sm">AI Generated Title:</h4>
+                      <p className="text-sm p-2 border rounded bg-background">{generatedAiTitle}</p>
+                      <h4 className="font-semibold text-sm mt-2">AI Generated Description:</h4>
+                      <ScrollArea className="h-[100px] w-full rounded-md border bg-background p-2">
+                        <pre className="text-xs whitespace-pre-wrap">{generatedAiDescription}</pre>
+                      </ScrollArea>
+                       <Button onClick={handleAppendAiSectionToDescription} className="w-full mt-2" variant="default">
+                        Append to Project Description
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" onClick={() => { setAiSectionPrompt(""); setGeneratedAiTitle(""); setGeneratedAiDescription(""); setAiSectionError(null); }}>Close</Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                <Button variant="outline" onClick={handleCancelEdits} className="text-sm py-2 px-4 w-full sm:w-auto">
+                <XCircle className="mr-1.5 h-4 w-4" /> Cancel
+                </Button>
+                <Button onClick={handleSaveChanges} className="text-sm py-2 px-4 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto">
+                <Save className="mr-1.5 h-4 w-4" /> Save Edits
+                </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
