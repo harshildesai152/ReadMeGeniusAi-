@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Files, FileText, LogIn, UserPlus, LogOut, LayoutDashboard, FileCode, Info } from 'lucide-react'; 
+import { Files, LogIn, UserPlus, LogOut, LayoutDashboard, FileCode, Info } from 'lucide-react'; 
 import { isLoggedIn, setLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -156,12 +156,6 @@ export default function HomePage() {
           <div className="mb-3 sm:mb-4">
             <p className="font-semibold text-sm sm:text-base">Explore other tools:</p>
             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 mt-2">
-                <Link href="/past" passHref>
-                  <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
-                    <FileText className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
-                    README from Past Link/Code
-                  </Button>
-                </Link>
                 <Link href="/past-files" passHref>
                    <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <Files className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
@@ -189,3 +183,4 @@ export default function HomePage() {
     </main>
   );
 }
+
