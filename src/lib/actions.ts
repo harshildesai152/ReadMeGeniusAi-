@@ -7,7 +7,8 @@ import { summarizeRepo } from "@/ai/flows/summarize-repo";
 import { suggestProjectName } from "@/ai/flows/suggest-project-name";
 import { summarizeCodeContent } from "@/ai/flows/summarize-code-content";
 import { generateReadmeFromPrompt } from "@/ai/flows/generate-readme-from-prompt";
-import { generateDetailedReadme as generateDetailedReadmeCore } from "@/ai/flows/generate-detailed-readme-flow"; // New import
+import { generateDetailedReadme as generateDetailedReadmeCore } from "@/ai/flows/generate-detailed-readme-flow.ts";
+import { explainCodeAi, type ExplainCodeInput, type ExplainCodeOutput } from "@/ai/flows/explain-code-flow";
 
 export type FullReadmeData = {
   projectName: string;
@@ -176,5 +177,28 @@ export async function generateDetailedReadme(
       return { error: "The AI model is currently overloaded or unavailable for generating details. Please try again in a few moments." };
     }
     return { error: e.message || "An unexpected error occurred while generating detailed README." };
+  }
+}
+
+export async function explainCodeAction(
+  code: string,
+  level: 'beginner' | 'technical'
+): Promise<{ explanation?: string; error?: string }> {
+  try {
+    if (!code.trim()) {
+      return { error: "Code snippet cannot be empty." };
+    }
+    const input: ExplainCodeInput = { code, level };
+    const result: ExplainCodeOutput = await explainCodeAi(input);
+    if (!result || !result.explanation) {
+      return { error: "Failed to get explanation from AI." };
+    }
+    return { explanation: result.explanation };
+  } catch (e: any) {
+    console.error("Error in explainCodeAction:", e);
+    if (e.message && (e.message.includes("503 Service Unavailable") || e.message.includes("model is overloaded") || e.message.includes("upstream connect error"))) {
+      return { error: "The AI model for code explanation is currently overloaded or unavailable. Please try again in a few moments." };
+    }
+    return { error: e.message || "An unexpected error occurred while explaining code." };
   }
 }
