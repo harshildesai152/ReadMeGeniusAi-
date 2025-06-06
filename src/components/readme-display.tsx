@@ -1,147 +1,145 @@
-
 // src/components/readme-display.tsx
 "use client";
 
-import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent as ReactTextareaChangeEvent, useId } from 'react';
 import type { FullReadmeData } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Edit3, Maximize, Minimize, Loader2, EyeIcon, CodeIcon, Palette, ImageUp, CircleX, DownloadCloud } from "lucide-react";
+import {
+  Check, Edit3, Maximize, Minimize, Loader2, Eye, Palette, ImagePlus, CircleX, DownloadCloud,
+  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
-const ClipboardCopySvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>`;
-const CheckSvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-const FileTextIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+import { QRCodeSVG } from 'qrcode.react';
+import ReactMarkdown from 'react-markdown';
+import RemarkGfm from 'remark-gfm';
 
 
 interface ReadmeDisplayProps {
   data: FullReadmeData;
   onGenerateDetails: (currentData: FullReadmeData) => Promise<void>;
   isGeneratingDetails: boolean;
-  onEditRequest: () => void;
+  onEditRequest: () => void; // This might be less used now, or repurposed.
 }
 
-const MarkdownContent: React.FC<{ content: string; isFullScreen?: boolean; contentWrapperId?: string }> = ({ content, isFullScreen, contentWrapperId }) => {
-  if (!content && content !== "") return <p className="text-muted-foreground italic text-xs sm:text-sm">Not available or empty.</p>;
+type IconName = keyof typeof LUCIDE_ICON_MAP;
 
-  let htmlContent = content
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/^### (.*$)/gim, `<h4 class="text-sm sm:text-base font-semibold mt-2.5 mb-1 ${isFullScreen ? 'text-foreground/90' : 'text-primary/90'}">${'$1'}</h4>`)
-    .replace(/^## (.*$)/gim, `<h3 class="text-base sm:text-lg font-semibold mt-3 mb-1.5 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-2 decoration-primary/40">${'$1'}</h3>`)
-    .replace(/^# (.*$)/gim, `<h2 class="text-lg sm:text-xl font-semibold mt-4 mb-2 ${isFullScreen ? 'text-foreground' : 'text-primary'} underline underline-offset-4 decoration-primary/50">${'$1'}</h2>`)
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/<u>(.*?)<\/u>/g, '<u>$1</u>')
-    .replace(/`([^`]+)`/g, (match, p1) => `<code class="bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-300 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono shadow-sm border border-border/30">${p1}</code>`)
-    .replace(/^(?:(?:- |\* |\+ )\s*.*(?:\n|$))+/gm, (match) => {
-      const items = match.trim().split('\n').map(item => `<li class="ml-5 sm:ml-6 list-disc my-1 text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${item.replace(/^(- |\* |\+ )\s*/, '')}</li>`).join('');
-      return `<ul class="mb-2">${items}</ul>`;
-    })
-    .replace(/^(?:\d+\.\s*.*(?:\n|$))+/gm, (match) => {
-      const items = match.trim().split('\n').map(item => `<li class="ml-5 sm:ml-6 list-decimal my-1 text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${item.replace(/^\d+\.\s*/, '')}</li>`).join('');
-      return `<ol class="mb-2">${items}</ol>`;
-    })
-    .replace(/```([\s\S]*?)```/g, (match, p1, offset) => {
-      const uniqueId = `codeblock-${contentWrapperId || 'global'}-${offset}-${Math.random().toString(36).substring(2,9)}`;
-      return `
-        <div class="code-block-container group relative my-2 sm:my-3 rounded-lg shadow-md overflow-hidden bg-neutral-800 dark:bg-black">
-          <button
-            class="code-block-copy-button absolute top-1.5 right-1.5 z-10 p-1.5 rounded-md text-neutral-400 hover:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 opacity-60 group-hover:opacity-100 transition-opacity duration-150"
-            data-target-id="${uniqueId}"
-            data-copy-icon='${ClipboardCopySvgIcon.replace(/'/g, "&apos;")}'
-            data-check-icon='${CheckSvgIcon.replace(/'/g, "&apos;")}'
-            aria-label="Copy code to clipboard"
-          >
-            ${ClipboardCopySvgIcon}
-          </button>
-          <pre id="${uniqueId}" class="text-neutral-200 dark:text-neutral-100 p-3 pt-8 sm:p-4 sm:pt-10 text-xs sm:text-sm overflow-x-auto font-mono">${p1.trim()}</pre>
-        </div>
-      `;
-    })
-    .replace(/\n/g, '<br />');
-
-  htmlContent = htmlContent.split('<br />').map(line => {
-    const trimmedLine = line.trim();
-    if (trimmedLine.startsWith('<h') || trimmedLine.startsWith('<ul') || trimmedLine.startsWith('<ol') || trimmedLine.startsWith('<div class="code-block-container') || trimmedLine.startsWith('<li') || trimmedLine === '') {
-      return line;
-    }
-    return `<p class="mb-2 sm:mb-2.5 leading-relaxed text-xs sm:text-sm ${isFullScreen ? 'text-foreground/90' : 'text-foreground/80 dark:text-foreground/70'}">${line || <>&nbsp;</>}</p>`;
-  }).join('<br />').replace(/<br \/>(<p|<div class="code-block-container)/g, '$1').replace(/(<\/p>|<\/div>)<br \/>/g, '$1');
-
-  return <div id={contentWrapperId} className={cn("prose dark:prose-invert max-w-none", isFullScreen ? "text-sm sm:text-base" : "text-xs sm:text-sm")} dangerouslySetInnerHTML={{ __html: htmlContent || '' }} />;
+const LUCIDE_ICON_MAP = {
+  Edit3, Pencil: Edit3, Edit2: Edit3, Edit: Edit3,
+  FileText, FileJson: FileText, FileCode2: FileText, FileArchive: FileText,
+  ClipboardCopy, Copy: ClipboardCopy, Clipboard: ClipboardCopy, CopyCheck: Check,
+  Code, Code2: Code, Terminal: Code,
+  Eye, EyeOff: Eye, View: Eye,
+  Palette, Paintbrush: Palette, Brush: Palette,
+  ImagePlus, Image: ImagePlus, FileImage: ImagePlus,
+  Maximize, ExternalLink: Maximize, Expand: Maximize,
+  Minimize, Shrink: Minimize, Minimize2: Minimize,
+  DownloadCloud, Download: DownloadCloud, CloudDownload: DownloadCloud,
+  QrCode, QrCodeIcon: QrCode, // Added for QR Code
+  Type, Heading1: Type, Pilcrow: Type, // Added for Font
+  Save, CheckSquare: Save, // Added for potential future Save Raw button
+  Columns, LayoutGrid: Columns, Rows: Columns, // Added for Edit Raw button
 };
 
+interface IconOption {
+  value: IconName;
+  label: string;
+}
 
-export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, onEditRequest }: ReadmeDisplayProps) {
+interface CustomizableAction {
+  id: keyof ActionButtonIcons;
+  label: string;
+  defaultIcon: IconName;
+  options: IconOption[];
+}
+
+interface ActionButtonIcons {
+  edit: IconName;
+  moreDetail: IconName;
+  copy: IconName;
+  toggleLiveEdit: IconName; // Replaces viewRaw / viewFormatted
+  branding: IconName;
+  fullScreen: IconName;
+  exitFullScreen: IconName;
+  qr: IconName;
+  font: IconName;
+  // saveRaw: IconName; // For future "Save Raw Changes" button
+}
+
+const DEFAULT_ACTION_BUTTON_ICONS: ActionButtonIcons = {
+  edit: 'Edit3',
+  moreDetail: 'FileText',
+  copy: 'ClipboardCopy',
+  toggleLiveEdit: 'Columns', // New default for toggling editor
+  branding: 'Palette',
+  fullScreen: 'Maximize',
+  exitFullScreen: 'Minimize',
+  qr: 'QrCode',
+  font: 'Type',
+  // saveRaw: 'Save',
+};
+
+const CUSTOMIZABLE_ACTIONS: CustomizableAction[] = [
+  { id: 'edit', label: 'Structured Edit Button', defaultIcon: 'Edit3', options: [{value: 'Edit3', label: 'Edit 3'}, {value: 'Pencil', label: 'Pencil'}, {value: 'Edit2', label: 'Edit 2'}] },
+  { id: 'moreDetail', label: 'More Detail Button', defaultIcon: 'FileText', options: [{value: 'FileText', label: 'File Text'}, {value: 'FileJson', label: 'File JSON'}, {value: 'FileCode2', label: 'File Code 2'}] },
+  { id: 'copy', label: 'Copy All Button', defaultIcon: 'ClipboardCopy', options: [{value: 'ClipboardCopy', label: 'Clipboard Copy'}, {value: 'Copy', label: 'Copy'}, {value: 'Clipboard', label: 'Clipboard'}] },
+  { id: 'toggleLiveEdit', label: 'Edit Raw / Preview Button', defaultIcon: 'Columns', options: [{value: 'Columns', label: 'Columns (Edit/Preview)'}, {value: 'Code', label: 'Code (Raw)'}, {value: 'Eye', label: 'Eye (Preview)'}] },
+  { id: 'branding', label: 'Branding Button', defaultIcon: 'Palette', options: [{value: 'Palette', label: 'Palette'}, {value: 'Paintbrush', label: 'Paintbrush'}, {value: 'Image', label: 'Image'}] },
+  { id: 'fullScreen', label: 'Full Screen Button', defaultIcon: 'Maximize', options: [{value: 'Maximize', label: 'Maximize'}, {value: 'Expand', label: 'Expand'}] },
+  { id: 'exitFullScreen', label: 'Exit Full Screen Button', defaultIcon: 'Minimize', options: [{value: 'Minimize', label: 'Minimize'}, {value: 'Shrink', label: 'Shrink'}] },
+  { id: 'qr', label: 'QR Code Button', defaultIcon: 'QrCode', options: [{value: 'QrCode', label: 'QR Code Default'}] },
+  { id: 'font', label: 'Font Select Icon', defaultIcon: 'Type', options: [{value: 'Type', label: 'Type Default'}, {value: 'Heading1', label: 'Heading 1'}] },
+  // { id: 'saveRaw', label: 'Save Raw Changes Button', defaultIcon: 'Save', options: [{value: 'Save', label: 'Save'}, {value: 'CheckSquare', label: 'Check Square'}] },
+];
+
+const FONT_OPTIONS = [
+  { value: 'Inter, sans-serif', label: 'Inter (Default)' },
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: 'Helvetica, Arial, sans-serif', label: 'Helvetica' },
+  { value: '"Times New Roman", Times, serif', label: 'Times New Roman' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: '"Courier New", Courier, monospace', label: 'Courier New' },
+  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+];
+
+const MAX_QR_CODE_DATA_LENGTH = 2000; // Conservative limit for QR data URI
+
+export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGeneratingDetails, onEditRequest }: ReadmeDisplayProps) {
   const { toast } = useToast();
-  const [isCopiedGlobal, setIsCopiedGlobal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [viewMode, setViewMode] = useState<'formatted' | 'raw'>('formatted');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const contentWrapperId = `readme-content-wrapper-${React.useId()}`;
+  const contentWrapperId = `readme-content-wrapper-${useId()}`;
 
   const [customLogoDataUri, setCustomLogoDataUri] = useState<string | null>(null);
-  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#4285F4"); // Default to app primary
+  const [selectedThemeColor, setSelectedThemeColor] = useState<string>("#3b82f6"); // Default to a nice blue
   const [isBrandingDialogOpen, setIsBrandingDialogOpen] = useState<boolean>(false);
   const [isGeneratingBrandedPdf, setIsGeneratingBrandedPdf] = useState<boolean>(false);
 
+  const [qrCodeValue, setQrCodeValue] = useState<string>('');
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [selectedFontFamily, setSelectedFontFamily] = useState<string>(FONT_OPTIONS[0].value);
+  const [actionButtonIcons, setActionButtonIcons] = useState<ActionButtonIcons>(DEFAULT_ACTION_BUTTON_ICONS);
+  const [isIconOptionsDialogOpen, setIsIconOptionsDialogOpen] = useState<boolean>(false);
+  
+  const [isCopiedGlobal, setIsCopiedGlobal] = useState(false); // For the main "Copy All" button
 
-  useEffect(() => {
-    if (!mounted) return;
-    const handleEsc = (event: KeyboardEvent) => { if (event.key === 'Escape' && isFullScreen) setIsFullScreen(false); };
-    if (isFullScreen) { document.body.style.overflow = 'hidden'; document.addEventListener('keydown', handleEsc); }
-    else { document.body.style.overflow = ''; }
-    return () => { document.body.style.overflow = ''; document.removeEventListener('keydown', handleEsc); };
-  }, [isFullScreen, mounted]);
+  const [rawMarkdownContent, setRawMarkdownContent] = useState<string>('');
+  const [isLiveEditing, setIsLiveEditing] = useState<boolean>(false);
+  const editorTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!mounted || !data || viewMode === 'raw') return;
-    const mainContentDisplayArea = document.getElementById(contentWrapperId);
-    if (!mainContentDisplayArea) return;
-
-    const copyButtons = mainContentDisplayArea.querySelectorAll('.code-block-copy-button');
-    copyButtons.forEach(buttonEl => {
-      const newButton = buttonEl.cloneNode(true) as HTMLButtonElement;
-      buttonEl.parentNode?.replaceChild(newButton, buttonEl);
-      newButton.addEventListener('click', async () => {
-        const targetId = newButton.dataset.targetId;
-        if (!targetId) return;
-        const preElement = mainContentDisplayArea.querySelector(`#${targetId}`);
-        if (preElement && preElement.textContent) {
-          try {
-            await navigator.clipboard.writeText(preElement.textContent);
-            newButton.innerHTML = newButton.dataset.checkIcon || CheckSvgIcon;
-            newButton.classList.add('text-green-500');
-            toast({ title: "Code Copied!", description: "The code block has been copied."});
-            setTimeout(() => {
-              newButton.innerHTML = newButton.dataset.copyIcon || ClipboardCopySvgIcon;
-              newButton.classList.remove('text-green-500');
-            }, 2000);
-          } catch (err) {
-            console.error("Failed to copy code: ", err);
-            toast({ title: "Error Copying Code", variant: "destructive"});
-          }
-        }
-      });
-    });
-  }, [data, isFullScreen, mounted, toast, contentWrapperId, viewMode]);
-
-
-  const formatReadmeForCopy = (readmeData: FullReadmeData): string => {
+  const formatReadmeForMarkdown = (readmeData: FullReadmeData): string => {
+    if (!readmeData) return '';
     let text = `# ${readmeData.projectName}\n\n`;
     text += `## Project Description\n${readmeData.projectDescription}\n\n`;
     text += `## Features\n${readmeData.features}\n\n`;
@@ -151,10 +149,53 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
     return text.trim();
   };
 
+  useEffect(() => {
+    setMounted(true);
+    const storedFont = localStorage.getItem('readmeDisplayFont');
+    if (storedFont && FONT_OPTIONS.find(f => f.value === storedFont)) {
+      setSelectedFontFamily(storedFont);
+    }
+    const storedIcons = localStorage.getItem('readmeDisplayIcons');
+    if (storedIcons) {
+      try {
+        setActionButtonIcons(JSON.parse(storedIcons));
+      } catch (e) {
+        localStorage.removeItem('readmeDisplayIcons'); // Clear corrupted data
+      }
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (initialData) {
+      setRawMarkdownContent(formatReadmeForMarkdown(initialData));
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('readmeDisplayFont', selectedFontFamily);
+    }
+  }, [selectedFontFamily, mounted]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('readmeDisplayIcons', JSON.stringify(actionButtonIcons));
+    }
+  }, [actionButtonIcons, mounted]);
+
+
+  useEffect(() => {
+    if (!mounted) return;
+    const handleEsc = (event: KeyboardEvent) => { if (event.key === 'Escape' && isFullScreen) setIsFullScreen(false); };
+    if (isFullScreen) { document.body.style.overflow = 'hidden'; document.addEventListener('keydown', handleEsc); }
+    else { document.body.style.overflow = ''; }
+    return () => { document.body.style.overflow = ''; document.removeEventListener('keydown', handleEsc); };
+  }, [isFullScreen, mounted]);
+
+
   const handleGlobalCopy = () => {
     if (!mounted) return;
-    const readmeText = formatReadmeForCopy(data);
-    navigator.clipboard.writeText(readmeText)
+    navigator.clipboard.writeText(rawMarkdownContent)
       .then(() => {
         setIsCopiedGlobal(true);
         toast({ title: "Copied to clipboard!", description: "Full README content copied."});
@@ -166,83 +207,51 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
       });
   };
 
-  const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCustomLogoDataUri(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else if (file) {
-      toast({ title: "Invalid File", description: "Please upload an image file.", variant: "destructive" });
-    }
-  };
-
   const readmeToBrandedHtml = (
-    readmeData: FullReadmeData,
+    readmeMd: string, // Now takes raw Markdown
     logoUri: string | null,
     themeColorHex: string
   ): string => {
-    const escapeHtml = (unsafe: string | undefined): string => {
-      if (!unsafe) return '';
-      return unsafe
-           .replace(/&/g, "&amp;")
-           .replace(/</g, "&lt;")
-           .replace(/>/g, "&gt;")
-           .replace(/"/g, "&quot;")
-           .replace(/'/g, "&#039;");
-    };
+    // This function would ideally use react-markdown to render to a temporary element,
+    // then capture its innerHTML, and then inject logo and theme colors.
+    // For simplicity in this step, we'll do a very basic HTML structure.
+    // A more robust solution would involve a server-side rendering or more complex client-side HTML construction.
 
-    const markdownToBasicHtml = (md: string | undefined) => {
-        if (!md) return '';
-        let html = escapeHtml(md);
-        // Basic list conversion
-        html = html.replace(/^- (.*)/gm, '<li>$1</li>');
-        html = html.replace(/<\/li>\n<li>/gm, '</li><li>'); // Fix multiple newlines between list items
-        html = html.replace(/<ul>\s*<li>/gm, '<ul><li>'); // Fix space after <ul>
-        html = html.replace(/^(<li>.*<\/li>)$/gm, '<ul>$1</ul>'); // Wrap single line lists
-        html = html.replace(/<\/li>\n<\/ul>/gm, '</li></ul>'); // Fix newline before </ul>
-        // Convert multiple <ul> to one
-        html = html.replace(/<\/ul>\s*<ul>/gm, '');
-
-
-        // Basic headings (simplified)
-        html = html.replace(/^### (.*$)/gim, `<h3 style="font-size: 16px; color: ${themeColorHex}; margin-top: 15px; margin-bottom: 5px;">$1</h3>`);
-        html = html.replace(/^## (.*$)/gim, `<h2 style="font-size: 18px; color: ${themeColorHex}; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 3px;">$1</h2>`);
-
-        // Paragraphs
-        html = html.split('\n').map(p => p.trim() ? `<p style="font-size: 13px; line-height: 1.6; color: #555; margin-bottom: 10px;">${p}</p>` : '').join('');
-        html = html.replace(/<\/p><p/g, '</p><p'); // Remove extra space if paragraphs are just separated by single newlines
-        return html;
-    };
-    
-    let fullHtml = `<div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; border: 1px solid #ddd; color: #333;">`;
+    let html = `<div style="font-family: ${selectedFontFamily}; padding: 20px; max-width: 800px; margin: auto; border: 1px solid #ddd; color: #333;">`;
     if (logoUri) {
-      fullHtml += `<div style="text-align: center; margin-bottom: 25px;"><img src="${logoUri}" alt="Custom Logo" style="max-height: 80px; max-width: 200px; display: inline-block;" /></div>`;
+      html += `<div style="text-align: center; margin-bottom: 25px;"><img src="${logoUri}" alt="Custom Logo" style="max-height: 80px; max-width: 200px; display: inline-block;" /></div>`;
     }
-    fullHtml += `<h1 style="font-size: 26px; color: ${themeColorHex}; border-bottom: 2px solid ${themeColorHex}; padding-bottom: 8px; margin-bottom: 20px; text-align: center;">${escapeHtml(readmeData.projectName)}</h1>`;
+    // Extract project name from Markdown (first H1)
+    const projectNameMatch = readmeMd.match(/^# (.*)/m);
+    const projectName = projectNameMatch ? projectNameMatch[1] : 'README Document';
+    html += `<h1 style="font-size: 26px; color: ${themeColorHex}; border-bottom: 2px solid ${themeColorHex}; padding-bottom: 8px; margin-bottom: 20px; text-align: center;">${projectName}</h1>`;
     
-    fullHtml += `<div style="margin-bottom: 20px;"><h2 style="font-size: 20px; color: ${themeColorHex}; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">Project Description</h2>${markdownToBasicHtml(readmeData.projectDescription)}</div>`;
-    fullHtml += `<div style="margin-bottom: 20px;"><h2 style="font-size: 20px; color: ${themeColorHex}; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">Features</h2>${markdownToBasicHtml(readmeData.features)}</div>`;
-    fullHtml += `<div style="margin-bottom: 20px;"><h2 style="font-size: 20px; color: ${themeColorHex}; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">Technologies Used</h2>${markdownToBasicHtml(readmeData.technologiesUsed)}</div>`;
+    // Convert Markdown to HTML (very basic for PDF)
+    // In a real scenario, you'd use react-markdown here on a temp div then get innerHTML
+    // Or use a library that converts MD to HTML string with GFM.
+    // This is a placeholder for proper MD to HTML conversion for PDF.
+    const bodyHtml = readmeMd
+        .replace(/^## (.*)/gm, `<h2 style="font-size: 20px; color: ${themeColorHex}; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">$1</h2>`)
+        .replace(/^### (.*)/gm, `<h3 style="font-size: 16px; color: ${themeColorHex}; margin-top: 15px; margin-bottom: 5px;">$1</h3>`)
+        .replace(/\n/g, '<br />') // Basic newline to <br>
+        .replace(/```([\s\S]*?)```/g, (match, code) => `<pre style="background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; border-radius: 5px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; color: #444;">${code.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`)
+        .replace(/`([^`]+)`/g, `<code style="background-color: #eee; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>`);
+
+
+    html += `<div class="prose prose-sm">${bodyHtml.replace(/^# .*/m, '')}</div>`; // Add prose for basic styling, skip H1
     
-    fullHtml += `<div style="margin-bottom: 20px;"><h2 style="font-size: 20px; color: ${themeColorHex}; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">Folder Structure</h2><pre style="background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; border-radius: 5px; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; color: #444;">${escapeHtml(readmeData.folderStructure)}</pre></div>`;
-    
-    fullHtml += `<div style="margin-bottom: 20px;"><h2 style="font-size: 20px; color: ${themeColorHex}; margin-bottom: 10px; border-bottom: 1px solid ${themeColorHex}; padding-bottom: 4px;">Setup Instructions</h2>${markdownToBasicHtml(readmeData.setupInstructions)}</div>`;
-    
-    fullHtml += `</div>`;
-    return fullHtml;
+    html += `</div>`;
+    return html;
   };
 
   const handleDownloadBrandedPdf = async () => {
-    if (!mounted || !data) return;
+    if (!mounted || !rawMarkdownContent) return;
     setIsGeneratingBrandedPdf(true);
     toast({ title: "Generating Branded PDF...", description: "This may take a moment." });
     try {
-      const brandedHtml = readmeToBrandedHtml(data, customLogoDataUri, selectedThemeColor);
+      const brandedHtml = readmeToBrandedHtml(rawMarkdownContent, customLogoDataUri, selectedThemeColor);
       const pdfContainer = document.createElement('div');
-      pdfContainer.style.position = 'absolute'; pdfContainer.style.left = '-9999px'; pdfContainer.style.width = '800px'; // A4-like width
+      pdfContainer.style.position = 'absolute'; pdfContainer.style.left = '-9999px'; pdfContainer.style.width = '800px';
       pdfContainer.innerHTML = brandedHtml;
       document.body.appendChild(pdfContainer);
 
@@ -252,8 +261,9 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      const sanitizedProjectName = data.projectName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
-      pdf.save(`${sanitizedProjectName || 'readme'}_branded.pdf`);
+      const projectNameMatch = rawMarkdownContent.match(/^# (.*)/m);
+      const sanitizedProjectName = projectNameMatch ? projectNameMatch[1].replace(/[^a-z0-9_]/gi, '_').toLowerCase() : 'readme';
+      pdf.save(`${sanitizedProjectName}_branded.pdf`);
       toast({ title: "Branded PDF Generated!", description: "Your branded PDF has been downloaded." });
     } catch (e: any) {
       console.error("Branded PDF Generation Error:", e);
@@ -264,13 +274,80 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
     }
   };
 
+  const handleGenerateQrCode = () => {
+    if (!mounted) return;
+    const dataUri = `data:text/markdown;charset=utf-8,${encodeURIComponent(rawMarkdownContent)}`;
+    if (dataUri.length > MAX_QR_CODE_DATA_LENGTH) {
+      toast({
+        title: "README Too Large for QR Code",
+        description: "The content is too long to reliably generate a QR code. Please copy content manually.",
+        variant: "destructive",
+        duration: 7000,
+      });
+      setQrCodeValue(''); // Clear previous value if any
+      setIsQrDialogOpen(false); // Don't open dialog
+      return;
+    }
+    setQrCodeValue(dataUri);
+    setIsQrDialogOpen(true);
+  };
+  
+  const handleLogoUpload = (event: ReactTextareaChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => { setCustomLogoDataUri(reader.result as string); };
+      reader.readAsDataURL(file);
+    } else if (file) {
+      toast({ title: "Invalid File", description: "Please upload an image file.", variant: "destructive" });
+    }
+  };
 
-  const handleMoreDetailClick = () => { if (!mounted) return; onGenerateDetails(data); };
-  const handleEditClick = () => { if (!mounted) return; onEditRequest(); };
-  const toggleFullScreen = () => { if (!mounted) return; setIsFullScreen(!isFullScreen); }
-  const toggleViewMode = () => { if (!mounted) return; setViewMode(prev => prev === 'formatted' ? 'raw' : 'formatted'); };
+  const handleMoreDetailClick = () => { if (!mounted || !initialData) return; onGenerateDetails(initialData); }; // Operates on original structured data
+  
+  const toggleFullScreen = () => { if (!mounted) return; setIsFullScreen(!isFullScreen); };
 
-  if (!mounted) return null;
+  const getIcon = (iconName: IconName | undefined) => {
+    const IconComponent = LUCIDE_ICON_MAP[iconName || 'Edit3']; // Fallback to Edit3 if undefined
+    return <IconComponent />;
+  };
+
+  const handleToggleLiveEdit = () => {
+    setIsLiveEditing(prev => !prev);
+    if (!isLiveEditing && initialData) { // Entering edit mode
+      setRawMarkdownContent(formatReadmeForMarkdown(initialData));
+    }
+    // Note: No saving of rawMarkdownContent back to initialData when toggling off.
+    // This would require a "Save Raw Changes" button and more complex logic.
+  };
+
+  if (!mounted || !initialData) return (
+    <Card className="w-full shadow-xl animate-pulse">
+        <CardHeader>
+            <div className="h-8 bg-muted rounded w-3/4"></div>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                        <div className="h-6 bg-muted rounded w-1/4"></div>
+                        <div className="h-10 bg-muted rounded w-full"></div>
+                    </div>
+                ))}
+            </div>
+        </CardContent>
+    </Card>
+  );
+
+  const EditIconToRender = getIcon(actionButtonIcons.edit);
+  const MoreDetailIconToRender = getIcon(actionButtonIcons.moreDetail);
+  const CopyIconToRender = isCopiedGlobal ? <Check /> : getIcon(actionButtonIcons.copy);
+  const ToggleLiveEditIconToRender = getIcon(actionButtonIcons.toggleLiveEdit);
+  const BrandingIconToRender = getIcon(actionButtonIcons.branding);
+  const FullScreenIconToRender = isFullScreen ? getIcon(actionButtonIcons.exitFullScreen) : getIcon(actionButtonIcons.fullScreen);
+  const QRIconToRender = getIcon(actionButtonIcons.qr);
+  const FontIconToRender = getIcon(actionButtonIcons.font);
+
 
   return (
      <>
@@ -286,34 +363,55 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             "text-base sm:text-lg md:text-xl font-bold font-headline text-primary",
             isFullScreen && "text-lg sm:text-xl"
             )}>
-          {isFullScreen ? data.projectName : "Generated README.md"}
+          {isFullScreen && !isLiveEditing ? initialData.projectName : "Generated README.md"}
+          {isFullScreen && isLiveEditing ? " (Live Editor)" : ""}
         </CardTitle>
         <div className={cn(
             "flex items-center flex-wrap w-full sm:w-auto",
-            "gap-1 sm:gap-2 justify-start",
+            "gap-1 sm:gap-1.5 justify-start", // Reduced gap slightly
             "sm:justify-end mt-2 sm:mt-0"
           )}>
-           <Button variant="outline" size="sm" onClick={handleEditClick} className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            <Edit3 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Edit
+           <Button variant="outline" size="sm" onClick={() => onEditRequest()} className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Edit Structured Data">
+            <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{EditIconToRender}</span> Edit Sections
           </Button>
-          <Button variant="outline" size="sm" onClick={handleMoreDetailClick} disabled={isGeneratingDetails} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            {isGeneratingDetails ? <Loader2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <span dangerouslySetInnerHTML={{ __html: FileTextIconSvg }} className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 [&_svg]:h-full [&_svg]:w-full"></span>}
+          <Button variant="outline" size="sm" onClick={handleMoreDetailClick} disabled={isGeneratingDetails || isLiveEditing} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title={isLiveEditing ? "Disabled in live edit mode" : "Generate More Detail"}>
+            {isGeneratingDetails ? <Loader2 className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{MoreDetailIconToRender}</span>}
             {isGeneratingDetails ? "Generating..." : "More Detail"}
           </Button>
-           <Button variant="outline" size="sm" onClick={toggleViewMode} className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            {viewMode === 'formatted' ? <CodeIcon className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> : <EyeIcon className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />}
-            {viewMode === 'formatted' ? 'View Raw' : 'View Formatted'}
+          <Button variant="outline" size="sm" onClick={handleToggleLiveEdit} className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title={isLiveEditing ? "View Formatted Preview" : "Edit Raw Markdown"}>
+             <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{ToggleLiveEditIconToRender}</span>
+            {isLiveEditing ? 'Preview' : 'Edit Raw'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleGlobalCopy} className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            {isCopiedGlobal ? <Check className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <span dangerouslySetInnerHTML={{ __html: ClipboardCopySvgIcon }} className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 [&_svg]:h-full [&_svg]:w-full"></span>}
+          <Button variant="outline" size="sm" onClick={handleGlobalCopy} className="bg-accent text-accent-foreground hover:bg-accent/90 text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Copy All Markdown">
+            <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{CopyIconToRender}</span>
             {isCopiedGlobal ? "Copied!" : "Copy All"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsBrandingDialogOpen(true)} className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            <Palette className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+          <Button variant="outline" size="sm" onClick={() => setIsBrandingDialogOpen(true)} className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Custom Branding & PDF Export">
+             <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{BrandingIconToRender}</span>
             Branding
           </Button>
-          <Button variant="outline" size="sm" onClick={toggleFullScreen} className="bg-muted text-muted-foreground hover:bg-muted/80 text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1.5">
-            {isFullScreen ? <Minimize className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> : <Maximize className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />}
+          <Select value={selectedFontFamily} onValueChange={setSelectedFontFamily}>
+            <SelectTrigger className="h-auto w-auto text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1 bg-muted text-muted-foreground hover:bg-muted/80" title="Change Font Style">
+               <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{FontIconToRender}</span>
+              <SelectValue placeholder="Font" />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_OPTIONS.map(font => (
+                <SelectItem key={font.value} value={font.value} style={{fontFamily: font.value}} className="text-xs sm:text-sm">
+                  {font.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+           <Button variant="outline" size="sm" onClick={handleGenerateQrCode} className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Generate QR Code to Share/Download">
+             <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{QRIconToRender}</span>
+            QR
+          </Button>
+           <Button variant="outline" size="sm" onClick={() => setIsIconOptionsDialogOpen(true)} className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title="Customize Button Icons">
+            <ImagePlus className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Icons
+          </Button>
+          <Button variant="outline" size="sm" onClick={toggleFullScreen} className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1 sm:text-sm sm:px-2.5 sm:py-1" title={isFullScreen ? "Exit Full Screen" : "Enter Full Screen"}>
+             <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5">{FullScreenIconToRender}</span>
             {isFullScreen ? "Exit Full" : "Full Screen"}
           </Button>
         </div>
@@ -329,43 +427,61 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
             isFullScreen ? "flex-1 h-auto w-full border-0 rounded-none bg-transparent" : "h-[calc(100vh-420px)] min-h-[300px] sm:h-[calc(100vh-380px)] md:h-[500px] rounded-b-lg"
           )}
         >
-        {viewMode === 'formatted' ? (
           <div className={cn(
-              "space-y-3 sm:space-y-4",
-              isFullScreen ? "max-w-4xl mx-auto px-3 py-3 sm:px-6 sm:py-4" : "p-3 sm:p-4"
+              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0 h-full" : "h-full",
+              isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto",
+              isFullScreen && isLiveEditing ? "md:gap-0" : "p-0 md:p-1"
             )}>
-            {!isFullScreen && (
-              <div className="py-1.5 sm:py-2 border-b border-border/50">
-                <h1 className="text-xl sm:text-2xl font-bold text-primary underline decoration-primary/60 underline-offset-4 sm:underline-offset-[6px] mb-1.5 sm:mb-2 font-headline">
-                  {data.projectName}
-                </h1>
+            {isLiveEditing && (
+              <div className={cn(
+                "w-full h-full p-1",
+                isFullScreen ? "md:border-r md:border-border" : "border rounded-md md:rounded-l-md md:rounded-r-none"
+              )}>
+                <Textarea
+                  ref={editorTextAreaRef}
+                  value={rawMarkdownContent}
+                  onChange={(e) => setRawMarkdownContent(e.target.value)}
+                  className={cn(
+                    "w-full h-full min-h-[300px] md:min-h-full resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 font-mono text-xs sm:text-sm",
+                    isFullScreen ? "rounded-none" : "rounded-md md:rounded-l-md md:rounded-r-none"
+                  )}
+                  placeholder="Edit your README.md content here..."
+                  style={{fontFamily: FONT_OPTIONS.find(f => f.label.includes('Courier New'))?.value }}
+                />
               </div>
             )}
-            <MarkdownContent contentWrapperId={contentWrapperId + "-desc"} content={data.projectDescription} isFullScreen={isFullScreen} />
-            <MarkdownContent contentWrapperId={contentWrapperId + "-feat"} content={data.features} isFullScreen={isFullScreen} />
-            <MarkdownContent contentWrapperId={contentWrapperId + "-tech"} content={data.technologiesUsed} isFullScreen={isFullScreen} />
-            <MarkdownContent contentWrapperId={contentWrapperId + "-fold"} content={data.folderStructure} isFullScreen={isFullScreen} />
-            <MarkdownContent contentWrapperId={contentWrapperId + "-set"} content={data.setupInstructions} isFullScreen={isFullScreen}/>
+            
+            {(!isLiveEditing || (isLiveEditing && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
+               <div className={cn(
+                  "prose prose-sm sm:prose-base dark:prose-invert max-w-none overflow-auto",
+                  "p-3 sm:p-4",
+                   isLiveEditing ? (isFullScreen ? "md:border-l-0" : "border rounded-md md:rounded-r-md md:rounded-l-none") : "",
+                   isFullScreen ? "h-full" : ""
+                  )}
+                  style={{ fontFamily: selectedFontFamily }}
+                  id={contentWrapperId}
+                >
+                <ReactMarkdown remarkPlugins={[RemarkGfm]}>
+                  {rawMarkdownContent}
+                </ReactMarkdown>
+              </div>
+            )}
+             {isLiveEditing && typeof window !== 'undefined' && window.innerWidth < 768 && (
+                <div className="p-2 text-center text-muted-foreground text-xs">
+                    Preview is hidden on small screens in edit mode. Toggle "Preview" to see changes.
+                </div>
+            )}
           </div>
-           ) : (
-            <pre
-              className={cn(
-                "font-mono text-xs sm:text-sm whitespace-pre-wrap break-all bg-popover text-popover-foreground rounded-md",
-                isFullScreen ? "max-w-4xl mx-auto p-3 py-3 sm:p-6 sm:py-4 h-full" : "p-3 sm:p-4 m-3 sm:m-4"
-              )}
-            >
-              {formatReadmeForCopy(data)}
-            </pre>
-          )}
         </ScrollArea>
       </CardContent>
     </Card>
 
+    {/* Branding Dialog */}
     <Dialog open={isBrandingDialogOpen} onOpenChange={setIsBrandingDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5 text-orange-500" /> Custom Branding & Export
+              {getIcon(actionButtonIcons.branding)} Custom Branding & Export
             </DialogTitle>
             <DialogDescription>
               Upload a logo and choose a theme color for branded PDF exports.
@@ -401,24 +517,94 @@ export function ReadmeDisplay({ data, onGenerateDetails, isGeneratingDetails, on
                     type="text"
                     value={selectedThemeColor}
                     onChange={(e) => setSelectedThemeColor(e.target.value)}
-                    placeholder="#4285F4"
+                    placeholder="#3b82f6"
                     className="h-10 flex-1 text-sm"
                     disabled={isGeneratingBrandedPdf}
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground text-center pt-2">
-                Your logo and theme color will be applied to the "Download Branded PDF" option.
-            </p>
           </div>
           <DialogFooter className="sm:justify-end gap-2 sm:gap-0">
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isGeneratingBrandedPdf}>Close</Button>
             </DialogClose>
-            <Button type="button" onClick={handleDownloadBrandedPdf} disabled={isGeneratingBrandedPdf || !data}>
+            <Button type="button" onClick={handleDownloadBrandedPdf} disabled={isGeneratingBrandedPdf || !rawMarkdownContent}>
               {isGeneratingBrandedPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DownloadCloud className="mr-2 h-4 w-4" /> }
               Download Branded PDF
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {getIcon(actionButtonIcons.qr)} Scan to View/Download README
+            </DialogTitle>
+            <DialogDescription>
+              Scan this QR code with another device. You'll get the raw Markdown text.
+              Copy the text and save it as an `README.md` file on that device.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-4">
+            {qrCodeValue ? (
+              <QRCodeSVG value={qrCodeValue} size={256} includeMargin={true} level="L" imageSettings={{excavate:true, height:40, width:40, src:"/qr_logo.png"}}/>
+            ) : (
+              <p className="text-muted-foreground">QR code not available (content might be too large or empty).</p>
+            )}
+          </div>
+           <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Icon Options Dialog */}
+       <Dialog open={isIconOptionsDialogOpen} onOpenChange={setIsIconOptionsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ImagePlus /> Customize Button Icons</DialogTitle>
+            <DialogDescription>Select your preferred icons for various actions.</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] p-1 -mx-1">
+            <div className="space-y-4 py-4 pr-3">
+              {CUSTOMIZABLE_ACTIONS.map(action => (
+                <div key={action.id} className="space-y-1.5">
+                  <Label htmlFor={`icon-select-${action.id}`} className="text-sm font-medium">{action.label}</Label>
+                  <Select
+                    value={actionButtonIcons[action.id]}
+                    onValueChange={(value) => {
+                      setActionButtonIcons(prev => ({ ...prev, [action.id]: value as IconName }));
+                    }}
+                  >
+                    <SelectTrigger id={`icon-select-${action.id}`} className="w-full text-xs sm:text-sm">
+                      <SelectValue placeholder="Select an icon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {action.options.map(option => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            {React.createElement(LUCIDE_ICON_MAP[option.value], {className: "h-4 w-4"})}
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <DialogFooter className="mt-2 flex-col sm:flex-row sm:justify-between">
+            <Button variant="ghost" onClick={() => {setActionButtonIcons(DEFAULT_ACTION_BUTTON_ICONS); toast({title: "Icons Reset", description: "Button icons restored to defaults."})}} className="w-full sm:w-auto text-xs">Reset to Defaults</Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+            <DialogClose asChild><Button type="button" variant="outline" className="flex-1 sm:flex-none text-xs">Close</Button></DialogClose>
+            <Button type="button" onClick={() => {setIsIconOptionsDialogOpen(false); toast({title: "Preferences Saved", description: "Icon choices have been updated."})}} className="flex-1 sm:flex-none text-xs">Save Preferences</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
