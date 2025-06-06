@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
   Check, Edit3, Maximize, Minimize, Loader2, Eye, Palette, ImagePlus, CircleX, DownloadCloud,
-  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp, Pencil, FileJson, FileCode2, Copy, Clipboard, Expand, Shrink, Heading1, CheckSquare, LayoutGrid, Rows
+  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp, Pencil, FileJson, FileCode2, Copy, Clipboard, Expand, Shrink, Heading1, CheckSquare, LayoutGrid, Rows, Github
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -49,6 +49,7 @@ const LUCIDE_ICON_MAP = {
   Type, Heading1, Pilcrow: Type, 
   Save, CheckSquare,
   Columns, LayoutGrid, Rows,
+  Github,
 };
 
 interface IconOption {
@@ -279,7 +280,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
     setIsQrDialogOpen(true);
   };
   
-  const handleLogoUpload = (event: ReactTextareaChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -302,7 +303,11 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const handleToggleLiveEdit = () => {
     setIsLiveEditing(prev => !prev);
     if (!isLiveEditing && initialData) { 
-      setRawMarkdownContent(formatReadmeForMarkdown(initialData));
+      // When switching back to preview from live edit, re-format from initialData if needed,
+      // or decide if rawMarkdownContent should be the source of truth.
+      // For now, let's assume rawMarkdownContent is the current truth.
+      // If you want to "reset" to structured data:
+      // setRawMarkdownContent(formatReadmeForMarkdown(initialData));
     }
   };
 
@@ -412,15 +417,19 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             isFullScreen ? "flex-1 h-auto w-full border-0 rounded-none bg-transparent" : "h-[calc(100vh-420px)] min-h-[300px] sm:h-[calc(100vh-380px)] md:h-[500px] rounded-b-lg"
           )}
         >
-          <div className={cn( /* contentHostDiv */
-              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0 h-full" : "h-full",
-              isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto",
-              isFullScreen && isLiveEditing ? "md:gap-0" : 
-                (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")
-            )}>
+          <div className={cn(
+              "w-full",
+              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0" : "h-full", // Structure for live edit vs preview
+              isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto", // Full width in FS, constrained otherwise
+              // Padding for the host div:
+              isFullScreen && isLiveEditing ? "p-0 md:gap-0" : // FS Live Edit: no padding on host, gap for desktop
+                (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")   // FS Preview: p-3. Not FS: p-0 (ScrollArea gets page padding)
+            )}
+            id="contentHostDiv"
+          >
             {isLiveEditing && (
               <div className={cn(
-                "w-full h-full p-1",
+                "w-full h-full p-1", // Editor pane always gets a little padding
                 isFullScreen ? "md:border-r md:border-border" : "border rounded-md md:rounded-l-md md:rounded-r-none"
               )}>
                 <Textarea
@@ -438,11 +447,14 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             )}
             
             {(!isLiveEditing || (isLiveEditing && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
-               <div className={cn( /* markdownWrapperDiv */
+               <div className={cn(
                   "prose prose-sm sm:prose-base dark:prose-invert max-w-none w-full break-words", 
-                  (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", 
-                   isLiveEditing ? (isFullScreen ? "md:border-l-0" : "border rounded-md md:rounded-r-md md:rounded-l-none") : "",
-                   isFullScreen ? "h-full" : ""
+                  // Padding for markdownWrapperDiv:
+                  // It should have padding if its parent (contentHostDiv) does NOT provide the main screen edge padding.
+                  (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", // No padding if FS Preview (parent has it). Else, it needs padding.
+                   isLiveEditing && isFullScreen ? "md:border-l-0" : "", 
+                   isLiveEditing && !isFullScreen ? "border rounded-md md:rounded-r-md md:rounded-l-none" : "",
+                   isFullScreen && !isLiveEditing ? "h-full" : "" // Make it take full height in FS preview
                   )}
                   style={{ fontFamily: selectedFontFamily }}
                   id={contentWrapperId}
@@ -597,3 +609,4 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
     </>
   );
 }
+
