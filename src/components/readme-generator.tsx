@@ -623,6 +623,13 @@ ${readmeItem.setupInstructions}
         ...prev!,
         projectDescription: currentDescription + newSectionText,
       }));
+      
+      setTimeout(() => {
+        if (fieldRefs.projectDescription.current) {
+          fieldRefs.projectDescription.current.scrollTop = fieldRefs.projectDescription.current.scrollHeight;
+        }
+      }, 0);
+
       toast({ title: "Section Appended", description: `"${generatedAiTitle.replace(/^##\s*/, '')}" has been added to the Project Description.` });
       setIsAiAddSectionDialogOpen(false);
       setAiSectionPrompt("");
@@ -640,6 +647,13 @@ ${readmeItem.setupInstructions}
             ...prev!,
             projectDescription: currentDescription + newSectionText,
         }));
+        
+        setTimeout(() => {
+            if (fieldRefs.projectDescription.current) {
+              fieldRefs.projectDescription.current.scrollTop = fieldRefs.projectDescription.current.scrollHeight;
+            }
+        }, 0);
+
         toast({ title: "Manual Section Appended", description: `"${manualSectionTitle.trim()}" has been added to Project Description.`});
         setIsManualAddSectionDialogOpen(false);
         setManualSectionTitle("");
