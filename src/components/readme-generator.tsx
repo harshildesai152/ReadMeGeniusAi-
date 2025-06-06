@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles, Edit } from "lucide-react";
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles, Edit, Edit3Icon } from "lucide-react";
 import { processGitHubRepo, generateDetailedReadme, generateAiSectionAction, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,13 @@ interface SavedReadmeItem extends FullReadmeData {
   inputTypeUsed?: InputType;
   originalInput?: string;
 }
+
+interface EditedCustomSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
 const FileTextIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
 
 // Helper function to convert a single README item to a simplified HTML string
@@ -125,6 +132,8 @@ export function ReadmeGenerator() {
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editableReadmeData, setEditableReadmeData] = useState<FullReadmeData | null>(null);
+  const [editedCustomSections, setEditedCustomSections] = useState<EditedCustomSection[]>([]);
+
 
   const [selectedReadmeIdsForPdf, setSelectedReadmeIdsForPdf] = useState<string[]>([]);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
@@ -135,6 +144,8 @@ export function ReadmeGenerator() {
   const technologiesRef = useRef<HTMLTextAreaElement>(null);
   const folderStructureRef = useRef<HTMLTextAreaElement>(null);
   const setupInstructionsRef = useRef<HTMLTextAreaElement>(null);
+  const customSectionContentRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+
 
   const fieldRefs: Record<keyof Omit<FullReadmeData, 'projectName'>, React.RefObject<HTMLTextAreaElement>> = {
     projectDescription: descriptionRef,
@@ -248,6 +259,7 @@ export function ReadmeGenerator() {
     setCurrentReadmeIdForDetail(readmeItem.id); 
     setIsEditing(false); 
     setEditableReadmeData(null);
+    setEditedCustomSections([]); // Clear custom sections when loading a new README
     setError(null);
     toast({
       title: "README Loaded",
@@ -319,6 +331,7 @@ ${readmeItem.setupInstructions}
     setCurrentReadmeIdForDetail(null);
     setIsEditing(false); 
     setEditableReadmeData(null);
+    setEditedCustomSections([]);
 
     let result;
     let originalInputValue = "";
@@ -414,6 +427,7 @@ ${readmeItem.setupInstructions}
   const handleEditRequest = () => {
     if (generatedReadmeData) {
       setEditableReadmeData({ ...generatedReadmeData });
+      setEditedCustomSections([]); // Reset custom sections specific to this editing session
       setIsEditing(true);
       setError(null); 
     }
@@ -430,19 +444,43 @@ ${readmeItem.setupInstructions}
       });
     }
   };
+  
+  const handleCustomSectionChange = (id: string, field: 'title' | 'content', value: string) => {
+    setEditedCustomSections(prev => 
+      prev.map(section => 
+        section.id === id ? { ...section, [field]: value } : section
+      )
+    );
+  };
+
+  const handleRemoveCustomSection = (id: string) => {
+    setEditedCustomSections(prev => prev.filter(section => section.id !== id));
+  };
+
 
   const handleSaveChanges = () => {
     if (editableReadmeData) {
-      setGeneratedReadmeData(editableReadmeData);
+      let finalDescription = editableReadmeData.projectDescription;
+      editedCustomSections.forEach(section => {
+        finalDescription += `\n\n## ${section.title}\n${section.content}\n`;
+      });
+
+      const updatedReadmeData = {
+        ...editableReadmeData,
+        projectDescription: finalDescription.trim(),
+      };
+      
+      setGeneratedReadmeData(updatedReadmeData);
+
       if (currentReadmeIdForDetail) {
         setSavedReadmes(prev => prev.map(item =>
           item.id === currentReadmeIdForDetail
-            ? { ...item, ...editableReadmeData, savedDate: new Date().toISOString() }
+            ? { ...item, ...updatedReadmeData, savedDate: new Date().toISOString() }
             : item
         ));
         toast({ title: "Edits Saved!", description: "Your changes to the README have been saved." });
       } else {
-        const savedItem = handleSaveReadme(editableReadmeData, inputType, 
+        const savedItem = handleSaveReadme(updatedReadmeData, inputType, 
             inputType === 'url' ? repoUrl : (inputType === 'code' ? pastedCode : userPrompt)
         );
         if (savedItem) {
@@ -452,12 +490,14 @@ ${readmeItem.setupInstructions}
       }
       setIsEditing(false);
       setEditableReadmeData(null);
+      setEditedCustomSections([]); // Clear after saving
     }
   };
 
   const handleCancelEdits = () => {
     setIsEditing(false);
     setEditableReadmeData(null);
+    setEditedCustomSections([]);
     toast({ title: "Edits Cancelled", description: "Your changes were not saved.", variant: "default" });
   };
 
@@ -531,9 +571,8 @@ ${readmeItem.setupInstructions}
     generateAndDownloadPdf(selectedReadmes, "selected_readmes_merged");
   };
 
-  const applyFormat = (formatType: 'underline' | 'highlight', fieldName: keyof Omit<FullReadmeData, 'projectName'>) => {
-    const textareaRef = fieldRefs[fieldName];
-    if (textareaRef && textareaRef.current && editableReadmeData) {
+  const applyFormatToTextarea = (formatType: 'underline' | 'highlight', textareaRef: React.RefObject<HTMLTextAreaElement>, sectionId?: string, fieldName?: keyof EditedCustomSection) => {
+    if (textareaRef && textareaRef.current) {
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -544,54 +583,29 @@ ${readmeItem.setupInstructions}
       let finalNewValue = '';
       let newCursorPos = start;
 
-      const listMarkerRegex = /^(\s*([-*+]|\d+\.)\s+)/;
-      let marker = "";
-
-      // Check if the selected text itself starts with a list marker
-      const selectionMatch = selectedText.match(listMarkerRegex);
-      if (selectionMatch) {
-          marker = selectionMatch[0];
-          selectedText = selectedText.substring(marker.length); // Actual text content
-          // The marker should remain outside the formatting tags
-          textBefore = textBefore + marker; 
+      if (selectedText) {
+        if (formatType === 'underline') finalNewValue = `${textBefore}<u>${selectedText}</u>${textAfter}`;
+        else if (formatType === 'highlight') finalNewValue = `${textBefore}<mark>${selectedText}</mark>${textAfter}`;
+        newCursorPos = (formatType === 'underline' ? textBefore + `<u>${selectedText}</u>` : textBefore + `<mark>${selectedText}</mark>`).length;
       } else {
-          // If selection doesn't start with a marker, check if the line it's on does
-          const lineStart = currentValue.lastIndexOf('\n', start - 1) + 1;
-          const currentLine = currentValue.substring(lineStart, start);
-          const lineMatch = currentLine.match(listMarkerRegex);
-          if (lineMatch && start === lineStart + lineMatch[0].length) { // Cursor is right after marker
-            // This case is complex, for now, let's assume user selected content or we insert at cursor
-          }
-      }
-
-
-      if (selectedText) { // Text was selected
-        if (formatType === 'underline') {
-          finalNewValue = `${textBefore}<u>${selectedText}</u>${textAfter}`;
-          newCursorPos = (textBefore + `<u>${selectedText}</u>`).length;
-        } else if (formatType === 'highlight') {
-          finalNewValue = `${textBefore}<mark>${selectedText}</mark>${textAfter}`;
-          newCursorPos = (textBefore + `<mark>${selectedText}</mark>`).length;
-        }
-      } else { // No text selected, insert tags at cursor
-        if (formatType === 'underline') {
-          finalNewValue = `${textBefore}<u></u>${textAfter}`;
-          newCursorPos = textBefore.length + 3; // Position cursor inside <u>|</u>
-        } else if (formatType === 'highlight') {
-          finalNewValue = `${textBefore}<mark></mark>${textAfter}`;
-          newCursorPos = textBefore.length + 6; // Position cursor inside <mark>|</mark>
-        }
+        if (formatType === 'underline') { finalNewValue = `${textBefore}<u></u>${textAfter}`; newCursorPos = textBefore.length + 3; }
+        else if (formatType === 'highlight') { finalNewValue = `${textBefore}<mark></mark>${textAfter}`; newCursorPos = textBefore.length + 6; }
       }
       
-      setEditableReadmeData(prev => prev ? { ...prev, [fieldName]: finalNewValue } : null);
+      if (sectionId && fieldName && fieldName === 'content') {
+        handleCustomSectionChange(sectionId, 'content', finalNewValue);
+      } else if (fieldName === undefined && editableReadmeData) { // Standard field
+        setEditableReadmeData(prev => prev ? { ...prev, [(textareaRef as any).fieldNameForFormat]: finalNewValue } : null);
+      }
 
-      // Defer focusing and setting cursor position
+
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(newCursorPos, newCursorPos);
       }, 0);
     }
   };
+
 
   const handleGenerateAiSection = async () => {
     if (!aiSectionPrompt.trim()) {
@@ -608,57 +622,35 @@ ${readmeItem.setupInstructions}
       setAiSectionError(result.error);
       toast({ title: "AI Section Generation Failed", description: result.error, variant: "destructive" });
     } else if (result) {
-      setGeneratedAiTitle(result.sectionTitle);
+      setGeneratedAiTitle(result.sectionTitle.replace(/^##\s*/, '')); // Remove H2 for input field
       setGeneratedAiDescription(result.sectionDescription);
-      toast({ title: "AI Section Content Generated!", description: "Review and append it to your README." });
+      toast({ title: "AI Section Content Generated!", description: "Review and add it to your README." });
     }
     setIsGeneratingAiSectionContent(false);
   };
 
-  const handleAppendAiSectionToDescription = () => {
-    if (editableReadmeData && generatedAiTitle && generatedAiDescription) {
-      const currentDescription = editableReadmeData.projectDescription || "";
-      const newSectionText = `\n\n${generatedAiTitle}\n${generatedAiDescription}\n`;
-      setEditableReadmeData(prev => ({
-        ...prev!,
-        projectDescription: currentDescription + newSectionText,
-      }));
-      
-      setTimeout(() => {
-        if (fieldRefs.projectDescription.current) {
-          fieldRefs.projectDescription.current.scrollTop = fieldRefs.projectDescription.current.scrollHeight;
-        }
-      }, 0);
-
-      toast({ title: "Section Appended", description: `"${generatedAiTitle.replace(/^##\s*/, '')}" has been added to the Project Description.` });
+  const handleAddAiGeneratedSectionToEditor = () => {
+    if (generatedAiTitle && generatedAiDescription) {
+      setEditedCustomSections(prev => [
+        ...prev,
+        { id: Date.now().toString(), title: generatedAiTitle, content: generatedAiDescription }
+      ]);
+      toast({ title: "Section Added to Editor", description: `"${generatedAiTitle}" is ready to be edited further or saved.` });
       setIsAiAddSectionDialogOpen(false);
-      setAiSectionPrompt("");
-      setGeneratedAiTitle("");
-      setGeneratedAiDescription("");
-      setAiSectionError(null);
+      setAiSectionPrompt(""); setGeneratedAiTitle(""); setGeneratedAiDescription(""); setAiSectionError(null);
     }
   };
 
-  const handleSaveManualSection = () => {
-    if (editableReadmeData && manualSectionTitle.trim()) {
-        const currentDescription = editableReadmeData.projectDescription || "";
-        const newSectionText = `\n\n## ${manualSectionTitle.trim()}\n${manualSectionContent.trim()}\n`;
-        setEditableReadmeData(prev => ({
-            ...prev!,
-            projectDescription: currentDescription + newSectionText,
-        }));
-        
-        setTimeout(() => {
-            if (fieldRefs.projectDescription.current) {
-              fieldRefs.projectDescription.current.scrollTop = fieldRefs.projectDescription.current.scrollHeight;
-            }
-        }, 0);
-
-        toast({ title: "Manual Section Appended", description: `"${manualSectionTitle.trim()}" has been added to Project Description.`});
+  const handleAddManualSectionToEditor = () => {
+    if (manualSectionTitle.trim()) {
+        setEditedCustomSections(prev => [
+            ...prev,
+            { id: Date.now().toString(), title: manualSectionTitle.trim(), content: manualSectionContent.trim() }
+        ]);
+        toast({ title: "Manual Section Added to Editor", description: `"${manualSectionTitle.trim()}" is ready.`});
         setIsManualAddSectionDialogOpen(false);
-        setManualSectionTitle("");
-        setManualSectionContent("");
-    } else if (!manualSectionTitle.trim()) {
+        setManualSectionTitle(""); setManualSectionContent("");
+    } else {
         toast({ title: "Title Required", description: "Please enter a title for your manual section.", variant: "destructive"});
     }
   };
@@ -677,7 +669,7 @@ ${readmeItem.setupInstructions}
           <CardContent>
             <div className="animate-pulse space-y-4">
               <div className="h-10 bg-muted rounded-md"></div>
-              <div className="h-10 bg-muted rounded-md w-full sm:w-1/2 mx-auto"></div> {/* Adjusted for radio group stacking */}
+              <div className="h-10 bg-muted rounded-md w-full sm:w-1/2 mx-auto"></div>
             </div>
           </CardContent>
         </Card>
@@ -701,10 +693,10 @@ ${readmeItem.setupInstructions}
                     <Label htmlFor={`edit-${field.key}`} className="font-semibold text-sm sm:text-base">{field.label}</Label>
                     {field.component === 'textarea' && (
                         <div className="flex space-x-1">
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormat('underline', field.key as keyof Omit<FullReadmeData, 'projectName'>)} title="Underline selected text">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormatToTextarea('underline', fieldRefs[field.key as keyof typeof fieldRefs], undefined, field.key as any)} title="Underline selected text">
                                 <UnderlineIcon className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormat('highlight', field.key as keyof Omit<FullReadmeData, 'projectName'>)} title="Highlight selected text">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormatToTextarea('highlight', fieldRefs[field.key as keyof typeof fieldRefs], undefined, field.key as any)} title="Highlight selected text">
                                 <HighlighterIcon className="h-4 w-4" />
                             </Button>
                         </div>
@@ -721,7 +713,10 @@ ${readmeItem.setupInstructions}
                 ) : (
                     <Textarea 
                         id={`edit-${field.key}`}
-                        ref={fieldRefs[field.key as keyof typeof fieldRefs]}
+                        ref={(el) => {
+                            fieldRefs[field.key as keyof typeof fieldRefs].current = el;
+                            if (el) { (el as any).fieldNameForFormat = field.key }
+                         }}
                         value={editableReadmeData[field.key]} 
                         onChange={(e) => handleEditableInputChange(e, field.key)}
                         className={`mt-1 min-h-[100px] sm:min-h-[120px] text-sm sm:text-base ${field.isMonospace ? 'font-mono' : ''}`}
@@ -729,6 +724,45 @@ ${readmeItem.setupInstructions}
                 )}
             </div>
         ))}
+
+        {editedCustomSections.map((section, index) => (
+            <div key={section.id} className="space-y-2 p-3 border border-dashed rounded-md bg-muted/30 mt-3">
+                 <div className="flex justify-between items-center">
+                    <Label htmlFor={`custom-title-${section.id}`} className="font-semibold text-sm">Custom Section Title</Label>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveCustomSection(section.id)} title="Remove this custom section">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Input
+                    id={`custom-title-${section.id}`}
+                    value={section.title}
+                    onChange={(e) => handleCustomSectionChange(section.id, 'title', e.target.value)}
+                    placeholder="Enter title for your custom section"
+                    className="text-sm"
+                />
+                 <div className="flex justify-between items-center mt-2">
+                    <Label htmlFor={`custom-content-${section.id}`} className="font-semibold text-sm">Custom Section Content</Label>
+                     <div className="flex space-x-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormatToTextarea('underline', { current: customSectionContentRefs.current[section.id] }, section.id, 'content')} title="Underline selected text">
+                            <UnderlineIcon className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => applyFormatToTextarea('highlight', { current: customSectionContentRefs.current[section.id] }, section.id, 'content')} title="Highlight selected text">
+                            <HighlighterIcon className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+                <Textarea
+                    id={`custom-content-${section.id}`}
+                    ref={(el) => customSectionContentRefs.current[section.id] = el}
+                    value={section.content}
+                    onChange={(e) => handleCustomSectionChange(section.id, 'content', e.target.value)}
+                    placeholder="Enter content for your custom section (Markdown supported)"
+                    className="min-h-[100px] text-sm"
+                />
+            </div>
+        ))}
+
+
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                  <Dialog open={isAiAddSectionDialogOpen} onOpenChange={setIsAiAddSectionDialogOpen}>
@@ -764,13 +798,13 @@ ${readmeItem.setupInstructions}
                         {generatedAiTitle && (
                             <div className="space-y-2 mt-3 p-3 border rounded-md bg-muted/50">
                             <h4 className="font-semibold text-sm">AI Generated Title:</h4>
-                            <p className="text-sm p-2 border rounded bg-background">{generatedAiTitle}</p>
+                            <Input value={generatedAiTitle} readOnly className="bg-background" />
                             <h4 className="font-semibold text-sm mt-2">AI Generated Description:</h4>
                             <ScrollArea className="h-[100px] w-full rounded-md border bg-background p-2">
                                 <pre className="text-xs whitespace-pre-wrap">{generatedAiDescription}</pre>
                             </ScrollArea>
-                            <Button onClick={handleAppendAiSectionToDescription} className="w-full mt-2" variant="default">
-                                Append to Project Description
+                            <Button onClick={handleAddAiGeneratedSectionToEditor} className="w-full mt-2" variant="default">
+                                Add to Editor Form
                             </Button>
                             </div>
                         )}
@@ -786,14 +820,14 @@ ${readmeItem.setupInstructions}
                 <Dialog open={isManualAddSectionDialogOpen} onOpenChange={setIsManualAddSectionDialogOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" className="text-sm py-2 px-4 w-full sm:w-auto border-green-500/50 text-green-600 hover:bg-green-500/10">
-                            <Edit className="mr-1.5 h-4 w-4" /> Manual: Add Section
+                            <Edit3Icon className="mr-1.5 h-4 w-4" /> Manual: Add Section
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                             <DialogTitle>Manually Add New Section</DialogTitle>
                             <DialogDescription>
-                                Enter a title and content for your new section. It will be appended to the Project Description.
+                                Enter a title and content for your new section. It will be added to the editor form as a new block.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-3">
@@ -821,8 +855,8 @@ ${readmeItem.setupInstructions}
                             <DialogClose asChild>
                                 <Button type="button" variant="outline" onClick={() => { setManualSectionTitle(""); setManualSectionContent("");}}>Cancel</Button>
                             </DialogClose>
-                            <Button type="button" variant="default" onClick={handleSaveManualSection}>
-                                Add Section to Description
+                            <Button type="button" variant="default" onClick={handleAddManualSectionToEditor}>
+                                Add Section to Editor Form
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -1034,4 +1068,3 @@ ${readmeItem.setupInstructions}
     </div>
   );
 }
-
