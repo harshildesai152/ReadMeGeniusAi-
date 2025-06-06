@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Files, FileText, LogIn, UserPlus, LogOut, LayoutDashboard, FileCode } from 'lucide-react'; 
+import { Files, FileText, LogIn, UserPlus, LogOut, LayoutDashboard, FileCode, Info } from 'lucide-react'; 
 import { isLoggedIn, setLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -99,6 +99,7 @@ export default function HomePage() {
                   <div className="h-9 sm:h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 1 */}
                   <div className="h-9 sm:h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 2 */}
                   <div className="h-9 sm:h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 3 */}
+                  <div className="h-9 sm:h-10 w-full sm:w-56 bg-muted rounded-md"></div> {/* Button 4 for About Us */}
               </div>
             </div>
             <div className="h-3 sm:h-4 w-2/3 sm:w-1/2 mx-auto bg-muted rounded-md mb-1 mt-4 sm:mt-6"></div> {/* Copyright */}
@@ -154,7 +155,7 @@ export default function HomePage() {
          <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground w-full">
           <div className="mb-3 sm:mb-4">
             <p className="font-semibold text-sm sm:text-base">Explore other tools:</p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-2">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 mt-2">
                 <Link href="/past" passHref>
                   <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <FileText className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
@@ -171,6 +172,12 @@ export default function HomePage() {
                    <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <FileCode className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
                     Explain My Code
+                  </Button>
+                </Link>
+                <Link href="/about" passHref>
+                   <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
+                    <Info className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                    About Us
                   </Button>
                 </Link>
             </div>

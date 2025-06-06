@@ -7,7 +7,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, LogOut, LayoutDashboard, Home, FileText, Files } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, LayoutDashboard, Home, FileText, Files, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { isLoggedIn, setLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
@@ -128,10 +128,10 @@ export default function ExplainCodePage() {
         
         <CodeExplainer />
         
-        <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground">
+        <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground w-full">
           <div className="mb-3 sm:mb-4">
             <p className="font-semibold text-sm sm:text-base">Explore other tools:</p>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-2">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 mt-2">
                 <Link href="/" passHref>
                   <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <FileText className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
@@ -142,6 +142,12 @@ export default function ExplainCodePage() {
                    <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <Files className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" /> 
                     Past Files Inventory & Gen
+                  </Button>
+                </Link>
+                <Link href="/about" passHref>
+                   <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
+                    <Info className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                    About Us
                   </Button>
                 </Link>
             </div>

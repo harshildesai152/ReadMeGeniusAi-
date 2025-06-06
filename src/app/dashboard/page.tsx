@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from "next/link";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { isLoggedIn, setLoggedIn as setAuthLoggedIn, getUserByEmail, getCurrentU
 import type { User } from '@/lib/auth/storage';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
-import { Loader2, Home, UserCircle2, Mail, Phone, CheckCircle, LogOutIcon, Edit3, Save, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Home, UserCircle2, Mail, Phone, CheckCircle, LogOutIcon, Edit3, Save, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -39,9 +40,7 @@ export default function DashboardPage() {
           setEditablePhone(currentUser.phone);     
         }
       }
-      // Simulate loading delay for skeleton visibility, remove in production
-      // setTimeout(() => setIsLoading(false), 1500); 
-      setIsLoading(false); // Set to false after data is fetched
+      setIsLoading(false); 
     }
   }, [router]);
 
@@ -126,6 +125,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center space-x-1 sm:space-x-2">
               <div className="h-8 w-8 sm:h-9 bg-muted rounded-md"></div> {/* Home icon */}
+              <div className="h-8 w-8 sm:h-9 bg-muted rounded-md"></div> {/* About Us icon */}
               <div className="h-8 w-8 sm:h-9 bg-muted rounded-full"></div> {/* Theme toggle */}
               <div className="h-8 w-20 sm:h-9 bg-muted rounded-md"></div> {/* Logout button */}
             </div>
@@ -186,6 +186,11 @@ export default function DashboardPage() {
             <Button onClick={handleGoHome} variant="ghost" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
               <Home className="h-4 sm:h-5 w-4 sm:h-5" />
             </Button>
+            <Link href="/about" passHref>
+                <Button variant="ghost" size="icon" title="About Us" className="h-8 w-8 sm:h-9 sm:w-9">
+                    <Info className="h-4 sm:h-5 w-4 sm:h-5" />
+                </Button>
+            </Link>
             <ThemeToggle />
             <Button onClick={handleLogout} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
               <LogOutIcon className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" />
@@ -328,4 +333,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

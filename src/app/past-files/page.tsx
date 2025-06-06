@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, AlertTriangle, UploadCloud, Download, Trash2, Home, LogIn, UserPlus, LogOut, LayoutDashboard, Eye, Save, XCircle, Check, MessagesSquare, ClipboardPaste, Github } from "lucide-react";
+import { Loader2, AlertTriangle, UploadCloud, Download, Trash2, Home, LogIn, UserPlus, LogOut, LayoutDashboard, Eye, Save, XCircle, Check, MessagesSquare, ClipboardPaste, Github, Info } from "lucide-react";
 import { processGitHubRepo, generateDetailedReadme, type FullReadmeData } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -868,7 +868,12 @@ ${readmeItem.setupInstructions}
 
 
          <footer className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
+            <Link href="/about" passHref>
+                <Button variant="link" className="text-muted-foreground hover:text-primary text-xs sm:text-sm">
+                    <Info className="mr-1 h-3.5 w-3.5" /> About Us
+                </Button>
+            </Link>
+            <p className="mt-1">&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
       </div>
     </main>

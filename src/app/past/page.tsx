@@ -7,7 +7,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus, LogOut, LayoutDashboard, Home } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, LayoutDashboard, Home, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { isLoggedIn, setLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
@@ -63,7 +63,7 @@ export default function PastPage() {
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Link href="/" passHref>
               <Button variant="outline" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
-                <Home className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                <Home className="h-3.5 sm:h-4 w-3.5 sm:h-4" />
               </Button>
             </Link>
             {loggedInStatus ? (
@@ -103,7 +103,12 @@ export default function PastPage() {
         </p>
         <ReadmeGenerator />
         <footer className="mt-8 sm:mt-12 text-center text-xs sm:text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
+          <Link href="/about" passHref>
+            <Button variant="link" className="text-muted-foreground hover:text-primary text-xs sm:text-sm">
+                <Info className="mr-1 h-3.5 w-3.5" /> About Us
+            </Button>
+          </Link>
+          <p className="mt-1">&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
         </footer>
       </div>
     </main>
