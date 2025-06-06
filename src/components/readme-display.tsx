@@ -1,3 +1,4 @@
+
 // src/components/readme-display.tsx
 "use client";
 
@@ -9,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
   Check, Edit3, Maximize, Minimize, Loader2, Eye, Palette, ImagePlus, CircleX, DownloadCloud,
-  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns
+  FileText, ClipboardCopy, Code, QrCode, Type, Save, Columns, ImageUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -40,7 +41,7 @@ const LUCIDE_ICON_MAP = {
   Code, Code2: Code, Terminal: Code,
   Eye, EyeOff: Eye, View: Eye,
   Palette, Paintbrush: Palette, Brush: Palette,
-  ImagePlus, Image: ImagePlus, FileImage: ImagePlus,
+  ImagePlus, Image: ImagePlus, FileImage: ImagePlus, ImageUp,
   Maximize, ExternalLink: Maximize, Expand: Maximize,
   Minimize, Shrink: Minimize, Minimize2: Minimize,
   DownloadCloud, Download: DownloadCloud, CloudDownload: DownloadCloud,
