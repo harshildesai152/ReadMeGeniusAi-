@@ -303,11 +303,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
   const handleToggleLiveEdit = () => {
     setIsLiveEditing(prev => !prev);
     if (!isLiveEditing && initialData) { 
-      // When switching back to preview from live edit, re-format from initialData if needed,
-      // or decide if rawMarkdownContent should be the source of truth.
-      // For now, let's assume rawMarkdownContent is the current truth.
-      // If you want to "reset" to structured data:
-      // setRawMarkdownContent(formatReadmeForMarkdown(initialData));
+      setRawMarkdownContent(formatReadmeForMarkdown(initialData));
     }
   };
 
@@ -408,7 +404,7 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
       </CardHeader>
       <CardContent className={cn(
          "p-0",
-         isFullScreen && "flex-1 flex flex-col min-h-0"
+         isFullScreen && "flex-1 flex flex-col min-h-0 overflow-hidden" // Added overflow-hidden here
         )}>
         <ScrollArea
           ref={scrollAreaRef}
@@ -418,18 +414,17 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
           )}
         >
           <div className={cn(
-              "w-full",
-              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0" : "h-full", // Structure for live edit vs preview
-              isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto", // Full width in FS, constrained otherwise
-              // Padding for the host div:
-              isFullScreen && isLiveEditing ? "p-0 md:gap-0" : // FS Live Edit: no padding on host, gap for desktop
-                (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")   // FS Preview: p-3. Not FS: p-0 (ScrollArea gets page padding)
+              isLiveEditing ? "md:grid md:grid-cols-2 md:gap-0" : "h-full",
+              "w-full", 
+              isFullScreen ? "max-w-none mx-0" : "max-w-4xl mx-auto", 
+              isFullScreen && isLiveEditing ? "p-0 md:gap-0" : 
+                (isFullScreen ? "p-3 sm:p-4" : "p-0 md:p-1")   
             )}
             id="contentHostDiv"
           >
             {isLiveEditing && (
               <div className={cn(
-                "w-full h-full p-1", // Editor pane always gets a little padding
+                "w-full h-full p-1", 
                 isFullScreen ? "md:border-r md:border-border" : "border rounded-md md:rounded-l-md md:rounded-r-none"
               )}>
                 <Textarea
@@ -449,12 +444,10 @@ export function ReadmeDisplay({ data: initialData, onGenerateDetails, isGenerati
             {(!isLiveEditing || (isLiveEditing && typeof window !== 'undefined' && window.innerWidth >= 768)) && (
                <div className={cn(
                   "prose prose-sm sm:prose-base dark:prose-invert max-w-none w-full break-words", 
-                  // Padding for markdownWrapperDiv:
-                  // It should have padding if its parent (contentHostDiv) does NOT provide the main screen edge padding.
-                  (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", // No padding if FS Preview (parent has it). Else, it needs padding.
+                  (isFullScreen && !isLiveEditing) ? "" : "p-3 sm:p-4", 
                    isLiveEditing && isFullScreen ? "md:border-l-0" : "", 
                    isLiveEditing && !isFullScreen ? "border rounded-md md:rounded-r-md md:rounded-l-none" : "",
-                   isFullScreen && !isLiveEditing ? "h-full" : "" // Make it take full height in FS preview
+                   isFullScreen && !isLiveEditing ? "h-full" : "" 
                   )}
                   style={{ fontFamily: selectedFontFamily }}
                   id={contentWrapperId}
