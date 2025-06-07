@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles, Edit, Edit3Icon } from "lucide-react";
+import { Loader2, AlertTriangle, Github, Eye, Trash2, Download, MessagesSquare, ClipboardPaste, Save, XCircle, UnderlineIcon, HighlighterIcon, PlusCircle, Sparkles, Edit, Edit3Icon, Pin, PinOff } from "lucide-react";
 import { processGitHubRepo, generateDetailedReadme, generateAiSectionAction, type FullReadmeData } from "@/lib/actions";
 import { ReadmeDisplay } from "./readme-display";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { cn } from "@/lib/utils";
 
 
 type InputType = "url" | "code" | "prompt";
@@ -53,6 +54,7 @@ interface EditedCustomSection {
   id: string;
   title: string;
   content: string;
+  isPinned?: boolean;
 }
 
 const FileTextIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
@@ -427,7 +429,8 @@ ${readmeItem.setupInstructions}
   const handleEditRequest = () => {
     if (generatedReadmeData) {
       setEditableReadmeData({ ...generatedReadmeData });
-      setEditedCustomSections([]); // Reset custom sections specific to this editing session
+      // Initialize editedCustomSections if needed (e.g., parse from description or start empty)
+      setEditedCustomSections([]); 
       setIsEditing(true);
       setError(null); 
     }
@@ -453,15 +456,31 @@ ${readmeItem.setupInstructions}
     );
   };
 
-  const handleRemoveCustomSection = (id: string) => {
-    setEditedCustomSections(prev => prev.filter(section => section.id !== id));
+  const handleRemoveCustomSection = (idToRemove: string) => {
+    setEditedCustomSections(prev => prev.filter(section => section.id !== idToRemove));
+  };
+
+  const handleTogglePinCustomSection = (sectionId: string) => {
+    setEditedCustomSections(prevSections =>
+      prevSections.map(section =>
+        section.id === sectionId ? { ...section, isPinned: !section.isPinned } : section
+      )
+    );
   };
 
 
   const handleSaveChanges = () => {
     if (editableReadmeData) {
       let finalDescription = editableReadmeData.projectDescription;
-      editedCustomSections.forEach(section => {
+      
+      // Get custom sections in their current display order (pinned first)
+      const sortedCustomSections = [...editedCustomSections].sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0; // Maintain relative order for items with same pinned status
+      });
+
+      sortedCustomSections.forEach(section => {
         finalDescription += `\n\n## ${section.title}\n${section.content}\n`;
       });
 
@@ -490,7 +509,7 @@ ${readmeItem.setupInstructions}
       }
       setIsEditing(false);
       setEditableReadmeData(null);
-      setEditedCustomSections([]); // Clear after saving
+      setEditedCustomSections([]); 
     }
   };
 
@@ -522,13 +541,13 @@ ${readmeItem.setupInstructions}
       
       const pdfContainer = document.createElement('div');
       pdfContainer.style.position = 'absolute';
-      pdfContainer.style.left = '-9999px'; // Position off-screen
-      pdfContainer.style.width = '800px'; // A4-like width for better canvas rendering
+      pdfContainer.style.left = '-9999px'; 
+      pdfContainer.style.width = '800px'; 
       pdfContainer.innerHTML = combinedHtml;
       document.body.appendChild(pdfContainer);
 
       const canvas = await html2canvas(pdfContainer, {
-        scale: 2, // Increase scale for better quality
+        scale: 2, 
         useCORS: true,
         logging: false,
         width: pdfContainer.scrollWidth,
@@ -542,8 +561,8 @@ ${readmeItem.setupInstructions}
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'p',
-        unit: 'px', // Use pixels for easier coordination with canvas
-        format: [canvas.width, canvas.height] // Set PDF page size to canvas size
+        unit: 'px', 
+        format: [canvas.width, canvas.height] 
       });
 
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
@@ -571,39 +590,38 @@ ${readmeItem.setupInstructions}
     generateAndDownloadPdf(selectedReadmes, "selected_readmes_merged");
   };
 
-  const applyFormatToTextarea = (formatType: 'underline' | 'highlight', textareaRef: React.RefObject<HTMLTextAreaElement>, sectionId?: string, fieldName?: keyof EditedCustomSection) => {
-    if (textareaRef && textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentValue = textarea.value;
-      let selectedText = currentValue.substring(start, end);
-      let textBefore = currentValue.substring(0, start);
-      let textAfter = currentValue.substring(end);
-      let finalNewValue = '';
-      let newCursorPos = start;
+  const applyFormatToTextarea = (formatType: 'underline' | 'highlight', textareaRef: React.RefObject<HTMLTextAreaElement>, sectionId?: string, fieldNameForKey?: keyof FullReadmeData | 'content') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-      if (selectedText) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    let selectedText = currentValue.substring(start, end);
+    let textBefore = currentValue.substring(0, start);
+    let textAfter = currentValue.substring(end);
+    let finalNewValue = '';
+    let newCursorPos = start;
+
+    if (selectedText) {
         if (formatType === 'underline') finalNewValue = `${textBefore}<u>${selectedText}</u>${textAfter}`;
         else if (formatType === 'highlight') finalNewValue = `${textBefore}<mark>${selectedText}</mark>${textAfter}`;
         newCursorPos = (formatType === 'underline' ? textBefore + `<u>${selectedText}</u>` : textBefore + `<mark>${selectedText}</mark>`).length;
-      } else {
+    } else {
         if (formatType === 'underline') { finalNewValue = `${textBefore}<u></u>${textAfter}`; newCursorPos = textBefore.length + 3; }
         else if (formatType === 'highlight') { finalNewValue = `${textBefore}<mark></mark>${textAfter}`; newCursorPos = textBefore.length + 6; }
-      }
-      
-      if (sectionId && fieldName && fieldName === 'content') {
-        handleCustomSectionChange(sectionId, 'content', finalNewValue);
-      } else if (fieldName === undefined && editableReadmeData) { // Standard field
-        setEditableReadmeData(prev => prev ? { ...prev, [(textareaRef as any).fieldNameForFormat]: finalNewValue } : null);
-      }
+    }
+    
+    if (sectionId && fieldNameForKey === 'content') {
+      handleCustomSectionChange(sectionId, 'content', finalNewValue);
+    } else if (editableReadmeData && fieldNameForKey && fieldNameForKey !== 'content') {
+      setEditableReadmeData(prev => prev ? { ...prev, [fieldNameForKey as keyof FullReadmeData]: finalNewValue } : null);
+    }
 
-
-      setTimeout(() => {
+    setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(newCursorPos, newCursorPos);
-      }, 0);
-    }
+    }, 0);
   };
 
 
@@ -622,7 +640,7 @@ ${readmeItem.setupInstructions}
       setAiSectionError(result.error);
       toast({ title: "AI Section Generation Failed", description: result.error, variant: "destructive" });
     } else if (result) {
-      setGeneratedAiTitle(result.sectionTitle.replace(/^##\s*/, '')); // Remove H2 for input field
+      setGeneratedAiTitle(result.sectionTitle.replace(/^##\s*/, '')); 
       setGeneratedAiDescription(result.sectionDescription);
       toast({ title: "AI Section Content Generated!", description: "Review and add it to your README." });
     }
@@ -633,11 +651,15 @@ ${readmeItem.setupInstructions}
     if (generatedAiTitle && generatedAiDescription) {
       setEditedCustomSections(prev => [
         ...prev,
-        { id: Date.now().toString(), title: generatedAiTitle, content: generatedAiDescription }
+        { id: Date.now().toString(), title: generatedAiTitle, content: generatedAiDescription, isPinned: false }
       ]);
       toast({ title: "Section Added to Editor", description: `"${generatedAiTitle}" is ready to be edited further or saved.` });
       setIsAiAddSectionDialogOpen(false);
       setAiSectionPrompt(""); setGeneratedAiTitle(""); setGeneratedAiDescription(""); setAiSectionError(null);
+       setTimeout(() => {
+        const editorForm = document.getElementById("editor-form-card-content");
+        if (editorForm) editorForm.scrollTop = editorForm.scrollHeight;
+      }, 0);
     }
   };
 
@@ -645,11 +667,15 @@ ${readmeItem.setupInstructions}
     if (manualSectionTitle.trim()) {
         setEditedCustomSections(prev => [
             ...prev,
-            { id: Date.now().toString(), title: manualSectionTitle.trim(), content: manualSectionContent.trim() }
+            { id: Date.now().toString(), title: manualSectionTitle.trim(), content: manualSectionContent.trim(), isPinned: false }
         ]);
         toast({ title: "Manual Section Added to Editor", description: `"${manualSectionTitle.trim()}" is ready.`});
         setIsManualAddSectionDialogOpen(false);
         setManualSectionTitle(""); setManualSectionContent("");
+        setTimeout(() => {
+          const editorForm = document.getElementById("editor-form-card-content");
+          if (editorForm) editorForm.scrollTop = editorForm.scrollHeight;
+        }, 0);
     } else {
         toast({ title: "Title Required", description: "Please enter a title for your manual section.", variant: "destructive"});
     }
@@ -678,6 +704,16 @@ ${readmeItem.setupInstructions}
   }
 
   if (isEditing && editableReadmeData) {
+    const sortedCustomSections = [...editedCustomSections].sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        // Fallback to original order (or sort by ID if they are timestamps)
+        const aIdNum = parseInt(a.id, 10);
+        const bIdNum = parseInt(b.id, 10);
+        if (!isNaN(aIdNum) && !isNaN(bIdNum)) return aIdNum - bIdNum;
+        return 0;
+    });
+
     return (
       <Card className="w-full max-w-3xl shadow-xl space-y-4 sm:space-y-6 border hover:border-foreground transition-colors duration-200">
         <CardHeader>
@@ -686,7 +722,7 @@ ${readmeItem.setupInstructions}
             Modify the sections below. Use Markdown for formatting (e.g., ## for headings, **bold**).
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4" id="editor-form-card-content">
          {EDITABLE_FIELDS_CONFIG.map(field => (
             <div key={field.key}>
                 <div className="flex justify-between items-center mb-1">
@@ -713,10 +749,7 @@ ${readmeItem.setupInstructions}
                 ) : (
                     <Textarea 
                         id={`edit-${field.key}`}
-                        ref={(el) => {
-                            fieldRefs[field.key as keyof typeof fieldRefs].current = el;
-                            if (el) { (el as any).fieldNameForFormat = field.key }
-                         }}
+                        ref={fieldRefs[field.key as keyof typeof fieldRefs]}
                         value={editableReadmeData[field.key]} 
                         onChange={(e) => handleEditableInputChange(e, field.key)}
                         className={`mt-1 min-h-[100px] sm:min-h-[120px] text-sm sm:text-base ${field.isMonospace ? 'font-mono' : ''}`}
@@ -725,13 +758,18 @@ ${readmeItem.setupInstructions}
             </div>
         ))}
 
-        {editedCustomSections.map((section, index) => (
+        {sortedCustomSections.map((section, index) => (
             <div key={section.id} className="space-y-2 p-3 border border-dashed rounded-md bg-muted/30 mt-3">
                  <div className="flex justify-between items-center">
                     <Label htmlFor={`custom-title-${section.id}`} className="font-semibold text-sm">Custom Section Title</Label>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveCustomSection(section.id)} title="Remove this custom section">
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className={cn("h-6 w-6", section.isPinned ? "text-primary" : "text-muted-foreground hover:text-primary")} onClick={() => handleTogglePinCustomSection(section.id)} title={section.isPinned ? "Unpin Section" : "Pin Section"}>
+                            {section.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveCustomSection(section.id)} title="Remove this custom section">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
                 <Input
                     id={`custom-title-${section.id}`}
@@ -1068,3 +1106,4 @@ ${readmeItem.setupInstructions}
     </div>
   );
 }
+
