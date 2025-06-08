@@ -552,7 +552,6 @@ export default function HomePage() {
         <TrustedBySection />
         <HowItWorksSection />
         <TestimonialsSection />
-        <FAQSection />
         <CallToActionSection />
         <ReadmeGeneratorWrapper />
 
@@ -577,7 +576,7 @@ export default function HomePage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="flex-grow pt-0">
-                        <p className="text-sm text-muted-foreground dark:text-neutral-300 group-hover:text-muted-foreground/80 dark:group-hover:text-neutral-300/80 transition-colors">
+                        <p className="text-sm text-muted-foreground dark:text-neutral-300 transition-colors">
                           {tool.description}
                         </p>
                       </CardContent>
@@ -593,6 +592,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        <FAQSection />
       </main>
       <Footer />
     </div>
