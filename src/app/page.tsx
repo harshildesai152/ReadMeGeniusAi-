@@ -12,13 +12,14 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { 
   Files, FileCode, Info, LayoutDashboard, LogIn, LogOut, UserPlus, 
   Github, Twitter, Linkedin, ArrowRight, Sparkles, FileText, Cpu, 
-  ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2, Menu 
+  ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2, Menu, HelpCircle
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose 
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -43,12 +44,12 @@ const HeroSection = () => {
       <Image
         src="https://placehold.co/1600x800/3A3226/E0E0E0.png"
         alt="Abstract background for hero section"
-        fill // Changed from layout="fill" to fill for Next 13+
+        fill 
         objectFit="cover"
         quality={80}
         className="opacity-30 dark:opacity-40"
         data-ai-hint="dark gradient tech"
-        priority // Added priority for LCP element
+        priority
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/80 dark:from-black/50 dark:via-black/70 dark:to-black/90"></div>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 z-10">
@@ -66,7 +67,7 @@ const HeroSection = () => {
           >
             Generate Now
           </Button>
-           <Link href="/#templates" passHref> {/* Changed to /#templates to avoid error for non-existing page */}
+           <Link href="/#templates" passHref>
             <Button
               size="lg"
               variant="outline"
@@ -243,6 +244,61 @@ const TestimonialsSection = () => (
   </section>
 );
 
+const FAQSection = () => {
+  const faqs = [
+    {
+      question: "What is ReadMeGenius?",
+      answer: "ReadMeGenius is an AI-powered tool designed to help developers quickly and easily generate professional README files for their software projects. You can input a GitHub URL, paste code, or describe your project, and our AI will craft the relevant sections."
+    },
+    {
+      question: "How does the AI generation work?",
+      answer: "We use advanced language models (like Google's Gemini) through Genkit. The AI analyzes the provided input (repository, code, or prompt) to understand the project's context, features, and technologies, then generates corresponding README content."
+    },
+    {
+      question: "Is my data safe?",
+      answer: "We take your privacy seriously. Input data like code snippets or prompts are processed to generate the README and are not stored long-term for generation purposes. GitHub repository analysis uses publicly available information. Please see our Privacy Policy for more details."
+    },
+    {
+      question: "Can I customize the generated README?",
+      answer: "Yes! After the AI generates the initial README, you can edit all sections directly in our editor. You can refine the content, add new sections, or adjust formatting before saving or downloading your README."
+    },
+    {
+      question: "Is there a cost to use this service?",
+      answer: "ReadMeGenius offers a generous free tier for generating READMEs. Advanced features or higher usage limits might be part of future premium plans. For now, enjoy the core features for free!"
+    }
+  ];
+
+  return (
+    <section className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4 flex items-center justify-center gap-3">
+            <HelpCircle className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            Frequently Asked Questions
+          </h2>
+          <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-xl mx-auto">
+            Have questions? We’ve got answers. If you don’t see your question here, feel free to contact us.
+          </p>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem value={`item-${index}`} key={index} className="border-border hover:border-primary/30 transition-colors">
+                <AccordionTrigger className="text-left text-sm sm:text-base font-medium hover:text-primary dark:hover:text-primary-foreground py-3 sm:py-4">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 pb-3 sm:pb-4 text-xs sm:text-sm text-muted-foreground dark:text-neutral-300 leading-relaxed">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const CallToActionSection = () => {
   const scrollToGenerator = () => {
     document.getElementById('readme-generator-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -391,7 +447,6 @@ export default function HomePage() {
               <NavLink href="#">Docs</NavLink>
             </nav>
             
-            {/* Desktop Auth Buttons & Theme Toggle */}
             <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
               {loggedInStatus ? (
                 <>
@@ -401,7 +456,7 @@ export default function HomePage() {
                       Dashboard
                     </Button>
                   </Link>
-                  <Button variant="destructive" onClick={handleLogout} className="text-xs sm:text-sm px-3 py-1.5 sm:px-4">
+                  <Button variant="destructive" onClick={handleLogout} className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90">
                     <LogOut className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Logout
                   </Button>
@@ -424,7 +479,6 @@ export default function HomePage() {
               <ThemeToggle />
             </div>
 
-            {/* Mobile Menu Trigger */}
             <div className="flex items-center md:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -443,7 +497,6 @@ export default function HomePage() {
                       <SheetClose asChild><NavLink href="/past-files" className="justify-start w-full py-2 h-auto">Past Files</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/explain-code" className="justify-start w-full py-2 h-auto">Explain Code</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/about" className="justify-start w-full py-2 h-auto">About Us</NavLink></SheetClose>
-                      {/* Placeholder Links from Desktop Nav */}
                       <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Templates</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Features</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Pricing</NavLink></SheetClose>
@@ -499,6 +552,7 @@ export default function HomePage() {
         <TrustedBySection />
         <HowItWorksSection />
         <TestimonialsSection />
+        <FAQSection />
         <CallToActionSection />
         <ReadmeGeneratorWrapper />
 
@@ -544,6 +598,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-    
