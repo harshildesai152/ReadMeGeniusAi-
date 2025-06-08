@@ -1,4 +1,3 @@
-
 // src/components/readme-generator.tsx
 "use client";
 
@@ -477,8 +476,12 @@ ${readmeItem.setupInstructions}
       const sortedCustomSections = [...editedCustomSections].sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-        return 0; // Maintain relative order for items with same pinned status
-      });
+        // Fallback to original order (or sort by ID if they are timestamps)
+        const aIdNum = parseInt(a.id, 10);
+        const bIdNum = parseInt(b.id, 10);
+        if (!isNaN(aIdNum) && !isNaN(bIdNum)) return aIdNum - bIdNum;
+        return 0;
+    });
 
       sortedCustomSections.forEach(section => {
         finalDescription += `\n\n## ${section.title}\n${section.content}\n`;
@@ -684,7 +687,7 @@ ${readmeItem.setupInstructions}
 
   if (!mounted) {
     return (
-      <div className="w-full max-w-3xl space-y-8">
+      <div className="w-full max-w-3xl space-y-8 mx-auto">
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="text-2xl sm:text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
@@ -715,7 +718,7 @@ ${readmeItem.setupInstructions}
     });
 
     return (
-      <Card className="w-full max-w-3xl shadow-xl space-y-4 sm:space-y-6 border hover:border-foreground transition-colors duration-200">
+      <Card className="w-full shadow-xl space-y-4 sm:space-y-6 border hover:border-foreground transition-colors duration-200">
         <CardHeader>
           <CardTitle className="text-xl sm:text-2xl font-bold text-center font-headline">Edit README Content</CardTitle>
           <CardDescription className="text-center text-xs sm:text-sm text-muted-foreground">
@@ -917,7 +920,7 @@ ${readmeItem.setupInstructions}
   }
 
   return (
-    <div className="w-full max-w-3xl space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       <Card className="shadow-xl border hover:border-foreground transition-colors duration-200">
         <CardHeader>
           <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-center font-headline">Generate Your README</CardTitle>
@@ -1106,4 +1109,3 @@ ${readmeItem.setupInstructions}
     </div>
   );
 }
-
