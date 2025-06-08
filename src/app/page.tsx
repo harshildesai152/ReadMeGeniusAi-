@@ -30,17 +30,17 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden rounded-xl shadow-2xl">
+    <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden rounded-xl shadow-2xl bg-neutral-800">
       <Image
         src="https://placehold.co/1600x800/3A3226/E0E0E0.png"
         alt="Abstract background for hero section"
         layout="fill"
         objectFit="cover"
         quality={80}
-        className="opacity-40 dark:opacity-60"
+        className="opacity-30 dark:opacity-40"
         data-ai-hint="dark gradient tech"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70 dark:from-black/50 dark:via-black/70 dark:to-black/80"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/80 dark:from-black/50 dark:via-black/70 dark:to-black/90"></div>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 z-10">
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 sm:mb-8 animate-fade-in-down">
           Generate README files using AI
@@ -51,7 +51,7 @@ const HeroSection = () => {
         <Button
           size="lg"
           onClick={scrollToGenerator}
-          className="bg-white text-neutral-900 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105 animate-bounce- λίγο"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105 animate-bounce- λίγο"
         >
           Generate Now
         </Button>
@@ -62,15 +62,15 @@ const HeroSection = () => {
 
 
 const FeatureCard: React.FC<{ icon: React.ElementType; title: string; description: string }> = ({ icon: Icon, title, description }) => (
-  <Card className="bg-neutral-50 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700/60 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl flex flex-col h-full">
+  <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl flex flex-col h-full">
     <CardHeader className="pb-4">
-      <div className="w-12 h-12 mb-3 rounded-lg bg-primary-foreground dark:bg-primary/20 text-primary dark:text-primary-foreground flex items-center justify-center">
+      <div className="w-12 h-12 mb-3 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground flex items-center justify-center">
         <Icon className="w-6 h-6" />
       </div>
-      <CardTitle className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">{title}</CardTitle>
+      <CardTitle className="text-lg font-semibold text-card-foreground dark:text-neutral-100">{title}</CardTitle>
     </CardHeader>
     <CardContent className="flex-grow">
-      <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+      <p className="text-sm text-muted-foreground dark:text-neutral-300 leading-relaxed">
         {description}
       </p>
     </CardContent>
@@ -78,11 +78,11 @@ const FeatureCard: React.FC<{ icon: React.ElementType; title: string; descriptio
 );
 
 const FeaturesSection = () => (
-  <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-neutral-900">
+  <section className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">Features</h2>
-        <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Features</h2>
+        <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-2xl mx-auto">
           Our AI-powered README generator offers a range of features to help you create professional and informative README files for your projects.
         </p>
       </div>
@@ -108,17 +108,17 @@ const FeaturesSection = () => (
 );
 
 const StatsCard: React.FC<{ title: string; value: string }> = ({ title, value }) => (
- <Card className="bg-neutral-50 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700/60 shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl p-6 text-center">
-    <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">{title}</p>
-    <p className="text-3xl font-bold text-neutral-900 dark:text-white">{value}</p>
+ <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl p-6 text-center">
+    <p className="text-sm text-muted-foreground dark:text-neutral-400 mb-1">{title}</p>
+    <p className="text-3xl font-bold text-card-foreground dark:text-white">{value}</p>
   </Card>
 );
 
 const TrustedBySection = () => (
-  <section className="py-16 sm:py-20 md:py-24 bg-neutral-100 dark:bg-neutral-950">
+  <section className="py-16 sm:py-20 md:py-24 bg-muted/50 dark:bg-neutral-900 text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">Trusted by developers worldwide</h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Trusted by developers worldwide</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         <StatsCard title="Projects Documented" value="10,000+" />
@@ -141,21 +141,21 @@ const HowItWorksStep: React.FC<{ icon: React.ElementType; title: string; descrip
       <div className="w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground flex items-center justify-center text-2xl font-bold">
         <Icon className="w-8 h-8" />
       </div>
-      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold border-2 border-background dark:border-neutral-900">
+      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold border-2 border-background dark:border-neutral-800">
         {step}
       </div>
     </div>
-    <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">{title}</h3>
-    <p className="text-sm text-neutral-600 dark:text-neutral-400">{description}</p>
+    <h3 className="text-lg font-semibold text-foreground dark:text-neutral-100 mb-2">{title}</h3>
+    <p className="text-sm text-muted-foreground dark:text-neutral-400">{description}</p>
   </div>
 );
 
 const HowItWorksSection = () => (
-  <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-neutral-900">
+  <section className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">How It Works</h2>
-        <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">How It Works</h2>
+        <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-xl mx-auto">
           Generating your README is simple and fast. Follow these three easy steps.
         </p>
       </div>
@@ -169,17 +169,17 @@ const HowItWorksSection = () => (
 );
 
 const TestimonialCard: React.FC<{ quote: string; name: string; role: string; avatarUrl?: string }> = ({ quote, name, role, avatarUrl }) => (
-  <Card className="bg-neutral-50 dark:bg-neutral-800/80 border-neutral-200 dark:border-neutral-700/60 shadow-lg rounded-xl p-6 flex flex-col h-full">
+  <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-lg rounded-xl p-6 flex flex-col h-full">
     <CardContent className="flex-grow pb-4">
-      <p className="text-neutral-600 dark:text-neutral-300 italic">&ldquo;{quote}&rdquo;</p>
+      <p className="text-muted-foreground dark:text-neutral-300 italic">&ldquo;{quote}&rdquo;</p>
     </CardContent>
-    <CardFooter className="pt-4 border-t border-neutral-200 dark:border-neutral-700/60">
+    <CardFooter className="pt-4 border-t border-border dark:border-neutral-700/60">
       <div className="flex items-center">
         {avatarUrl && <Image src={avatarUrl} alt={name} width={40} height={40} className="rounded-full mr-3" data-ai-hint="person" />}
-        {!avatarUrl && <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-600 flex items-center justify-center text-neutral-600 dark:text-neutral-300 mr-3 text-sm font-semibold">{name.substring(0,1)}</div>}
+        {!avatarUrl && <div className="w-10 h-10 rounded-full bg-muted dark:bg-neutral-600 flex items-center justify-center text-muted-foreground dark:text-neutral-300 mr-3 text-sm font-semibold">{name.substring(0,1)}</div>}
         <div>
-          <p className="font-semibold text-neutral-800 dark:text-neutral-100">{name}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{role}</p>
+          <p className="font-semibold text-card-foreground dark:text-neutral-100">{name}</p>
+          <p className="text-xs text-muted-foreground dark:text-neutral-400">{role}</p>
         </div>
       </div>
     </CardFooter>
@@ -187,11 +187,11 @@ const TestimonialCard: React.FC<{ quote: string; name: string; role: string; ava
 );
 
 const TestimonialsSection = () => (
-  <section className="py-16 sm:py-20 md:py-24 bg-neutral-100 dark:bg-neutral-950">
+  <section className="py-16 sm:py-20 md:py-24 bg-muted/50 dark:bg-neutral-900 text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">Loved by Developers</h2>
-        <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Loved by Developers</h2>
+        <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-xl mx-auto">
           Hear what our users are saying about ReadMeGenius.
         </p>
       </div>
@@ -245,7 +245,7 @@ const CallToActionSection = () => {
 };
 
 const ReadmeGeneratorWrapper = () => (
-  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-white dark:bg-neutral-900">
+  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <ReadmeGenerator />
     </div>
@@ -344,7 +344,7 @@ export default function HomePage() {
 
   if (!mounted) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-start bg-neutral-950 text-white">
+      <main className="flex min-h-screen flex-col items-center justify-start bg-background text-foreground">
         <div className="w-full h-screen flex items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
@@ -353,8 +353,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-950 text-white dark"> {/* Force dark theme context for this page */}
-      <header className="sticky top-0 z-50 w-full bg-neutral-950/80 backdrop-blur-md shadow-md">
+    <div className="min-h-screen flex flex-col bg-background text-foreground"> {/* Removed forced dark theme */}
+      <header className="sticky top-0 z-50 w-full bg-neutral-900/90 dark:bg-neutral-950/80 backdrop-blur-md shadow-md"> {/* Header remains dark */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Logo />
@@ -409,10 +409,9 @@ export default function HomePage() {
         <CallToActionSection />
         <ReadmeGeneratorWrapper />
 
-         {/* Explore More Tools Section - styled to fit the new dark theme */}
-        <section className="py-16 sm:py-20 bg-neutral-900 dark:bg-neutral-950">
+        <section className="py-16 sm:py-20 bg-background text-foreground">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-8 sm:mb-12 text-white dark:text-white">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-8 sm:mb-12 text-foreground dark:text-white">
               Discover More Tools
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
@@ -423,20 +422,20 @@ export default function HomePage() {
               ].map((tool) => (
                 <Link href={tool.href} passHref key={tool.title} legacyBehavior>
                   <a className="block">
-                    <Card className="bg-neutral-800 dark:bg-neutral-800 border-neutral-700 dark:border-neutral-700/80 hover:border-primary/70 dark:hover:border-primary/70 transition-all duration-300 cursor-pointer h-full flex flex-col group shadow-lg hover:shadow-primary/20">
+                    <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border transition-all duration-300 cursor-pointer h-full flex flex-col group shadow-lg hover:shadow-primary/20">
                       <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-3 text-lg sm:text-xl text-white dark:text-white">
+                        <CardTitle className="flex items-center gap-3 text-lg sm:text-xl text-card-foreground dark:text-white">
                           <tool.icon className="h-6 w-6 text-primary" />
                           {tool.title}
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="flex-grow pt-0">
-                        <p className="text-sm text-neutral-400 dark:text-neutral-400 group-hover:text-neutral-300 dark:group-hover:text-neutral-300 transition-colors">
+                        <p className="text-sm text-muted-foreground dark:text-neutral-300 group-hover:text-muted-foreground/80 dark:group-hover:text-neutral-300/80 transition-colors">
                           {tool.description}
                         </p>
                       </CardContent>
                        <CardFooter className="pt-4 mt-auto">
-                        <Button variant="link" className="text-primary p-0 h-auto group-hover:underline">
+                        <Button variant="link" className="text-primary dark:text-primary-foreground p-0 h-auto group-hover:underline">
                           Explore <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Button>
                       </CardFooter>
@@ -448,8 +447,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <Footer />
+      <Footer /> {/* Footer remains dark styled */}
     </div>
   );
 }
-
