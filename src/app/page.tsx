@@ -52,7 +52,7 @@ const HeroSection = () => {
           <Button
             size="lg"
             onClick={scrollToGenerator}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-white dark:text-black dark:hover:bg-neutral-200 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
           >
             Generate Now
           </Button>
@@ -99,18 +99,18 @@ const FeaturesSection = () => (
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         <FeatureCard
-          icon={Sparkles}
-          title="AI-Powered Generation"
+          icon={FileText}
+          title="Automated Generation"
           description="Leverage advanced AI to automatically create engaging and informative content tailored for your README."
         />
         <FeatureCard
-          icon={Settings}
-          title="Customizable Templates"
+          icon={Cpu}
+          title="AI-Powered Content"
           description="Choose from a variety of professionally designed templates to perfectly match your project's unique style and needs."
         />
         <FeatureCard
-          icon={Github}
-          title="GitHub Integration"
+          icon={ShieldCheck}
+          title="Customizable Templates"
           description="Seamlessly connect with your GitHub repositories to fetch project details and generate READMEs instantly."
         />
       </div>
@@ -268,11 +268,11 @@ const ReadmeGeneratorWrapper = () => (
 
 const FooterLinkColumn: React.FC<{ title: string; links: Array<{ href: string; label: string }> }> = ({ title, links }) => (
   <div>
-    <h3 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-4">{title}</h3>
+    <h3 className="text-sm font-semibold text-muted-foreground/80 dark:text-muted-foreground/70 uppercase tracking-wider mb-4">{title}</h3>
     <ul className="space-y-3">
       {links.map(link => (
         <li key={link.label}>
-          <Link href={link.href} className="text-base text-neutral-300 hover:text-white transition-colors">
+          <Link href={link.href} className="text-base text-muted-foreground hover:text-primary transition-colors">
             {link.label}
           </Link>
         </li>
@@ -282,18 +282,18 @@ const FooterLinkColumn: React.FC<{ title: string; links: Array<{ href: string; l
 );
 
 const Footer = () => (
-  <footer className="bg-neutral-900 dark:bg-black text-neutral-300 py-16 sm:py-20">
+  <footer className="bg-secondary dark:bg-neutral-900 text-secondary-foreground dark:text-neutral-300 py-16 sm:py-20">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 mb-12">
         <div className="md:col-span-2 lg:col-span-1">
           <Logo />
-          <p className="mt-4 text-sm text-neutral-400 leading-relaxed">
+          <p className="mt-4 text-sm text-muted-foreground dark:text-neutral-400 leading-relaxed">
             AI-powered README generation to streamline your development workflow and create professional project documentation effortlessly.
           </p>
           <div className="flex space-x-5 mt-6">
-            <Link href="#" className="text-neutral-400 hover:text-white"><Github className="w-5 h-5" /></Link>
-            <Link href="#" className="text-neutral-400 hover:text-white"><Twitter className="w-5 h-5" /></Link>
-            <Link href="#" className="text-neutral-400 hover:text-white"><Linkedin className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Github className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
           </div>
         </div>
         <FooterLinkColumn title="Product" links={[
@@ -315,7 +315,7 @@ const Footer = () => (
           { href: "#", label: "Contact Us" },
         ]} />
       </div>
-      <div className="border-t border-neutral-700/50 pt-8 text-center text-sm text-neutral-500">
+      <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground dark:text-neutral-500">
         <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved. Powered by AI magic ✨</p>
       </div>
     </div>
@@ -402,7 +402,7 @@ export default function HomePage() {
                   </Link>
                   <Button
                     onClick={scrollToGenerator}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 py-1.5 sm:px-4 rounded-md"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 py-1.5 sm:px-4 rounded-md dark:bg-white dark:text-black dark:hover:bg-neutral-200"
                   >
                     Get Started
                   </Button>
@@ -465,3 +465,4 @@ export default function HomePage() {
     </div>
   );
 }
+
