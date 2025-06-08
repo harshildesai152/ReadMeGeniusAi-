@@ -43,11 +43,12 @@ const HeroSection = () => {
       <Image
         src="https://placehold.co/1600x800/3A3226/E0E0E0.png"
         alt="Abstract background for hero section"
-        layout="fill"
+        fill // Changed from layout="fill" to fill for Next 13+
         objectFit="cover"
         quality={80}
         className="opacity-30 dark:opacity-40"
         data-ai-hint="dark gradient tech"
+        priority // Added priority for LCP element
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/80 dark:from-black/50 dark:via-black/70 dark:to-black/90"></div>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 z-10">
@@ -291,7 +292,7 @@ const FooterLinkColumn: React.FC<{ title: string; links: Array<{ href: string; l
 );
 
 const Footer = () => (
-  <footer className="bg-secondary dark:bg-neutral-900 text-secondary-foreground dark:text-neutral-300 py-16 sm:py-20">
+  <footer className="bg-secondary dark:bg-neutral-800 text-secondary-foreground dark:text-neutral-300 py-16 sm:py-20">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 mb-12">
         <div className="md:col-span-2 lg:col-span-1">
@@ -300,9 +301,9 @@ const Footer = () => (
             AI-powered README generation to streamline your development workflow and create professional project documentation effortlessly.
           </p>
           <div className="flex space-x-5 mt-6">
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Github className="w-5 h-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-primary-foreground"><Github className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-primary-foreground"><Twitter className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-primary-foreground"><Linkedin className="w-5 h-5" /></Link>
           </div>
         </div>
         <FooterLinkColumn title="Product" links={[
@@ -319,12 +320,12 @@ const Footer = () => (
         ]} />
         <FooterLinkColumn title="Company" links={[
           { href: "#", label: "Careers" },
-          { href: "#", label: "Privacy Policy" },
-          { href: "#", label: "Terms of Service" },
+          { href: "/privacy-policy", label: "Privacy Policy" },
+          { href: "/terms-of-service", label: "Terms of Service" },
           { href: "#", label: "Contact Us" },
         ]} />
       </div>
-      <div className="border-t border-border dark:border-neutral-700/60 pt-8 text-center text-sm text-muted-foreground dark:text-neutral-500">
+      <div className="border-t border-border dark:border-neutral-700 pt-8 text-center text-sm text-muted-foreground dark:text-neutral-500">
         <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved. Powered by AI magic ✨</p>
       </div>
     </div>
@@ -432,7 +433,7 @@ export default function HomePage() {
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
+                <SheetContent side="left" className="w-[300px] p-0 flex flex-col bg-background">
                   <SheetHeader className="p-4 border-b">
                     <SheetTitle><SheetClose asChild><Logo /></SheetClose></SheetTitle>
                   </SheetHeader>
