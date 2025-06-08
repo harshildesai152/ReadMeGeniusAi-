@@ -62,7 +62,7 @@ const HeroSection = () => {
 
 
 const FeatureCard: React.FC<{ icon: React.ElementType; title: string; description: string }> = ({ icon: Icon, title, description }) => (
-  <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl flex flex-col h-full">
+  <Card className="bg-slate-100 dark:bg-neutral-800 hover:border-primary/50 border-border shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl flex flex-col h-full">
     <CardHeader className="pb-4">
       <div className="w-12 h-12 mb-3 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground flex items-center justify-center">
         <Icon className="w-6 h-6" />
@@ -108,7 +108,7 @@ const FeaturesSection = () => (
 );
 
 const StatsCard: React.FC<{ title: string; value: string }> = ({ title, value }) => (
- <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl p-6 text-center">
+ <Card className="bg-slate-100 dark:bg-neutral-800 hover:border-primary/50 border-border shadow-md hover:shadow-lg transition-shadow duration-300 rounded-xl p-6 text-center">
     <p className="text-sm text-muted-foreground dark:text-neutral-400 mb-1">{title}</p>
     <p className="text-3xl font-bold text-card-foreground dark:text-white">{value}</p>
   </Card>
@@ -169,7 +169,7 @@ const HowItWorksSection = () => (
 );
 
 const TestimonialCard: React.FC<{ quote: string; name: string; role: string; avatarUrl?: string }> = ({ quote, name, role, avatarUrl }) => (
-  <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border shadow-lg rounded-xl p-6 flex flex-col h-full">
+  <Card className="bg-slate-100 dark:bg-neutral-800 hover:border-primary/50 border-border shadow-lg rounded-xl p-6 flex flex-col h-full">
     <CardContent className="flex-grow pb-4">
       <p className="text-muted-foreground dark:text-neutral-300 italic">&ldquo;{quote}&rdquo;</p>
     </CardContent>
@@ -245,7 +245,7 @@ const CallToActionSection = () => {
 };
 
 const ReadmeGeneratorWrapper = () => (
-  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
+  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-slate-100 dark:bg-neutral-800 text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <ReadmeGenerator />
     </div>
@@ -353,8 +353,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground"> {/* Removed forced dark theme */}
-      <header className="sticky top-0 z-50 w-full bg-neutral-900/90 dark:bg-neutral-950/80 backdrop-blur-md shadow-md"> {/* Header remains dark */}
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-50 w-full bg-neutral-900/90 dark:bg-neutral-950/80 backdrop-blur-md shadow-md">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Logo />
@@ -422,7 +422,7 @@ export default function HomePage() {
               ].map((tool) => (
                 <Link href={tool.href} passHref key={tool.title} legacyBehavior>
                   <a className="block">
-                    <Card className="bg-card hover:border-primary/50 dark:bg-neutral-800 dark:hover:border-primary/70 border-border transition-all duration-300 cursor-pointer h-full flex flex-col group shadow-lg hover:shadow-primary/20">
+                    <Card className="bg-slate-100 dark:bg-neutral-800 hover:border-primary/50 border-border transition-all duration-300 cursor-pointer h-full flex flex-col group shadow-lg hover:shadow-primary/20">
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3 text-lg sm:text-xl text-card-foreground dark:text-white">
                           <tool.icon className="h-6 w-6 text-primary" />
@@ -447,7 +447,8 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <Footer /> {/* Footer remains dark styled */}
+      <Footer />
     </div>
   );
 }
+
