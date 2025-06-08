@@ -9,7 +9,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Files, FileCode, Info, LayoutDashboard, LogIn, LogOut, UserPlus, Github, Twitter, Linkedin, ArrowRight, Sparkles, FileText, Cpu, ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2 } from 'lucide-react';
+import { 
+  Files, FileCode, Info, LayoutDashboard, LogIn, LogOut, UserPlus, 
+  Github, Twitter, Linkedin, ArrowRight, Sparkles, FileText, Cpu, 
+  ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2, Menu 
+} from 'lucide-react';
+import { 
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose 
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -56,7 +65,7 @@ const HeroSection = () => {
           >
             Generate Now
           </Button>
-           <Link href="/#templates" passHref>
+           <Link href="/#templates" passHref> {/* Changed to /#templates to avoid error for non-existing page */}
             <Button
               size="lg"
               variant="outline"
@@ -239,7 +248,7 @@ const CallToActionSection = () => {
   };
   return (
     <section className="py-20 sm:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-indigo-700 to-blue-800 opacity-90 dark:opacity-100"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/90 to-primary opacity-90 dark:opacity-100"></div>
       <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">Ready to Create Perfect README Files?</h2>
@@ -291,9 +300,9 @@ const Footer = () => (
             AI-powered README generation to streamline your development workflow and create professional project documentation effortlessly.
           </p>
           <div className="flex space-x-5 mt-6">
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Github className="w-5 h-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary dark:text-neutral-400 dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Github className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
           </div>
         </div>
         <FooterLinkColumn title="Product" links={[
@@ -315,7 +324,7 @@ const Footer = () => (
           { href: "#", label: "Contact Us" },
         ]} />
       </div>
-      <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground dark:text-neutral-500">
+      <div className="border-t border-border dark:border-neutral-700/60 pt-8 text-center text-sm text-muted-foreground dark:text-neutral-500">
         <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved. Powered by AI magic ✨</p>
       </div>
     </div>
@@ -326,6 +335,7 @@ const Footer = () => (
 export default function HomePage() {
   const [loggedInStatus, setLoggedInStatusState] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -349,11 +359,11 @@ export default function HomePage() {
     setAuthLoggedIn(false); 
     setLoggedInStatusState(false);
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    // router.push('/'); // Already on home
   };
 
   const scrollToGenerator = () => {
     document.getElementById('readme-generator-section')?.scrollIntoView({ behavior: 'smooth' });
+    if (isMobileMenuOpen) setIsMobileMenuOpen(false);
   };
 
   if (!mounted) {
@@ -372,14 +382,16 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Logo />
-            <nav className="hidden md:flex items-center space-x-2 lg:space-x-3">
+            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               <NavLink href="/">Home</NavLink>
               <NavLink href="#">Templates</NavLink>
               <NavLink href="#">Features</NavLink>
               <NavLink href="#">Pricing</NavLink>
               <NavLink href="#">Docs</NavLink>
             </nav>
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            
+            {/* Desktop Auth Buttons & Theme Toggle */}
+            <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
               {loggedInStatus ? (
                 <>
                   <Link href="/dashboard" passHref>
@@ -409,6 +421,72 @@ export default function HomePage() {
                 </>
               )}
               <ThemeToggle />
+            </div>
+
+            {/* Mobile Menu Trigger */}
+            <div className="flex items-center md:hidden">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
+                  <SheetHeader className="p-4 border-b">
+                    <SheetTitle><SheetClose asChild><Logo /></SheetClose></SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="flex-1">
+                    <nav className="grid gap-1 p-4">
+                      <SheetClose asChild><NavLink href="/" className="justify-start w-full py-2 h-auto">Home</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/past-files" className="justify-start w-full py-2 h-auto">Past Files</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/explain-code" className="justify-start w-full py-2 h-auto">Explain Code</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/about" className="justify-start w-full py-2 h-auto">About Us</NavLink></SheetClose>
+                      {/* Placeholder Links from Desktop Nav */}
+                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Templates</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Features</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Pricing</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Docs</NavLink></SheetClose>
+                    </nav>
+                  </ScrollArea>
+                  <div className="mt-auto border-t p-4">
+                    <div className="flex flex-col gap-2">
+                        {loggedInStatus ? (
+                          <>
+                            <SheetClose asChild>
+                              <Link href="/dashboard" passHref>
+                                <Button variant="outline" className="w-full justify-start">
+                                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                                </Button>
+                              </Link>
+                            </SheetClose>
+                            <Button variant="destructive" onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full justify-start">
+                              <LogOut className="mr-2 h-4 w-4" /> Logout
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <SheetClose asChild>
+                              <Link href="/auth/login" passHref>
+                                <Button variant="ghost" className="w-full justify-start">
+                                  Sign In
+                                </Button>
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                              <Button onClick={scrollToGenerator} className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/90">
+                                Get Started
+                              </Button>
+                            </SheetClose>
+                          </>
+                        )}
+                        <div className="pt-4 flex justify-start">
+                            <ThemeToggle />
+                        </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
@@ -466,3 +544,5 @@ export default function HomePage() {
   );
 }
 
+
+    
