@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Files, FileCode, Info, LayoutDashboard, LogIn, LogOut, UserPlus, Github, Twitter, Linkedin, ArrowRight, Sparkles, FileText, Cpu, ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2 } from 'lucide-react';
 import { isLoggedIn, setLoggedIn as setAuthLoggedIn } from '@/lib/auth/storage';
 import { useRouter } from 'next/navigation';
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 const NavLink: React.FC<{ href: string; children: React.ReactNode; className?: string }> = ({ href, children, className }) => (
   <Link href={href} passHref>
-    <Button variant="ghost" className={cn("text-sm sm:text-base text-neutral-300 hover:text-white hover:bg-neutral-700/50", className)}>
+    <Button variant="ghost" className={cn("text-sm sm:text-base text-muted-foreground hover:text-foreground hover:bg-accent", className)}>
       {children}
     </Button>
   </Link>
@@ -52,7 +52,7 @@ const HeroSection = () => {
           <Button
             size="lg"
             onClick={scrollToGenerator}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-white dark:text-black dark:hover:bg-neutral-200 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
           >
             Generate Now
           </Button>
@@ -368,7 +368,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-50 w-full bg-neutral-900/90 dark:bg-neutral-950/80 backdrop-blur-md shadow-md">
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Logo />
@@ -383,12 +383,12 @@ export default function HomePage() {
               {loggedInStatus ? (
                 <>
                   <Link href="/dashboard" passHref>
-                    <Button variant="outline" className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white">
+                    <Button variant="outline" className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 border-border text-foreground hover:bg-accent">
                       <LayoutDashboard className="mr-1.5 sm:mr-2 h-4 w-4" />
                       Dashboard
                     </Button>
                   </Link>
-                  <Button variant="destructive" onClick={handleLogout} className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 bg-red-600 hover:bg-red-700 text-white">
+                  <Button variant="destructive" onClick={handleLogout} className="text-xs sm:text-sm px-3 py-1.5 sm:px-4">
                     <LogOut className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Logout
                   </Button>
@@ -396,13 +396,13 @@ export default function HomePage() {
               ) : (
                 <>
                   <Link href="/auth/login" passHref>
-                    <Button variant="ghost" className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 text-neutral-300 hover:text-white hover:bg-neutral-700/50">
+                    <Button variant="ghost" className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 text-muted-foreground hover:text-foreground">
                       Sign In
                     </Button>
                   </Link>
                   <Button
                     onClick={scrollToGenerator}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 py-1.5 sm:px-4 rounded-md dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 py-1.5 sm:px-4 rounded-md"
                   >
                     Get Started
                   </Button>
