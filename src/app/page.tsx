@@ -30,7 +30,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden rounded-xl shadow-2xl bg-neutral-800">
+    <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden bg-neutral-800 dark:bg-neutral-900 rounded-xl shadow-2xl">
       <Image
         src="https://placehold.co/1600x800/3A3226/E0E0E0.png"
         alt="Abstract background for hero section"
@@ -48,13 +48,24 @@ const HeroSection = () => {
         <p className="text-lg sm:text-xl md:text-2xl text-neutral-200 dark:text-neutral-300 max-w-3xl mx-auto mb-8 sm:mb-10 animate-fade-in-up">
           Create comprehensive and professional README files for your projects in seconds with our AI-powered generator. Simply provide a brief description of your project, and let our AI handle the rest.
         </p>
-        <Button
-          size="lg"
-          onClick={scrollToGenerator}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105 animate-bounce- λίγο"
-        >
-          Generate Now
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            size="lg"
+            onClick={scrollToGenerator}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+          >
+            Generate Now
+          </Button>
+           <Link href="/#templates" passHref>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-white border-neutral-400 hover:bg-neutral-700/50 hover:text-white dark:text-neutral-200 dark:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-white text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+            >
+              View Templates
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -81,26 +92,26 @@ const FeaturesSection = () => (
   <section className="py-16 sm:py-20 md:py-24 bg-background text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Features</h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Powerful Features</h2>
         <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-2xl mx-auto">
           Our AI-powered README generator offers a range of features to help you create professional and informative README files for your projects.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         <FeatureCard
-          icon={FileText}
-          title="Automated Generation"
-          description="Generate README files automatically based on your project description."
+          icon={Sparkles}
+          title="AI-Powered Generation"
+          description="Leverage advanced AI to automatically create engaging and informative content tailored for your README."
         />
         <FeatureCard
-          icon={Cpu}
-          title="AI-Powered Content"
-          description="Leverage AI to create engaging and informative content for your README."
-        />
-        <FeatureCard
-          icon={ShieldCheck}
+          icon={Settings}
           title="Customizable Templates"
-          description="Choose from a variety of templates to match your project's style."
+          description="Choose from a variety of professionally designed templates to perfectly match your project's unique style and needs."
+        />
+        <FeatureCard
+          icon={Github}
+          title="GitHub Integration"
+          description="Seamlessly connect with your GitHub repositories to fetch project details and generate READMEs instantly."
         />
       </div>
     </div>
@@ -160,9 +171,9 @@ const HowItWorksSection = () => (
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-        <HowItWorksStep icon={Github} title="Connect Repository" description="Provide a GitHub URL, paste code, or describe your project." step={1} />
+        <HowItWorksStep icon={Combine} title="Connect Repository" description="Provide a GitHub URL, paste code, or describe your project." step={1} />
         <HowItWorksStep icon={Settings} title="Customize Options" description="Optionally refine sections or add more details." step={2} />
-        <HowItWorksStep icon={ArrowRight} title="Generate & Export" description="Get your professional README in seconds. Copy or download." step={3} />
+        <HowItWorksStep icon={FileText} title="Generate & Export" description="Get your professional README in seconds. Copy or download." step={3} />
       </div>
     </div>
   </section>
@@ -175,8 +186,11 @@ const TestimonialCard: React.FC<{ quote: string; name: string; role: string; ava
     </CardContent>
     <CardFooter className="pt-4 border-t border-border dark:border-neutral-700/60">
       <div className="flex items-center">
-        {avatarUrl && <Image src={avatarUrl} alt={name} width={40} height={40} className="rounded-full mr-3" data-ai-hint="person" />}
-        {!avatarUrl && <div className="w-10 h-10 rounded-full bg-muted dark:bg-neutral-600 flex items-center justify-center text-muted-foreground dark:text-neutral-300 mr-3 text-sm font-semibold">{name.substring(0,1)}</div>}
+        {avatarUrl ? (
+          <Image src={avatarUrl} alt={name} width={40} height={40} className="rounded-full mr-3" data-ai-hint="person" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-muted dark:bg-neutral-600 flex items-center justify-center text-muted-foreground dark:text-neutral-300 mr-3 text-sm font-semibold">{name.substring(0,1)}</div>
+        )}
         <div>
           <p className="font-semibold text-card-foreground dark:text-neutral-100">{name}</p>
           <p className="text-xs text-muted-foreground dark:text-neutral-400">{role}</p>
@@ -245,7 +259,7 @@ const CallToActionSection = () => {
 };
 
 const ReadmeGeneratorWrapper = () => (
-  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-slate-100 dark:bg-neutral-800 text-foreground">
+  <section id="readme-generator-section" className="py-16 sm:py-20 md:py-24 bg-muted/50 dark:bg-neutral-900 text-foreground">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <ReadmeGenerator />
     </div>
@@ -451,4 +465,3 @@ export default function HomePage() {
     </div>
   );
 }
-
