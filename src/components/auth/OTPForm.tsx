@@ -21,6 +21,7 @@ export function OTPForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
 
@@ -45,6 +46,7 @@ export function OTPForm() {
   const onSubmit = async (data: OTPFormData) => {
     setIsLoading(true);
     setError(null);
+    setInfoMessage(null);
 
     if (!email) {
       setError("Email not available for verification.");
@@ -55,7 +57,7 @@ export function OTPForm() {
     const pendingOtpData = getPendingOTP();
 
     if (!pendingOtpData || pendingOtpData.email.toLowerCase() !== email.toLowerCase()) {
-      setError("No pending OTP found for this email or OTP might have expired. Please try signing up again.");
+      setError("No pending OTP found for this email or OTP might have expired. Please try signing up again or resend OTP.");
       setIsLoading(false);
       return;
     }
@@ -81,9 +83,11 @@ export function OTPForm() {
     if (email) {
         const newOtp = generateOTP(); // Logs to console
         setPendingOTP(email, newOtp); // Resets OTP with new expiry
-        setError(`New OTP (mock: ${newOtp}) re-logged to console. Expiry refreshed.`);
+        setError(null); // Clear previous errors
+        setInfoMessage(`A new OTP has been 'sent' to ${email}. (For this demo, check your browser console for the new OTP: ${newOtp}). Expiry has been refreshed.`);
     } else {
         setError("Email not available to resend OTP.");
+        setInfoMessage(null);
     }
   };
 
@@ -93,7 +97,8 @@ export function OTPForm() {
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Enter OTP</CardTitle>
         <CardDescription>
-          An OTP has been sent to your console (for this demo) for email: <strong>{email || "loading..."}</strong>. Please enter it below.
+          An OTP has been sent to your email address: <strong>{email || "loading..."}</strong>. 
+          Please enter it below. (For this demo, check your browser console for the OTP).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -102,6 +107,12 @@ export function OTPForm() {
             <AlertTitle>OTP Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+        {infoMessage && (
+            <Alert variant="default" className="mb-4 bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
+                <AlertTitle>Information</AlertTitle>
+                <AlertDescription>{infoMessage}</AlertDescription>
+            </Alert>
         )}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -125,7 +136,7 @@ export function OTPForm() {
       </CardContent>
       <CardFooter className="flex flex-col items-center text-sm">
          <Button variant="link" onClick={handleResendOtp} disabled={isLoading || !email}>
-            Resend OTP (Mock)
+            Resend OTP
         </Button>
       </CardFooter>
     </Card>
