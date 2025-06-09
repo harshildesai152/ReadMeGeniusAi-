@@ -5,7 +5,7 @@ ReadMeGenius is a **Next.js** application that leverages **AI** (specifically **
 
 > **Core Functionality**: Generate comprehensive READMEs including project name, description, features, technologies used, setup instructions, and folder structure.
 
-The application also features a theme toggle for light/dark mode preferences and allows users to save, view, download, and delete their generated READMEs using browser `localStorage` (user-specific). An authentication system (mock, `localStorage`-based) is included, requiring users to log in to access generation features.
+The application also features a theme toggle for light/dark mode preferences and allows users to save, view, download, and delete their generated READMEs using browser `localStorage` (user-specific). An authentication system (mock, `localStorage`-based) is included, requiring users to log in to access generation features. OTPs are "sent" via email using Nodemailer with Ethereal.email for testing.
 
 ---
 
@@ -20,6 +20,7 @@ The application also features a theme toggle for light/dark mode preferences and
 *   **State Management**: React Hooks (`useState`, `useEffect`), `localStorage` for persistence
 *   **Forms**: React Hook Form with Zod for validation
 *   **Password Hashing**: `bcryptjs` (for mock authentication)
+*   **Emailing**: `nodemailer` (with Ethereal.email for OTP testing)
 *   **Linting/Formatting**: Standard Next.js setup (ESLint, Prettier implied)
 *   **Deployment**: Configured for Firebase App Hosting (see `apphosting.yaml`)
 
@@ -48,7 +49,7 @@ The application also features a theme toggle for light/dark mode preferences and
 *   ✨ **User-Friendly Interface**: Clean and intuitive UI for easy interaction.
 *   🔑 **Mock Authentication System**:
     *   Signup with full name, email, password, phone.
-    *   OTP verification (<u>logged to console</u>).
+    *   OTP verification (sent to an Ethereal.email test inbox; check server console for preview link and OTP).
     *   Login with email and password.
     *   Password hashing using `bcryptjs`.
     *   Mock "Continue with Google" option.
@@ -109,6 +110,20 @@ To run this project locally:
         GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY
         ```
     *   Obtain an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   **OTP Email Sending (Optional for Local Development)**:
+        This project uses `nodemailer` with `Ethereal.email` for testing OTP email sending. No specific environment variables are strictly required for Ethereal as it generates test accounts on the fly. When you sign up, the OTP and a link to preview the email on Ethereal will be logged to your **server console** (the terminal where you run `npm run dev`).
+        
+        If you wish to use your own SMTP provider (e.g., Gmail, SendGrid) for sending OTP emails, you would typically set environment variables like:
+        ```env
+        # Example SMTP (e.g., for Gmail - ensure you have an App Password if using 2FA)
+        # SMTP_HOST=smtp.gmail.com
+        # SMTP_PORT=587
+        # SMTP_SECURE=false # true for 465, false for other ports
+        # SMTP_USER=your-email@gmail.com
+        # SMTP_PASS=your-gmail-app-password 
+        # SMTP_FROM_EMAIL="ReadMeGenius <no-reply@example.com>"
+        ```
+        And then modify `src/lib/email.ts` to use these variables instead of `nodemailer.createTestAccount()`.
 
 4.  **Run the development server for Next.js**:
     ```bash
@@ -117,6 +132,7 @@ To run this project locally:
     # yarn dev
     ```
     The application will typically be available at `http://localhost:9002`.
+    When you sign up, check the **terminal running `npm run dev`** for the OTP and the Ethereal email preview link.
 
 5.  **Run the Genkit development server** (<u>in a separate terminal</u>):
     This allows you to inspect and test your Genkit flows.
@@ -149,6 +165,7 @@ To run this project locally:
 *   `src/lib/`: Contains utility functions and server actions.
     *   `src/lib/actions.ts`: Server actions that orchestrate AI flow calls.
     *   `src/lib/auth/`: Authentication helper functions (storage, password, otp).
+    *   `src/lib/email.ts`: Nodemailer setup for sending emails.
     *   `src/lib/schemas/`: Zod validation schemas.
 *   `public/`: Static assets.
 
@@ -159,6 +176,7 @@ To run this project locally:
 *   **Styling**: Modify Tailwind CSS classes and `src/app/globals.css` for theme adjustments.
 *   **AI Prompts**: Adjust the prompts within the files in `src/ai/flows/` to change the AI's behavior and output style.
 *   **ShadCN UI**: Add or customize components from `shadcn/ui` as needed.
+*   **Email Transport**: To use a real email provider instead of Ethereal, update `src/lib/email.ts` with your SMTP server details and credentials (ideally from environment variables).
 
 ---
 

@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 import { otpSchema, type OTPFormData } from "@/lib/schemas/auth";
 import { getPendingOTP, getUserByEmail, updateUser, clearPendingOTP, setPendingOTP } from "@/lib/auth/storage";
 import type { User } from "@/lib/auth/storage";
-import { generateOTP } from "@/lib/auth/otp";
+import { generateOTPAndSendEmail } from "@/lib/auth/otp"; // Updated import
 
 
 export function OTPForm() {
@@ -29,10 +29,9 @@ export function OTPForm() {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) {
       setEmail(decodeURIComponent(emailFromQuery));
+      setInfoMessage(`An OTP has been sent to ${decodeURIComponent(emailFromQuery)}. (Using Ethereal for demo - check server console for email preview link & OTP).`);
     } else {
       setError("Email not provided for OTP verification.");
-      // Optionally redirect if email is missing
-      // router.push('/auth/signup'); 
     }
   }, [searchParams, router]);
 
@@ -68,7 +67,6 @@ export function OTPForm() {
         const updatedUser: User = { ...user, verified: true };
         updateUser(updatedUser);
         clearPendingOTP();
-        // Successfully verified, redirect to login
         router.push("/auth/login?verified=true");
       } else {
         setError("User not found. Please try signing up again.");
@@ -79,12 +77,20 @@ export function OTPForm() {
     setIsLoading(false);
   };
   
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     if (email) {
-        const newOtp = generateOTP(); // Logs to console
-        setPendingOTP(email, newOtp); // Resets OTP with new expiry
-        setError(null); // Clear previous errors
-        setInfoMessage(`A new OTP has been 'sent' to ${email}. (For this demo, check your browser console for the new OTP: ${newOtp}). Expiry has been refreshed.`);
+        setIsLoading(true);
+        setError(null);
+        try {
+            const newOtp = await generateOTPAndSendEmail(email); 
+            setPendingOTP(email, newOtp); 
+            setInfoMessage(`A new OTP has been sent to ${email}. (Check Ethereal email preview link & OTP in server console).`);
+        } catch (e: any) {
+            console.error("Resend OTP Error:", e);
+            setError("Failed to resend OTP. Please try again shortly.");
+        } finally {
+            setIsLoading(false);
+        }
     } else {
         setError("Email not available to resend OTP.");
         setInfoMessage(null);
@@ -98,7 +104,8 @@ export function OTPForm() {
         <CardTitle className="text-2xl font-bold">Enter OTP</CardTitle>
         <CardDescription>
           An OTP has been sent to your email address: <strong>{email || "loading..."}</strong>. 
-          Please enter it below. (For this demo, check your browser console for the OTP).
+          Please check your inbox and enter it below.
+          (For this demo, emails are sent via Ethereal. Check your server console for the email preview link and the OTP itself).
         </CardDescription>
       </CardHeader>
       <CardContent>

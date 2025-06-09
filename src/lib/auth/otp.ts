@@ -1,6 +1,14 @@
-export function generateOTP(): string {
+
+import { sendOtpEmail } from '@/lib/email';
+
+export async function generateOTPAndSendEmail(email: string): Promise<string> {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  // As per spec, log to console. In a real app, this would be sent via SMS/email.
-  console.log(`Generated OTP for user: ${otp}`);
+  
+  // Send the OTP via email
+  await sendOtpEmail(email, otp);
+  
+  // Log to console for easy access during development with Ethereal
+  console.log(`OTP for ${email}: ${otp} (Email sent via Ethereal, check console for preview URL)`);
+  
   return otp;
 }

@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signupSchema, type SignupFormData } from "@/lib/schemas/auth";
 import { hashPasswordSync } from "@/lib/auth/password";
-import { generateOTP } from "@/lib/auth/otp";
+import { generateOTPAndSendEmail } from "@/lib/auth/otp"; // Updated import
 import { addUser, setPendingOTP, getUserByEmail } from "@/lib/auth/storage";
 import type { User } from "@/lib/auth/storage";
 
@@ -47,25 +47,26 @@ export function SignupForm() {
       }
 
       const hashedPassword = hashPasswordSync(data.password);
-      const otp = generateOTP(); // OTP is logged to console by this function
+      // Generate OTP and send it via email
+      const otp = await generateOTPAndSendEmail(data.email); 
 
       const newUser: User = {
-        id: Date.now().toString(), // Simple ID for mock
+        id: Date.now().toString(), 
         fullName: data.fullName,
         email: data.email,
         hashedPassword: hashedPassword,
         phone: data.phone,
-        verified: false, // User is not verified yet
+        verified: false, 
         provider: 'email',
       };
 
       addUser(newUser);
       setPendingOTP(data.email, otp);
 
-      // Navigate to OTP page, passing email as query param
       router.push(`/auth/otp?email=${encodeURIComponent(data.email)}`);
     } catch (e: any) {
-      setError(e.message || "An unexpected error occurred during signup.");
+      console.error("Signup Error:", e);
+      setError(e.message || "An unexpected error occurred during signup. Check console for details.");
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +76,7 @@ export function SignupForm() {
     <Card className="w-full max-w-md shadow-xl">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-        <CardDescription>Enter your details to sign up.</CardDescription>
+        <CardDescription>Enter your details to sign up. An OTP will be sent to your email for verification.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
