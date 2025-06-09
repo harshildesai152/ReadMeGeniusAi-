@@ -67,7 +67,7 @@ const HeroSection = () => {
           >
             Generate Now
           </Button>
-           <Link href="/#templates" passHref>
+           <Link href="/templates" passHref>
             <Button
               size="lg"
               variant="outline"
@@ -363,19 +363,19 @@ const Footer = () => (
           </div>
         </div>
         <FooterLinkColumn title="Product" links={[
-          { href: "#", label: "Templates" },
+          { href: "/templates", label: "Templates" },
           { href: "#", label: "Features" },
-          { href: "#", label: "Pricing" },
+          { href: "/pricing", label: "Pricing" },
           { href: "/explain-code", label: "Explain Code" },
         ]} />
         <FooterLinkColumn title="Resources" links={[
-          { href: "#", label: "Documentation" },
+          { href: "/docs", label: "Documentation" },
           { href: "/about", label: "About Us" },
-          { href: "#", label: "Blog" },
+          { href: "/blog", label: "Blog" },
           { href: "#", label: "Support" },
         ]} />
         <FooterLinkColumn title="Company" links={[
-          { href: "#", label: "Careers" },
+          { href: "/careers", label: "Careers" },
           { href: "/privacy-policy", label: "Privacy Policy" },
           { href: "/terms-of-service", label: "Terms of Service" },
           { href: "#", label: "Contact Us" },
@@ -441,10 +441,10 @@ export default function HomePage() {
             <Logo />
             <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               <NavLink href="/">Home</NavLink>
-              <NavLink href="#">Templates</NavLink>
+              <NavLink href="/templates">Templates</NavLink>
               <NavLink href="#">Features</NavLink>
-              <NavLink href="#">Pricing</NavLink>
-              <NavLink href="#">Docs</NavLink>
+              <NavLink href="/pricing">Pricing</NavLink>
+              <NavLink href="/docs">Docs</NavLink>
             </nav>
             
             <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
@@ -497,10 +497,12 @@ export default function HomePage() {
                       <SheetClose asChild><NavLink href="/past-files" className="justify-start w-full py-2 h-auto">Past Files</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/explain-code" className="justify-start w-full py-2 h-auto">Explain Code</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/about" className="justify-start w-full py-2 h-auto">About Us</NavLink></SheetClose>
-                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Templates</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/templates" className="justify-start w-full py-2 h-auto">Templates</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Features</NavLink></SheetClose>
-                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Pricing</NavLink></SheetClose>
-                      <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Docs</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/pricing" className="justify-start w-full py-2 h-auto">Pricing</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/docs" className="justify-start w-full py-2 h-auto">Docs</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/blog" className="justify-start w-full py-2 h-auto">Blog</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/careers" className="justify-start w-full py-2 h-auto">Careers</NavLink></SheetClose>
                     </nav>
                   </ScrollArea>
                   <div className="mt-auto border-t p-4">
@@ -598,3 +600,4 @@ export default function HomePage() {
     </div>
   );
 }
+
