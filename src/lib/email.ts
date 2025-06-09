@@ -2,6 +2,7 @@
 "use server";
 
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 interface EmailOptions {
   to: string;
@@ -10,45 +11,28 @@ interface EmailOptions {
   text?: string;
 }
 
-// Create a test SMTP account for Ethereal
-// This will generate temporary credentials each time the server starts
-// In a production app, you'd use permanent credentials from environment variables
-let testAccount: nodemailer.TestAccount | null = null;
-
-async function getTestAccount() {
-  if (!testAccount) {
-    testAccount = await nodemailer.createTestAccount();
-    console.log("Ethereal test account created:", testAccount);
-    console.log("Preview emails at:", nodemailer.getTestMessageUrl({
-      user: testAccount.user,
-      pass: testAccount.pass,
-      messageId: '<generated-message-id>' // Placeholder
-    }).split('<generated-message-id>')[0] + " (append message ID from console log below)");
-  }
-  return testAccount;
-}
-
-
 export async function sendOtpEmail(to: string, otp: string): Promise<void> {
-  try {
-    const account = await getTestAccount();
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.error("🔴 Gmail credentials (GMAIL_USER, GMAIL_PASS) are not set in .env file.");
+    // For development, we might still want to log the OTP if email sending fails
+    console.log(`OTP for ${to} (Email not sent due to missing config): ${otp}`);
+    // Optionally, you could throw an error or return a status indicating failure
+    // throw new Error("Email server credentials not configured.");
+    return; // Or handle as an error
+  }
 
+  try {
     const transporter = nodemailer.createTransport({
-      host: account.smtp.host,
-      port: account.smtp.port,
-      secure: account.smtp.secure,
+      service: 'gmail',
       auth: {
-        user: account.user,
-        pass: account.pass,
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS, // IMPORTANT: Use an App Password if 2FA is enabled for GMAIL_USER
       },
-      // It's good practice to set a default 'from' address,
-      // though Ethereal will use its own.
-      // For a real provider, this would be your company's email.
-      from: `"ReadMeGenius Support" <${account.user}>`, // Name part can be customized
     });
 
     const mailOptions: EmailOptions = {
-      to, // This is correctly set to the user's signup email
+      from: `"ReadMeGenius Support" <${process.env.GMAIL_USER}>`,
+      to,
       subject: 'Your ReadMeGenius OTP Verification Code',
       text: `
 ReadMeGenius - Account Verification
@@ -68,10 +52,10 @@ The ReadMeGenius Team
       `,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <h2 style="color: #007BFF;">ReadMeGenius - Account Verification</h2>
+          <h2 style="color: #4285F4;">ReadMeGenius - Account Verification</h2>
           <p>Hello,</p>
           <p>Thank you for signing up with ReadMeGenius! To complete your registration, please use the following One-Time Password (OTP):</p>
-          <p style="font-size: 28px; font-weight: bold; color: #007BFF; letter-spacing: 3px; margin: 25px 0; text-align: center; border: 1px dashed #007BFF; padding: 10px; background-color: #f0f8ff;">
+          <p style="font-size: 28px; font-weight: bold; color: #4285F4; letter-spacing: 3px; margin: 25px 0; text-align: center; border: 1px dashed #4285F4; padding: 10px; background-color: #f0f8ff;">
             ${otp}
           </p>
           <p>This OTP is valid for <strong>5 minutes</strong>. Please enter it on the verification page to activate your account.</p>
@@ -85,15 +69,14 @@ The ReadMeGenius Team
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('OTP Email sent: %s', info.messageId);
-    // Log the Ethereal URL to preview the email
-    console.log('Preview OTP Email URL: %s', nodemailer.getTestMessageUrl(info));
+    const info: SMTPTransport.SentMessageInfo = await transporter.sendMail(mailOptions);
+    console.log('✅ OTP Email sent to %s: %s', to, info.messageId);
 
   } catch (error) {
-    console.error('Error sending OTP email:', error);
-    // In a real app, you might want to throw this error or handle it more gracefully
-    // For this demo, we'll log it. The OTP will still be available in console via generateOTP.
+    console.error('🔴 Error sending OTP email via Gmail:', error);
+    // Log OTP for dev purposes if email fails, but don't let it crash the signup.
+    console.log(`OTP for ${to} (Email sending failed): ${otp}`);
+    // In a production app, you'd want more robust error handling here.
+    // For example, you might re-throw a generic error or return a specific error status.
   }
 }
-

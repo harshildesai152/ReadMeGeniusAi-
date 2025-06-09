@@ -5,7 +5,7 @@ ReadMeGenius is a **Next.js** application that leverages **AI** (specifically **
 
 > **Core Functionality**: Generate comprehensive READMEs including project name, description, features, technologies used, setup instructions, and folder structure.
 
-The application also features a theme toggle for light/dark mode preferences and allows users to save, view, download, and delete their generated READMEs using browser `localStorage` (user-specific). An authentication system (mock, `localStorage`-based) is included, requiring users to log in to access generation features. OTPs are "sent" via email using Nodemailer with Ethereal.email for testing.
+The application also features a theme toggle for light/dark mode preferences and allows users to save, view, download, and delete their generated READMEs using browser `localStorage` (user-specific). An authentication system (mock, `localStorage`-based) is included, requiring users to log in to access generation features. OTPs are "sent" via email using Nodemailer.
 
 ---
 
@@ -20,7 +20,7 @@ The application also features a theme toggle for light/dark mode preferences and
 *   **State Management**: React Hooks (`useState`, `useEffect`), `localStorage` for persistence
 *   **Forms**: React Hook Form with Zod for validation
 *   **Password Hashing**: `bcryptjs` (for mock authentication)
-*   **Emailing**: `nodemailer` (with Ethereal.email for OTP testing)
+*   **Emailing**: `nodemailer` (configurable for Gmail or other SMTP)
 *   **Linting/Formatting**: Standard Next.js setup (ESLint, Prettier implied)
 *   **Deployment**: Configured for Firebase App Hosting (see `apphosting.yaml`)
 
@@ -49,7 +49,7 @@ The application also features a theme toggle for light/dark mode preferences and
 *   ✨ **User-Friendly Interface**: Clean and intuitive UI for easy interaction.
 *   🔑 **Mock Authentication System**:
     *   Signup with full name, email, password, phone.
-    *   OTP verification (sent to an Ethereal.email test inbox; check server console for preview link and OTP).
+    *   OTP verification sent to the user's provided email address.
     *   Login with email and password.
     *   Password hashing using `bcryptjs`.
     *   Mock "Continue with Google" option.
@@ -105,25 +105,24 @@ To run this project locally:
 
 3.  **Set up Environment Variables**:
     *   Create a `.env` file in the root of the project.
-    *   ⚠️ You will need to add your **Google AI API Key** for Genkit to work:
+    *   You will need to add your **Google AI API Key** for Genkit to work:
         ```env
         GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY
         ```
-    *   Obtain an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-    *   **OTP Email Sending (Optional for Local Development)**:
-        This project uses `nodemailer` with `Ethereal.email` for testing OTP email sending. No specific environment variables are strictly required for Ethereal as it generates test accounts on the fly. When you sign up, the OTP and a link to preview the email on Ethereal will be logged to your **server console** (the terminal where you run `npm run dev`).
-        
-        If you wish to use your own SMTP provider (e.g., Gmail, SendGrid) for sending OTP emails, you would typically set environment variables like:
+        Obtain an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   **OTP Email Sending (Gmail Configuration)**:
+        This project uses `nodemailer` to send OTP emails. To use your Gmail account for sending:
         ```env
-        # Example SMTP (e.g., for Gmail - ensure you have an App Password if using 2FA)
-        # SMTP_HOST=smtp.gmail.com
-        # SMTP_PORT=587
-        # SMTP_SECURE=false # true for 465, false for other ports
-        # SMTP_USER=your-email@gmail.com
-        # SMTP_PASS=your-gmail-app-password 
-        # SMTP_FROM_EMAIL="ReadMeGenius <no-reply@example.com>"
+        # Your Gmail email address
+        GMAIL_USER=your-email@gmail.com
+        
+        # Your Gmail App Password (NOT your regular password)
+        # If you have 2-Factor Authentication enabled on your Gmail account,
+        # you MUST generate an App Password.
+        # See: https://support.google.com/accounts/answer/185833
+        GMAIL_PASS=your-gmail-app-password 
         ```
-        And then modify `src/lib/email.ts` to use these variables instead of `nodemailer.createTestAccount()`.
+        If `GMAIL_USER` and `GMAIL_PASS` are not set, OTPs will be logged to the server console for development purposes if email sending fails, but no actual email will be sent.
 
 4.  **Run the development server for Next.js**:
     ```bash
@@ -132,7 +131,7 @@ To run this project locally:
     # yarn dev
     ```
     The application will typically be available at `http://localhost:9002`.
-    When you sign up, check the **terminal running `npm run dev`** for the OTP and the Ethereal email preview link.
+    When you sign up, check the email address you provided for the OTP. If Gmail environment variables are not set up and email sending fails, check the **server console** for the OTP.
 
 5.  **Run the Genkit development server** (<u>in a separate terminal</u>):
     This allows you to inspect and test your Genkit flows.
@@ -176,7 +175,7 @@ To run this project locally:
 *   **Styling**: Modify Tailwind CSS classes and `src/app/globals.css` for theme adjustments.
 *   **AI Prompts**: Adjust the prompts within the files in `src/ai/flows/` to change the AI's behavior and output style.
 *   **ShadCN UI**: Add or customize components from `shadcn/ui` as needed.
-*   **Email Transport**: To use a real email provider instead of Ethereal, update `src/lib/email.ts` with your SMTP server details and credentials (ideally from environment variables).
+*   **Email Transport**: To use a different email provider than Gmail, update `src/lib/email.ts` with your SMTP server details and credentials (ideally from environment variables).
 
 ---
 
