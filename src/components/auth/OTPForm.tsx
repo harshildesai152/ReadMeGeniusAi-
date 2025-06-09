@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -11,8 +12,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { otpSchema, type OTPFormData } from "@/lib/schemas/auth";
-import { getPendingOTP, getUserByEmail, updateUser, clearPendingOTP } from "@/lib/auth/storage";
+import { getPendingOTP, getUserByEmail, updateUser, clearPendingOTP, setPendingOTP } from "@/lib/auth/storage";
 import type { User } from "@/lib/auth/storage";
+import { generateOTP } from "@/lib/auth/otp";
+
 
 export function OTPForm() {
   const router = useRouter();
@@ -75,18 +78,10 @@ export function OTPForm() {
   };
   
   const handleResendOtp = () => {
-    // In a real app, this would trigger a new OTP generation and sending mechanism.
-    // For this mock, we'd re-log the OTP or rely on the existing console log.
-    // We can also re-set the pending OTP to refresh its expiry if needed.
     if (email) {
-        const pendingOtpData = getPendingOTP();
-        if (pendingOtpData && pendingOtpData.email.toLowerCase() === email.toLowerCase()) {
-            console.log(`Resending OTP (mock): ${pendingOtpData.otp} for ${email}. Check your browser console.`);
-            // Optionally refresh expiry: setPendingOTP(email, pendingOtpData.otp);
-             setError("OTP (mock) re-logged to console. Expiry potentially refreshed.");
-        } else {
-            setError("Could not find original OTP to resend. Try signup again.");
-        }
+        const newOtp = generateOTP(); // Logs to console
+        setPendingOTP(email, newOtp); // Resets OTP with new expiry
+        setError(`New OTP (mock: ${newOtp}) re-logged to console. Expiry refreshed.`);
     } else {
         setError("Email not available to resend OTP.");
     }

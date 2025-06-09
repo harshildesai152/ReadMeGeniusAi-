@@ -55,7 +55,7 @@ export function SignupForm() {
         email: data.email,
         hashedPassword: hashedPassword,
         phone: data.phone,
-        verified: false,
+        verified: false, // User is not verified yet
         provider: 'email',
       };
 

@@ -29,7 +29,7 @@ export function LoginForm() {
     if (searchParams.get("verified") === "true") {
       setSuccessMessage("Account verified successfully! Please log in.");
     }
-     if (searchParams.get("registered") === "true") {
+     if (searchParams.get("registered") === "true") { // This might be legacy if OTP is always used
       setSuccessMessage("Registration successful! Please log in.");
     }
   }, [searchParams]);
@@ -47,7 +47,7 @@ export function LoginForm() {
     setError(null);
     setSuccessMessage(null);
 
-    const user = getUserByEmail(data.email); // Email comparison is now plain text
+    const user = getUserByEmail(data.email); 
 
     if (!user) {
       setError("User not found. Please check your email or sign up.");
@@ -91,29 +91,26 @@ export function LoginForm() {
     
     const plainMockEmail = "google.user."+ Date.now().toString(36).substring(2, 9) +"@example.com";
     const plainMockFullName = "Google User";
-    const plainMockPhone = "0000000000"; // Example phone
+    const plainMockPhone = "0000000000"; 
 
     const mockUser: User = {
       id: 'google-' + Date.now().toString(),
-      fullName: plainMockFullName, // Stored as plain text
-      email: plainMockEmail,       // Stored as plain text
-      phone: plainMockPhone,       // Stored as plain text
-      verified: true,
+      fullName: plainMockFullName, 
+      email: plainMockEmail,       
+      phone: plainMockPhone,       
+      verified: true, // Google users are considered verified by default in this mock
       provider: 'google',
-      // No hashedPassword for Google mock users
     };
     
     try {
-        // Check if user with this email already exists (plain text check)
         const existingUser = getUserByEmail(plainMockEmail);
         if (existingUser && existingUser.provider === 'google') {
-             // If Google user exists, just log them in
             setLoggedIn(true, plainMockEmail);
             router.push("/dashboard?googlesignin=true&existing=true");
         } else if (existingUser && existingUser.provider !== 'google') {
             setError("This mock Google email is already registered with a non-Google account. Try again or log in normally.");
         } else {
-            addUser(mockUser); // Adds the new Google user (with plain text details)
+            addUser(mockUser); 
             setLoggedIn(true, plainMockEmail); 
             router.push("/dashboard?googlesignin=true");
         }
