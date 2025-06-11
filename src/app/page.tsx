@@ -1,5 +1,3 @@
-
-// src/app/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -25,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import project1 from '../image/The-Future-of-AI-and-Its-Impact-on-Humanity.jpg'
 
 const NavLink: React.FC<{ href: string; children: React.ReactNode; className?: string }> = ({ href, children, className }) => (
   <Link href={href} passHref>
@@ -42,7 +41,7 @@ const HeroSection = () => {
   return (
     <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden bg-neutral-800 dark:bg-neutral-900 rounded-xl shadow-2xl">
       <Image
-        src="https://placehold.co/1600x800/3A3226/E0E0E0.png"
+        src={project1}
         alt="Abstract background for hero section"
         fill 
         objectFit="cover"
@@ -63,7 +62,7 @@ const HeroSection = () => {
           <Button
             size="lg"
             onClick={scrollToGenerator}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+             className="bg-primary text-primary-foreground text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
           >
             Generate Now
           </Button>
@@ -71,7 +70,7 @@ const HeroSection = () => {
             <Button
               size="lg"
               variant="outline"
-              className="text-white border-neutral-400 hover:bg-neutral-700/50 hover:text-white dark:text-neutral-200 dark:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-white text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
+              className="bg-primary text-primary-foreground text-base sm:text-lg px-8 py-3 sm:px-10 sm:py-4 rounded-lg shadow-lg transform transition-transform hover:scale-105"
             >
               View Templates
             </Button>
@@ -144,12 +143,12 @@ const TrustedBySection = () => (
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         <StatsCard title="Projects Documented" value="10,000+" />
-        <StatsCard title="Active Users" value="5,000+" />
-        <StatsCard title="GitHub Stars" value="1,200+" />
+        <StatsCard title="Active Users" value="100+" />
+        <StatsCard title="GitHub Stars" value="10+" />
       </div>
       <div className="text-center mt-10 sm:mt-12">
         <Link href="https://github.com/readme-ai" target="_blank" rel="noopener noreferrer" className="text-sm text-primary dark:text-primary-foreground hover:underline">
-          https://github.com/readme-ai
+          {/* https://github.com/readme-ai */}
         </Link>
       </div>
     </div>
@@ -283,8 +282,8 @@ const FAQSection = () => {
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem value={`item-${index}`} key={index} className="border-border hover:border-primary/30 transition-colors">
-                <AccordionTrigger className="text-left text-sm sm:text-base font-medium hover:text-primary dark:hover:text-primary-foreground py-3 sm:py-4">
+              <AccordionItem value={`item-${index}`} key={index} className="border-border  transition-colors">
+                <AccordionTrigger className="text-left text-sm sm:text-base font-medium  py-3 sm:py-4">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="pt-1 pb-3 sm:pb-4 text-xs sm:text-sm text-muted-foreground dark:text-neutral-300 leading-relaxed">
@@ -426,12 +425,198 @@ export default function HomePage() {
   if (!mounted) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-start bg-background text-foreground">
-        <div className="w-full h-screen flex items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 w-full animate-pulse">
+          {/* Header Skeleton */}
+          <header className="h-16 sm:h-20 flex items-center justify-between py-4 border-b">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 bg-muted rounded-full"></div>
+              <div className="h-6 w-20 sm:h-7 sm:w-24 bg-muted rounded-md"></div>
+              <div className="h-6 w-16 sm:h-7 sm:w-20 bg-muted rounded-md"></div>
+            </div>
+            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+              {[...Array(5)].map((_, i) => <div key={i} className="h-6 w-20 bg-muted rounded-md"></div>)}
+            </nav>
+            <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
+              <div className="h-9 w-20 bg-muted rounded-md"></div> {/* Sign In */}
+              <div className="h-9 w-28 bg-muted rounded-md"></div> {/* Get Started */}
+              <div className="h-9 w-9 bg-muted rounded-full"></div> {/* Theme Toggle */}
+            </div>
+            <div className="md:hidden h-8 w-8 bg-muted rounded-md"></div> {/* Mobile Menu Button */}
+          </header>
+
+          {/* Hero Section Skeleton */}
+          <section className="w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center bg-muted/30 rounded-xl my-8">
+            <div className="h-10 sm:h-12 w-3/4 mx-auto bg-muted rounded-md mb-6"></div> {/* Title */}
+            <div className="h-5 sm:h-6 w-full max-w-3xl mx-auto bg-muted rounded-md mb-4"></div> {/* Subtitle line 1 */}
+            <div className="h-5 sm:h-6 w-5/6 max-w-2xl mx-auto bg-muted rounded-md mb-10"></div> {/* Subtitle line 2 */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="h-12 sm:h-14 w-36 sm:w-40 bg-muted rounded-lg"></div> {/* Button 1 */}
+              <div className="h-12 sm:h-14 w-36 sm:w-40 bg-muted rounded-lg"></div> {/* Button 2 */}
+            </div>
+          </section>
+
+          {/* Features Section Skeleton */}
+          <section className="py-16 sm:py-20">
+            <div className="text-center mb-12 sm:mb-16">
+              <div className="h-8 sm:h-10 w-1/2 mx-auto bg-muted rounded-md mb-4"></div> {/* Section Title */}
+              <div className="h-4 sm:h-5 w-3/4 mx-auto bg-muted rounded-md"></div> {/* Section Subtitle */}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-muted/30 p-6 rounded-xl space-y-4 h-[220px]">
+                  <div className="h-10 w-10 bg-muted rounded-lg"></div> {/* Icon */}
+                  <div className="h-5 w-3/4 bg-muted rounded-md"></div> {/* Card Title */}
+                  <div className="h-3.5 w-full bg-muted rounded-md"></div> {/* Desc line 1 */}
+                  <div className="h-3.5 w-5/6 bg-muted rounded-md"></div> {/* Desc line 2 */}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* TrustedBy Section Skeleton */}
+          <section className="py-16 sm:py-20 bg-muted/20">
+             <div className="text-center mb-12 sm:mb-16">
+                <div className="h-8 sm:h-10 w-3/5 mx-auto bg-muted rounded-md"></div> {/* Section Title */}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                {[...Array(3)].map((_,i) => (
+                    <div key={i} className="bg-muted/30 p-6 rounded-xl h-[100px]">
+                        <div className="h-4 w-1/2 mx-auto bg-muted rounded-md mb-2"></div> {/* Stat Title */}
+                        <div className="h-8 w-1/3 mx-auto bg-muted rounded-md"></div> {/* Stat Value */}
+                    </div>
+                ))}
+            </div>
+             <div className="text-center mt-10 sm:mt-12">
+                <div className="h-4 w-1/3 mx-auto bg-muted rounded-md"></div> {/* Link */}
+            </div>
+          </section>
+
+          {/* HowItWorks Section Skeleton */}
+          <section className="py-16 sm:py-20">
+            <div className="text-center mb-12 sm:mb-16">
+              <div className="h-8 sm:h-10 w-1/2 mx-auto bg-muted rounded-md mb-4"></div> {/* Section Title */}
+              <div className="h-4 sm:h-5 w-3/4 mx-auto bg-muted rounded-md"></div> {/* Section Subtitle */}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-muted"></div> {/* Icon */}
+                  <div className="h-5 w-3/4 bg-muted rounded-md"></div> {/* Step Title */}
+                  <div className="h-3.5 w-full bg-muted rounded-md"></div> {/* Step Desc line 1 */}
+                  <div className="h-3.5 w-5/6 bg-muted rounded-md"></div> {/* Step Desc line 2 */}
+                </div>
+              ))}
+            </div>
+          </section>
+          
+          {/* Testimonials Section Skeleton */}
+           <section className="py-16 sm:py-20 bg-muted/20">
+            <div className="text-center mb-12 sm:mb-16">
+              <div className="h-8 sm:h-10 w-1/2 mx-auto bg-muted rounded-md mb-4"></div> {/* Section Title */}
+              <div className="h-4 sm:h-5 w-3/4 mx-auto bg-muted rounded-md"></div> {/* Section Subtitle */}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-muted/30 p-6 rounded-xl space-y-4 h-[180px]">
+                  <div className="h-4 w-full bg-muted rounded-md"></div> {/* Quote line 1 */}
+                  <div className="h-4 w-5/6 bg-muted rounded-md"></div> {/* Quote line 2 */}
+                  <div className="flex items-center pt-4 mt-auto border-t border-muted">
+                    <div className="w-10 h-10 rounded-full bg-muted mr-3"></div> {/* Avatar */}
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-24 bg-muted rounded-md"></div> {/* Name */}
+                      <div className="h-3 w-32 bg-muted rounded-md"></div> {/* Role */}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* CallToAction Section Skeleton */}
+          <section className="py-20 sm:py-28 bg-muted/30 my-8 rounded-xl">
+            <div className="text-center">
+              <div className="h-8 sm:h-10 w-3/4 mx-auto bg-muted rounded-md mb-6"></div> {/* Title */}
+              <div className="h-5 sm:h-6 w-1/2 mx-auto bg-muted rounded-md mb-10"></div> {/* Subtitle */}
+              <div className="h-12 sm:h-14 w-48 mx-auto bg-muted rounded-lg"></div> {/* Button */}
+            </div>
+          </section>
+
+          {/* ReadmeGeneratorWrapper Skeleton */}
+          <section className="py-16 sm:py-20 bg-muted/20 rounded-xl">
+            <div className="bg-muted/30 p-6 rounded-xl h-[400px] w-full max-w-3xl mx-auto">
+                <div className="h-8 w-1/2 bg-muted rounded-md mb-4"></div> {/* Card Title */}
+                <div className="h-4 w-3/4 bg-muted rounded-md mb-6"></div> {/* Card Description */}
+                <div className="space-y-4">
+                    <div className="h-10 bg-muted rounded-md"></div> {/* Input placeholder */}
+                    <div className="h-20 bg-muted rounded-md"></div> {/* Textarea placeholder */}
+                    <div className="h-10 bg-muted rounded-md"></div> {/* Button placeholder */}
+                </div>
+            </div>
+          </section>
+
+          {/* Discover More Tools Skeleton */}
+          <section className="py-16 sm:py-20">
+            <div className="h-8 sm:h-9 w-1/2 mx-auto bg-muted rounded-md mb-8 sm:mb-12"></div> {/* Section Title */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-muted/30 p-6 rounded-xl space-y-3 h-[200px]">
+                  <div className="flex items-center gap-3">
+                     <div className="h-8 w-8 bg-muted rounded-md"></div> {/* Icon */}
+                     <div className="h-6 w-3/4 bg-muted rounded-md"></div> {/* Card Title */}
+                  </div>
+                  <div className="h-4 w-full bg-muted rounded-md"></div> {/* Desc line 1 */}
+                  <div className="h-4 w-5/6 bg-muted rounded-md"></div> {/* Desc line 2 */}
+                  <div className="h-6 w-28 bg-muted rounded-md mt-auto pt-4"></div> {/* Button */}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* FAQ Section Skeleton */}
+          <section className="py-16 sm:py-20 bg-muted/20">
+            <div className="text-center mb-12 sm:mb-16">
+              <div className="h-8 sm:h-10 w-1/2 mx-auto bg-muted rounded-md mb-4"></div> {/* Section Title */}
+              <div className="h-4 sm:h-5 w-3/4 mx-auto bg-muted rounded-md"></div> {/* Section Subtitle */}
+            </div>
+            <div className="max-w-3xl mx-auto space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-12 bg-muted/30 rounded-md"></div> /* Accordion Item */
+              ))}
+            </div>
+          </section>
+
+          {/* Footer Skeleton */}
+          <footer className="bg-muted/20 py-16 sm:py-20 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 mb-12">
+              <div className="md:col-span-2 lg:col-span-1 space-y-4">
+                <div className="h-8 w-32 bg-muted rounded-md"></div> {/* Logo */}
+                <div className="h-4 w-full bg-muted rounded-md"></div>
+                <div className="h-4 w-5/6 bg-muted rounded-md"></div>
+                <div className="flex space-x-5 mt-6">
+                  <div className="h-6 w-6 bg-muted rounded-full"></div>
+                  <div className="h-6 w-6 bg-muted rounded-full"></div>
+                  <div className="h-6 w-6 bg-muted rounded-full"></div>
+                </div>
+              </div>
+              {[...Array(3)].map((_, colIndex) => (
+                <div key={colIndex} className="space-y-3">
+                  <div className="h-5 w-24 bg-muted rounded-md mb-4"></div> {/* Column Title */}
+                  {[...Array(3)].map((_, linkIndex) => (
+                    <div key={linkIndex} className="h-4 w-3/4 bg-muted rounded-md"></div> /* Link */
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-muted pt-8 text-center">
+              <div className="h-4 w-1/2 mx-auto bg-muted rounded-md"></div> {/* Copyright */}
+            </div>
+          </footer>
+
         </div>
       </main>
     );
   }
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -550,12 +735,13 @@ export default function HomePage() {
 
       <main className="flex-grow">
         <HeroSection />
+        <ReadmeGeneratorWrapper />
         <FeaturesSection />
         <TrustedBySection />
         <HowItWorksSection />
         <TestimonialsSection />
         <CallToActionSection />
-        <ReadmeGeneratorWrapper />
+       
 
         <section className="py-16 sm:py-20 bg-background text-foreground">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -600,4 +786,3 @@ export default function HomePage() {
     </div>
   );
 }
-
