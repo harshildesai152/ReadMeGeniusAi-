@@ -189,12 +189,12 @@ export function LoginForm() {
             </span>
           </div>
         </div>
-        <Button variant="outline" className="w-full mt-4 text-sm sm:text-base py-2.5 sm:py-3" onClick={handleGoogleSignIn} disabled={isLoading}>
+        {/* <Button variant="outline" className="w-full mt-4 text-sm sm:text-base py-2.5 sm:py-3" onClick={handleGoogleSignIn} disabled={isLoading}>
           {isLoading && !form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
              <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.02C17.38 19.02 15.48 20 12.48 20c-4.73 0-8.55-3.82-8.55-8.5s3.82-8.5 8.55-8.5c2.66 0 4.31 1.08 5.52 2.18l2.77-2.77C18.96 1.19 16.25 0 12.48 0C5.88 0 0 5.88 0 12.48s5.88 12.48 12.48 12.48c7.25 0 12.09-4.76 12.09-12.25 0-.76-.08-1.49-.2-2.24h-11.9z"></path></svg>
           )}
           Google (Mock)
-        </Button>
+        </Button> */}
 
       </CardContent>
       <CardFooter className="flex flex-col items-center text-sm">
