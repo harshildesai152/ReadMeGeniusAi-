@@ -648,7 +648,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <Link href="/auth/login" passHref>
+                  <Link href="/auth/signup" passHref>
                     <Button variant="ghost" className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 text-muted-foreground hover:text-foreground">
                       Sign In
                     </Button>
