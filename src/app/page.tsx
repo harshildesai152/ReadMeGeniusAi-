@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { 
   Files, FileCode, Info, LayoutDashboard, LogIn, LogOut, UserPlus, 
   Github, Twitter, Linkedin, ArrowRight, Sparkles, FileText, Cpu, 
-  ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2, Menu, HelpCircle
+  ShieldCheck, Users, Star, BookOpen, Settings, Combine, Loader2, Menu, HelpCircle,Image as ImageIcon
 } from 'lucide-react';
 import { 
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose 
@@ -23,7 +23,13 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import project1 from '../image/The-Future-of-AI-and-Its-Impact-on-Humanity.jpg'
+import project1 from '../image/20250614_2217_Futuristic AI Workspace_simple_compose_01jxqn9jaxew8a82ha128e0fc1.png'
+import project7 from '../image/The-Future-of-AI-and-Its-Impact-on-Humanity.jpg'
+import project2 from '../image/20250614_2217_Futuristic AI Workspace_simple_compose_01jxqn9jawfc7sk82cwyeaddn0.png'
+import project3 from '../image/20250614_2217_Futuristic AI Workspace_simple_compose_01jxqn9jazetjbx15b7nx56jgh.png'
+import project4 from '../image/20250614_2217_Futuristic AI Workspace_simple_compose_01jxqn9jayedxva7m242qbkp5y.png'
+import project5 from '../image/20250614_2213_AI-Enhanced README Background_simple_compose_01jxqn4krgew7v7hma180ekj13.png'
+import project6 from '../image/20250614_2213_AI-Enhanced README Background_simple_compose_01jxqn4kreebt8d032akr7hm8e.png'
 
 const NavLink: React.FC<{ href: string; children: React.ReactNode; className?: string }> = ({ href, children, className }) => (
   <Link href={href} passHref>
@@ -41,7 +47,7 @@ const HeroSection = () => {
   return (
     <section className="relative w-full py-20 sm:py-28 md:py-32 lg:py-40 text-center overflow-hidden bg-neutral-800 dark:bg-neutral-900 rounded-xl shadow-2xl">
       <Image
-        src={project1}
+        src={project7}
         alt="Abstract background for hero section"
         fill 
         objectFit="cover"
@@ -188,6 +194,54 @@ const HowItWorksSection = () => (
     </div>
   </section>
 );
+
+const ScrollableImageSection = () => {
+  const images = [
+    { src: project2, alt: "App Interface Screenshot", hint: "app interface" },
+    { src: project3, alt: "Generated README example", hint: "code document" },
+    { src: project4, alt: "User Dashboard preview", hint: "dashboard analytics" },
+    { src: project1, alt: "AI code explanation feature", hint: "ai explanation" },
+    { src: project5, alt: "Template selection screen", hint: "template selection" },
+    { src: project6, alt: "Dark mode theme preview", hint: "dark mode" },
+  ];
+  const duplicatedImages = [...images, ...images]; // Duplicate for seamless loop
+
+  return (
+    <section className="py-16 sm:py-20 md:py-24 bg-muted/50 dark:bg-neutral-900 text-foreground group">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4 flex items-center justify-center gap-3">
+            <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            Visual Showcase
+          </h2>
+          <p className="text-base sm:text-lg text-muted-foreground dark:text-neutral-400 max-w-2xl mx-auto">
+            Explore the look and feel of ReadMeGenius in action.
+          </p>
+        </div>
+        <div className="overflow-hidden w-full">
+          <div className="flex whitespace-nowrap animate-marquee-base md:animate-marquee-md group-hover:[animation-play-state:paused]">
+            {duplicatedImages.map((image, index) => (
+              <div key={index} className="flex-shrink-0 w-72 sm:w-80 md:w-96 mx-2 sm:mx-3">
+                <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-xl group/card">
+                  <div className="relative w-full aspect-[4/3]">
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint={image.hint}
+                      className="transition-transform duration-300 group-hover/card:scale-105"
+                    />
+                  </div>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const TestimonialCard: React.FC<{ quote: string; name: string; role: string; avatarUrl?: string }> = ({ quote, name, role, avatarUrl }) => (
   <Card className="bg-slate-100 dark:bg-neutral-800 hover:border-primary/50 border-border shadow-lg rounded-xl p-6 flex flex-col h-full">
@@ -735,10 +789,12 @@ export default function HomePage() {
 
       <main className="flex-grow">
         <HeroSection />
+          <ScrollableImageSection />
         <ReadmeGeneratorWrapper />
         <FeaturesSection />
         <TrustedBySection />
         <HowItWorksSection />
+       
         <TestimonialsSection />
         <CallToActionSection />
        

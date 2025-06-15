@@ -88,10 +88,21 @@ export default {
             height: '0',
           },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
+         'marquee-alt': { 
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'marquee-base': 'marquee 35s linear infinite', // Base duration
+        'marquee-md': 'marquee 50s linear infinite',   // Duration for md screens and up
+        'marquee-alt': 'marquee-alt 30s linear infinite',
       },
     },
   },
