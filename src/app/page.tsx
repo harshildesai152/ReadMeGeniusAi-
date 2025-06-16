@@ -148,7 +148,7 @@ const TrustedBySection = () => (
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground dark:text-white mb-4">Trusted by developers worldwide</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-        <StatsCard title="Projects Documented" value="10,000+" />
+        <StatsCard title="Page Views" value="400+" />
         <StatsCard title="Active Users" value="100+" />
         <StatsCard title="GitHub Stars" value="10+" />
       </div>
