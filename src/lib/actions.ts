@@ -72,32 +72,6 @@ export async function processGitHubRepo(
 // Project Description (first 200 chars): ${repoDescription.substring(0, 200)}...
 // This is a simplified, language-agnostic structural representation.
 // The AI should infer technologies primarily from the Project Description.
-//
-// project-root/
-//   src/
-//     main_module/
-//       core_logic.file_extension
-//       utils.file_extension
-//     api/
-//       endpoints.file_extension
-//   tests/
-//     unit/
-//     integration/
-//   docs/
-//     api_reference.md
-//     user_guide.md
-//   scripts/
-//     deploy.sh
-//     build.sh
-//   public/ or static/
-//     index.html
-//     styles.css
-//     images/
-//   README.md
-//   package.json or requirements.txt or pom.xml or Gemfile
-//   LICENSE
-//   .gitignore
-//   .env.example
       `;
     } else if (input.codeContent) {
       const summaryOutput = await summarizeCodeContent({ codeContent: input.codeContent });
