@@ -808,7 +808,7 @@ export default function HomePage() {
               {[
                 { href: "/past-files", icon: Files, title: "Past Files Inventory", description: "Upload multiple local files and generate individual READMEs for each one." },
                 { href: "/explain-code", icon: FileCode, title: "Explain My Code", description: "Get AI-powered explanations for your code snippets, tailored for beginner or technical audiences." },
-                { href: "/about", icon: Info, title: "About Us", description: "Learn more about ReadMeGenius, its features, and the technology behind it." },
+                // { href: "/about", icon: Info, title: "About Us", description: "Learn more about ReadMeGenius, its features, and the technology behind it." },
               ].map((tool) => (
                 <Link href={tool.href} passHref key={tool.title} legacyBehavior>
                   <a className="block">
