@@ -680,10 +680,10 @@ export default function HomePage() {
             <Logo />
             <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
               <NavLink href="/">Home</NavLink>
-              <NavLink href="/templates">Templates</NavLink>
-              <NavLink href="#">Features</NavLink>
-              <NavLink href="/pricing">Pricing</NavLink>
-              <NavLink href="/docs">Docs</NavLink>
+              <NavLink href="/Upload Files">Upload Files</NavLink>
+              <NavLink href="/explain-code">Code Explainer</NavLink>
+{/*               <NavLink href="/pricing">Pricing</NavLink>
+              <NavLink href="/docs">Docs</NavLink> */}
             </nav>
             
             <div className="hidden md:flex items-center space-x-2 sm:space-x-3">
