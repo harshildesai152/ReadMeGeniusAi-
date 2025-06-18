@@ -144,12 +144,12 @@ export default function ExplainCodePage() {
                     Past Files Inventory & Gen
                   </Button>
                 </Link>
-                <Link href="/about" passHref>
+{/*                 <Link href="/about" passHref>
                    <Button variant="outline" size="sm" className="bg-secondary hover:bg-muted w-full sm:w-auto text-xs sm:text-sm">
                     <Info className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
                     About Us
                   </Button>
-                </Link>
+                </Link> */}
             </div>
           </div>
           <p>&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
