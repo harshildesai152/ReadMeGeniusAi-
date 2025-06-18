@@ -315,10 +315,10 @@ const FAQSection = () => {
       question: "Can I customize the generated README?",
       answer: "Yes! After the AI generates the initial README, you can edit all sections directly in our editor. You can refine the content, add new sections, or adjust formatting before saving or downloading your README."
     },
-    {
-      question: "Is there a cost to use this service?",
-      answer: "ReadMeGenius offers a generous free tier for generating READMEs. Advanced features or higher usage limits might be part of future premium plans. For now, enjoy the core features for free!"
-    }
+    // {
+    //   question: "Is there a cost to use this service?",
+    //   answer: "ReadMeGenius offers a generous free tier for generating READMEs. Advanced features or higher usage limits might be part of future premium plans. For now, enjoy the core features for free!"
+    // }
   ];
 
   return (
