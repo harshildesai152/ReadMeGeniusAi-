@@ -838,7 +838,7 @@ export default function HomePage() {
         </section>
         <FAQSection />
       </main>
-      <Footer />
+{/*       <Footer /> */}
     </div>
   );
 }
