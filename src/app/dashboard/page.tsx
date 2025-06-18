@@ -186,11 +186,11 @@ export default function DashboardPage() {
             <Button onClick={handleGoHome} variant="ghost" size="icon" title="Go to Home" className="h-8 w-8 sm:h-9 sm:w-9">
               <Home className="h-4 sm:h-5 w-4 sm:h-5" />
             </Button>
-            <Link href="/about" passHref>
+{/*             <Link href="/about" passHref>
                 <Button variant="ghost" size="icon" title="About Us" className="h-8 w-8 sm:h-9 sm:w-9">
                     <Info className="h-4 sm:h-5 w-4 sm:h-5" />
                 </Button>
-            </Link>
+            </Link> */}
             <ThemeToggle />
             <Button onClick={handleLogout} variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
               <LogOutIcon className="mr-1 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:h-4" />
