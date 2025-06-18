@@ -873,14 +873,14 @@ ${readmeItem.setupInstructions}
         )}
 
 
-         <footer className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
+{/*          <footer className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
             <Link href="/about" passHref>
                 <Button variant="link" className="text-muted-foreground hover:text-primary text-xs sm:text-sm">
                     <Info className="mr-1 h-3.5 w-3.5" /> About Us
                 </Button>
             </Link>
             <p className="mt-1">&copy; {new Date().getFullYear()} ReadMeGenius. All rights reserved.</p>
-        </footer>
+        </footer> */}
       </div>
     </main>
   );
