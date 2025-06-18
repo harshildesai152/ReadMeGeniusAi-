@@ -72,7 +72,7 @@ const HeroSection = () => {
           >
             Generate Now
           </Button>
-           <Link href="/templates" passHref>
+{/*            <Link href="/templates" passHref>
             <Button
               size="lg"
               variant="outline"
@@ -80,7 +80,7 @@ const HeroSection = () => {
             >
               View Templates
             </Button>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </section>
