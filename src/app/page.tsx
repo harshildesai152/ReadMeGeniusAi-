@@ -735,13 +735,13 @@ export default function HomePage() {
                       <SheetClose asChild><NavLink href="/" className="justify-start w-full py-2 h-auto">Home</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/past-files" className="justify-start w-full py-2 h-auto">Past Files</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/explain-code" className="justify-start w-full py-2 h-auto">Explain Code</NavLink></SheetClose>
-                      <SheetClose asChild><NavLink href="/about" className="justify-start w-full py-2 h-auto">About Us</NavLink></SheetClose>
+{/*                       <SheetClose asChild><NavLink href="/about" className="justify-start w-full py-2 h-auto">About Us</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/templates" className="justify-start w-full py-2 h-auto">Templates</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="#" className="justify-start w-full py-2 h-auto">Features</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/pricing" className="justify-start w-full py-2 h-auto">Pricing</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/docs" className="justify-start w-full py-2 h-auto">Docs</NavLink></SheetClose>
                       <SheetClose asChild><NavLink href="/blog" className="justify-start w-full py-2 h-auto">Blog</NavLink></SheetClose>
-                      <SheetClose asChild><NavLink href="/careers" className="justify-start w-full py-2 h-auto">Careers</NavLink></SheetClose>
+                      <SheetClose asChild><NavLink href="/careers" className="justify-start w-full py-2 h-auto">Careers</NavLink></SheetClose> */}
                     </nav>
                   </ScrollArea>
                   <div className="mt-auto border-t p-4">
@@ -791,12 +791,12 @@ export default function HomePage() {
         <HeroSection />
           <ScrollableImageSection />
         <ReadmeGeneratorWrapper />
-        <FeaturesSection />
+{/*         <FeaturesSection />
         <TrustedBySection />
         <HowItWorksSection />
        
         <TestimonialsSection />
-        <CallToActionSection />
+        <CallToActionSection /> */}
        
 
         <section className="py-16 sm:py-20 bg-background text-foreground">
